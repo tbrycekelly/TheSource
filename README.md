@@ -7,4 +7,4 @@ Dont worry of any of these functions don't sound useful to you, there is plenty 
 Cheers,
 T
 
-[]('logo.png')
+![TBK Logo]('logo.png')
