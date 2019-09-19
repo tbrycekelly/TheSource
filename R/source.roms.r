@@ -1,0 +1,175 @@
+## Set of useful R functions for working with Regional Ocean 
+## Model System (ROMS) data and netcdf files.
+## 
+## Including LTRANS files.
+##
+## Author: Thomas Bryce Kelly (tbk14 at fsu.edu)
+## http://about.tkelly.org/
+##
+## Dept of Earth, Ocean & Atmospherical Sciences
+## Florida State University
+##
+## Center for Ocean & Atmospheric Prediction Studies
+## Florida State University
+##
+## National High Magnetic Field Laboratory
+## Florida State University
+
+
+## Load the relevent packages
+library(ncdf4)  # For reading in the NCEP wind fields
+library(R.matlab)  # If you need to read in matlab .mat files
+
+print.nc = function(file) {
+    file = nc_open(file)
+
+    print(file)
+    w = ncvar_get(file, 'w')
+    
+    nc_close(file)   
+}
+
+conv.time.roms = function(x, tz='UTC') {
+    as.POSIXct(x, origin="1900-01-01")
+}
+
+
+get.roms.time = function(path, convert = TRUE) {
+    
+    ## Open the nc file
+    roms = nc_open(path, write=FALSE)
+    
+    nhist = ncvar_get(roms, varid = 'nHIS') # dt * nHist = time between records
+    dstart = ncvar_get(roms, varid = 'dstart') # days since 1900-01-01 00:00:00
+    dt = ncvar_get(roms, varid = 'dt') # Sec
+    ntimes = ncvar_get(roms, varid = 'ntimes') # number of time frames
+    
+    ## Close the nc file
+    nc_close(roms)
+    
+    ## Calculate the times (seconds from 1900-01-01)
+    roms.times = seq(from = dstart, by = dt * nhist / 86400, length.out = ntimes/nhist) * 86400
+    
+    if (convert) {
+        roms.times = conv.time.roms(roms.times, tz='GMT')
+    }
+    
+    roms.times
+}
+
+
+read.roms = function(path) {
+    file = nc_open(path, write=FALSE)
+    
+    #### Load variables
+    ## Vertical Grid
+    h = ncvar_get(file, 'h')
+    hc = ncvar_get(file, 'hc')
+    theta = ncvar_get(file, 'theta_s')
+    N = 42 # Hard coded
+    
+    h = (h[2:dim(h)[1],] + h[1:(dim(h)[1] - 1),]) / 2 ## interpolate to center of each grid cell
+    h = (h[,2:dim(h)[2]] + h[,1:(dim(h)[2] - 1)]) / 2
+    
+    ## Horizontal
+    lat = ncvar_get(file, 'lat_psi')
+    lon = ncvar_get(file, 'lon_psi')
+    grid = list(lat = c(lat), lon = c(lon))
+    
+    ## Advect
+    u = ncvar_get(file, 'u')
+    u = (u[,2:dim(u)[2],,] + u[,1:(dim(u)[2] - 1),,]) / 2
+    
+    v = ncvar_get(file, 'v')
+    v = (v[2:dim(v)[1],,,] + v[1:(dim(v)[1] - 1),,,]) / 2
+    
+    w = ncvar_get(file, 'w')
+    w = (w[,,2:dim(w)[3],] + w[,,1:(dim(w)[3] - 1),]) / 2 # depth averaged w
+    w = (w[2:dim(w)[1],,,] + w[1:(dim(w)[1] - 1),,,]) / 2
+    w = (w[,2:dim(w)[2],,] + w[,1:(dim(w)[2] - 1),,]) / 2
+    
+    dims = c(dim(u)[1] * dim(u)[2], dim(u)[3], dim(u)[4])
+    dim(u) = dims
+    dim(v) = dims
+    dim(w) = dims
+    
+    ## Diffusivity
+    AKt = ncvar_get(file, 'AKt')
+    
+    ## Fields
+    temp = ncvar_get(file, 'temp')
+    if ('rho' %in% names(file$var)) {rho = ncvar_get(file, 'rho')} else {rho = NULL}
+    salt = ncvar_get(file, 'salt')
+    
+    temp = (temp[2:dim(temp)[1],,,] + temp[1:(dim(temp)[1] - 1),,,]) / 2
+    temp = (temp[,2:dim(temp)[2],,] + temp[,1:(dim(temp)[2] - 1),,]) / 2
+    
+    rho = (rho[2:dim(rho)[1],,,] + rho[1:(dim(rho)[1] - 1),,,]) / 2
+    rho = (rho[,2:dim(rho)[2],,] + rho[,1:(dim(rho)[2] - 1),,]) / 2
+    
+    salt = (salt[2:dim(salt)[1],,,] + salt[1:(dim(salt)[1] - 1),,,]) / 2
+    salt = (salt[,2:dim(salt)[2],,] + salt[,1:(dim(salt)[2] - 1),,]) / 2
+    
+    AKt = (AKt[2:dim(AKt)[1],,,] + AKt[1:(dim(AKt)[1] - 1),,,]) / 2
+    AKt = (AKt[,2:dim(AKt)[2],,] + AKt[,1:(dim(AKt)[2] - 1),,]) / 2
+    AKt = (AKt[,,2:dim(AKt)[3],] + AKt[,,1:(dim(AKt)[3] - 1),]) / 2
+    
+    dim(temp) = dims
+    dim(rho) = dims
+    dim(salt) = dims
+    dim(AKt) = dims
+    
+    dim(lon) = dims[1]
+    dim(lat) = dims[1]
+    dim(h) = dims[1]
+    
+    #### Calculated
+    z = get.zlevel.roms(h, hc, theta, N=N)
+    time = get.roms.time(path, TRUE)
+    
+    #### Return object
+    list(path=path, lat=lat, lon=lon, grid=grid, depth= function(x) {-get.zlevel.roms(x, hc, theta, N=N)},
+         h=h, u=u, v=v, w=w, AKt=AKt, T=temp, rho=rho, S=salt, time=time)
+}
+
+
+read.ltrans = function(path, roms.path, backward = TRUE) {
+    cycle = nc_open(path, write=FALSE)
+    lat = ncvar_get(cycle, 'lat')
+    lon = ncvar_get(cycle, 'lon')
+    S = ncvar_get(cycle, 'salinity')
+    T = ncvar_get(cycle, 'temperature')
+    age = ncvar_get(cycle, 'age')
+    dob = ncvar_get(cycle, 'dob') 
+    depth = ncvar_get(cycle, 'depth')
+    model.time = ncvar_get(cycle, 'model_time')
+    nc_close(cycle)
+    
+    rt = get.roms.time(roms.path, FALSE)
+    
+    if (backward) {
+        model.time = max(rt) - model.time
+        dob = max(rt) - dob
+    }
+    
+    ## Convert to POSIX
+    model.time = conv.time.roms(model.time, tz='GMT')
+    dob = conv.time.roms(dob, tz='GMT')
+    rt = conv.time.roms(rt, tz='GMT')
+    
+    ## Return
+    model = list(file = path, lat = lat, lon = lon, sal = S, temp = T, n.times = length(model.time),
+                 age = age, dob = dob, depth = depth, time = model.time, n.particles = length(lon[,1]), 
+                 roms.times = rt)
+}
+
+
+get.zlevel.roms = function(h, hc, theta, b=0.6, N) {
+    ds = 1 / N
+    s = seq(-1 + ds/2, -ds/2, by = ds)
+    A = sinh(theta * s) / sinh(theta)
+    B = (tanh(theta * (s + 0.5)) - tanh(theta * 0.5)) / (2 * tanh(theta * 0.5))
+    C = (1 - b) * A + b * B
+    
+    hc * s + (h - hc) * C
+}
