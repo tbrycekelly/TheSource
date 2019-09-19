@@ -4,6 +4,12 @@ __TheSource__ is an R package for the rest of us, whose sole mission is to allow
 
 Dont worry of any of these functions don't sound useful to you, there is plenty of good stuff to go around. So grab a beer and check out some of the tutorials!
 
+_To install:_
+```R
+devtools::install_github('tbrycekelly/TheSource')
+```
+
+
 Cheers,
 T
 
