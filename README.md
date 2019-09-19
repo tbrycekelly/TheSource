@@ -7,4 +7,4 @@ Dont worry of any of these functions don't sound useful to you, there is plenty 
 Cheers,
 T
 
-![TBK Logo](logo.png)
+<img src="https://github.com/tbrycekelly/TheSource/blob/master/logo.png" width="250">
