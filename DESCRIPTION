@@ -1,7 +1,7 @@
 Package: TheSource
 Type: Package
 Title: TheSource: It Will Hold Your Beer
-Version: 0.1.5
+Version: 0.1.6
 Author: Thomas Bryce Kelly
 Maintainer: Thomas Bryce Kelly <tom@tkelly.org>
 Description: It helps all of us to do more of what we intend to do. 

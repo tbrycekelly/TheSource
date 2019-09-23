@@ -404,31 +404,41 @@ calc.k = function(u, SST) { # m/d
 
 
 #' @title Calculate k (Reuer)
-#' @description This function calculates the temporal length scale of the NCP measurement. Essentially it calculates the ventilation based on water column and wind speed over a sequence of measurements (equally spaced).
-#' @param ws A vector of prior windspeeds ordered from most recent to oldest.
-#' @param mld Mixed layer depth in meters
-#' @param SST Mixed layer temperature in C
-#' @param dt a numeric or vector of the temporal spacing of the wind speed observations in days
-#' @param teeter.mod A boolean flag to turn on or off the modified version of Reuer's weighting scheme as outlined in Teeter et al. 2018.
+#' @description This function calculates the temporal length scale of the NCP measurement, aka a piston velocity (m/d). Essentially it calculates the ventilation based on water column and wind speed over a sequence of wind speed measurements (at 10 m height).
+#' @param time the time at which you are calculating k for
+#' @param wtime a vector of times at which a wind speed is recorded
+#' @param wspeed a vector of prior windspeeds ordered from most recent to oldest
+#' @param mld mixed layer depth in meters
+#' @param SST mixed layer temperature in C
+#' @param teeter.mod a boolean flag to turn on or off the modified version of Reuer's weighting scheme as outlined in Teeter et al. 2018.
 #' @author Thomas Bryce Kelly
 #' @references Reuer, M. K., Barnett, B. A., Bender, M. L., Falkowski, P. G., and Hendricks, M. B. (2007). New estimates of Southern Ocean biological production rates from O2/Ar ratios and the triple isotope composition of O2. Deep Sea Research Part I: Oceanographic Research Papers 54, 951–974. doi:10.1016/j.dsr.2007.02.007.
+#' @references Teeter, L., Hamme, R. C., Ianson, D., and Bianucci, L. (2018). Accurate Estimation of Net Community Production From O 2 /Ar Measurements. Global Biogeochem. Cycles. doi:10.1029/2017GB005874.
 #' @export
 #' @keywords Air-sea Oceanography NCP
-#' @return It will return a list with the individual weights and weighted sum (for dianostics), the k value (that you want), the instantaneous k (also useful), k.hist showing the history of k values (diagnostic), and time is time before measurement that each diagnostic is referenced against (for diagnostics).
-calc.k.reuer = function(ws, mld, SST, dt, teeter.mod = TRUE) { ## m d-1
-
-  ## Start
-  weights = rep(1, length(ws)) # initialize to weights of 1
-  k.result = calc.k(ws, SST) # k's for each time point (m/d)
-
-  if (length(dt) == 1) {
-    dt = rep(dt, length(ws))
+#' @return It will return a list with the individual weights and weighted sum (for dianostics), the k value (that you want, m/d), the instantaneous k (also useful, m/d), k.hist showing the history of k values (diagnostic), and time is time before measurement that each diagnostic is referenced against (for diagnostics, d).
+calc.k.reuer = function(time, wtime, wspeed, mld, SST, teeter.mod = TRUE) { ## m d-1
+  if (is.na(mld)) {
+    return(list(dt = NA,
+                weights = NA,
+                w.sum = NA,
+                k = NA,
+                k.inst = NA,
+                k.hist = NA,
+                time = 0,
+                integration.time = 0)
+           )
   }
+  ## Start
+  weights = rep(1, length(wspeed)) # initialize to weights of 1
+  k.result = calc.k(wspeed, SST) # k's for each time point (m/d)
 
-  if (length(ws) > 1) {
+  dt = as.numeric(difftime(time, wtime, units = 'days')) # positive values are before
+  dt = c(dt[1], diff(dt)) # delta time between each point
+
+  if (length(wspeed) > 1) {
     ## Loop through and sequentially calculate the transfer velocities and weighting of ventilation
-    for (i in 2:length(ws)) {
-
+    for (i in 2:length(wspeed)) {
       ## Calculate the weighting per Reuer et al. (2007)
       f = max(0, min(k.result[i-1] * dt[i] / mld, 1))
       weights[i] = weights[i-1] * (1 - f)
@@ -437,13 +447,16 @@ calc.k.reuer = function(ws, mld, SST, dt, teeter.mod = TRUE) { ## m d-1
   w = sum(weights)
   weights = weights / w ## Normalize
 
+  if (any(is.na(weights))) { warning('Weights contain an NA, check data for problems!')}
   #### Final Calculations
-  if (teeter.mod) { k.final = sum(weights * k.result) }
-  else { k.final = sum(weights * k.result) / (1 - weigths[length(weights)]) }
+  if (teeter.mod) { k.final = sum(weights * k.result, na.rm = TRUE) }
+  else { k.final = sum(weights * k.result, na.rm = TRUE) / (1 - weigths[length(weights)]) }
 
+  tau = NA
   tau = approx(cumsum(weights), cumsum(dt), 0.9, rule = 2)$y
 
-  list(weights = weights,
+  list(dt = dt,
+       weights = weights,
        w.sum = w,
        k = k.final,
        k.inst = k.result[1],

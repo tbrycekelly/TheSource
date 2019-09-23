@@ -1,0 +1,15 @@
+TheSource v0.1.6 (Release date: 2019-09-20)
+==============
+
+Changes:
+
+* Updated calc.k.reuer() to reduce risk of breaking and to improve computation
+
+TheSource v0.1.5 (Release date: 2019-09-19)
+==============
+
+Changes:
+
+* Initial NEWS release
+* First publically available release, all source files should be updated to reflect TheSource package
+* Renamed colnames in teh results of parameter.search to reflect cost function arguments
