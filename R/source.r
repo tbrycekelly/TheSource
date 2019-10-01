@@ -824,3 +824,26 @@ add.log.axis = function(side = 1, base = 10, col = 'black', color.minor = 'grey'
     axis(side = side, at = log(k, base), labels = FALSE, col = color.minor)
     axis(side = side, at = log(k[w>1], base), labels = k[w > 1], col = col)
 }
+
+#' @title Is Inside Polygon
+#' @description Useful to determine if a set of coordinates lies inside or outside a closed polygon. Currently works for
+#'  2D coordinates such as x,y or lat,lon. Example box argument: box = data.frame(x = c(-1, 1, 1, -1), y = c(1, 1, -1, -1)).
+#' @author Thomas Bryce Kelly
+#' @export
+is.inside = function(pos, box) {
+  d = rep(0, nrow(box))
+  ## first line
+  n = nrow(box)
+  a = (box[1,1] - box[n,1]) * (pos[1] - box[n,1])
+  b = (box[1,2] - box[n,2]) * (pos[2] - box[n,2])
+  d[1] = sign(a+b)
+
+  for (k in 2:nrow(box)) {
+    a = (box[k,1] - box[k-1,1]) * (pos[1] - box[k-1,1])
+    b = (box[k,2] - box[k-1,2]) * (pos[2] - box[k-1,2])
+    d[k] = sign(a+b)
+  }
+  if(all(d > -0.1)) {return(TRUE)}
+  if(all(d < 0.1)) {return(TRUE)}
+  return(FALSE)
+}

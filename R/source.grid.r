@@ -33,7 +33,7 @@
 # neighborhood = -1: The number of closest points used in the interpolation of a grid cell. Special value of -1 specifies the use of all points. If neighborhood > number of valid data then neighborhood is set to equal the number of valid datapoints.
 # field.name = 'z': Sets the name of the new interpolated field. By default the name is 'z', but setting it to 'T' for temperature makes sense.
 build.section = function(x, y, z, xlim = NULL, ylim = NULL, x.factor = 1, y.factor = 1, x.scale = NULL, y.scale = NULL,
-                         uncertainty = 1e-12, field.name = 'z', neighborhood = -1) {
+                         uncertainty = 1e-12, field.name = 'z', neighborhood = -1, p = 3) {
 
   ## Remove NAs
   l = !is.na(x) & !is.na(y) & !is.na(z)
@@ -66,10 +66,12 @@ build.section = function(x, y, z, xlim = NULL, ylim = NULL, x.factor = 1, y.fact
   x.new = seq(xlim[1], xlim[2], by = x.scale)
 
   ## Minimum distance based on grid size
-  delta.min = delta(x.factor, y.factor, x.scale/2, 0, y.scale/2, 0) * uncertainty
+  delta.min = delta(x.factor, y.factor, x.scale/2, 0, y.scale/2, 0, p = p) * uncertainty
 
   grid = expand.grid(x = x.new, y = y.new)
-  grid[[field.name]] = apply(grid, 1, function(row) {sum(z * W2(delta(x.factor, y.factor, x, row[1], y, row[2]), delta.min), na.rm = TRUE)})
+  grid[[field.name]] = apply(grid, 1, function(row) {
+    sum(z * W2(delta(x.factor, y.factor, x, row[1], y, row[2], p = p), delta.min), na.rm = TRUE)
+    })
 
 
   ## Construct return object
@@ -81,7 +83,8 @@ build.section = function(x, y, z, xlim = NULL, ylim = NULL, x.factor = 1, y.fact
                 y.factor = y.factor,
                 n.x = n.x, n.y = n.y,
                 uncertainty = uncertainty,
-                neighborhood = 0
+                neighborhood = neighborhood,
+                p = p
               ),
               x = x.new,
               y = y.new,
@@ -98,7 +101,7 @@ build.section = function(x, y, z, xlim = NULL, ylim = NULL, x.factor = 1, y.fact
 #' @param
 #' @export
 build.section.old = function(x, y, z, xlim = NULL, ylim = NULL, x.factor = 1, y.factor = 1, x.scale = NULL, y.scale = NULL,
-                         uncertainty = 1e-12, neighborhood = -1, field.name = 'z') {
+                         uncertainty = 1e-12, neighborhood = -1, field.name = 'z', p = 3) {
 
     ## Remove NAs
     l = !is.na(x) & !is.na(y) & !is.na(z)
@@ -160,7 +163,8 @@ build.section.old = function(x, y, z, xlim = NULL, ylim = NULL, x.factor = 1, y.
                     y.factor = y.factor,
                     n.x = n.x, n.y = n.y,
                     uncertainty = uncertainty,
-                    neighborhood = neighborhood
+                    neighborhood = neighborhood,
+                    p = p
                 ),
                 x = x.new,
                 y = y.new,
@@ -188,7 +192,7 @@ build.section.old = function(x, y, z, xlim = NULL, ylim = NULL, x.factor = 1, y.
 # field.name = 'zz': Sets the name of the new interpolated field. By default the name is 'zz', but setting it to 'T' for temperature makes sense.
 build.section.3d = function(x, y, z, zz, xlim = NULL, ylim = NULL, zlim = NULL, x.factor = 1, y.factor = 1, z.factor = 1,
                             x.scale = NULL, y.scale = NULL, z.scale = NULL, uncertainty = 1e-6,
-                            neighborhood = 20, field.name = 'zz') {
+                            neighborhood = 20, field.name = 'zz', p = 3) {
 
     ## Remove NAs
     l = !is.na(x) & !is.na(y) & !is.na(z) & !is.na(zz)
@@ -261,7 +265,8 @@ build.section.3d = function(x, y, z, zz, xlim = NULL, ylim = NULL, zlim = NULL, 
                     z.factor = z.factor,
                     n.x = n.x, n.y = n.y, n.z = n.z,
                     uncertainty = uncertainty,
-                    neighborhood = neighborhood
+                    neighborhood = neighborhood,
+                    p = p
                 ),
                 x = x.new,
                 y = y.new,
@@ -476,6 +481,43 @@ add.section.param = function(x, y, z, section, field.name) {
     section
 }
 
+
+jackknife.section = function(section, n) {
+
+  ## Get grid parameters
+  xlim = section$grid.meta$xlim
+  ylim = section$grid.meta$ylim
+  x.scale = section$grid.meta$x.scale
+  y.scale = section$grid.meta$y.scale
+  x.factor = section$grid.meta$x.factor
+  y.factor = section$grid.meta$y.factor
+  neighborhood = section$grid.meta$neighborhood
+  uncertainty = section$grid.meta$uncertainty
+
+  ## Minimum distance based on grid size
+  delta.min = delta(x.factor, y.factor, x.scale/2, 0, y.scale/2, 0, p = section$grid.meta$p) * uncertainty
+
+  section$jack = expand.grid(x = section$x, y = section$y)
+
+  for (k in 1:n) {
+    l = sample(1:nrow(section$data), nrow(section$data), replace = TRUE)
+    l = unique(l)
+    section$jack[[paste0('z', k)]] = NA
+
+    for (i in 1:nrow(section$grid)) {
+      ## Calculate distances and determine weights
+      del = delta(x.factor, y.factor, section$data$x[l], section$grid$x[i], section$data$y[l], section$grid$y[i])
+
+      w = W(del, delta.min) # Get weights
+      w = w / sum(w) # Normalize
+      section$jack[[paste0('z', k)]][i] = sum(section$data$z[l] * w)
+    }
+  }
+
+  ## Return
+  section
+}
+
 #' @title Build Section (ODV)
 #' @author Thomas Bryce Kelly
 #' @description
@@ -559,6 +601,29 @@ build.section.odv = function(x, y, z, xlim = NULL, ylim = NULL, x.factor = 1, y.
                )
     ## Return
     grid
+}
+
+
+#' @title Cross Validate the IDW
+#' @author Thomas Bryce Kelly
+#' @export
+cv.section = function(section) {
+
+  var = 0
+  delta.min = delta(section$grid.meta$x.factor, section$grid.meta$y.factor,
+                    section$grid.meta$x.scale/2, 0, section$grid.meta$y.scale/2, 0,
+                    p = section$grid.meta$p) * section$grid.meta$uncertainty
+
+  for (i in 1:nrow(section$data)) {
+    del = delta(section$grid.meta$x.factor, section$grid.meta$y.factor, section$data$x[-i], section$data$x[i],
+                section$data$y[-i], section$data$y[i], p = section$grid.meta$p)
+
+    w = W(del, delta.min)
+    w = w / sum(w)
+    var = var + (sum(w * section$data$z[-i]) - section$data$z[i])^2
+  }
+  section$rmse = sqrt(var / nrow(section$data))
+  section
 }
 
 #' @title Distance Metric

@@ -1,9 +1,10 @@
-TheSource v0.1.6 (Release date: 2019-09-20)
+TheSource v0.1.6 (Release date: 2019-10-01)
 ==============
 
 Changes:
 
 * Updated calc.k.reuer() to reduce risk of breaking and to improve computation
+* Added is.inside() function
 
 TheSource v0.1.5 (Release date: 2019-09-19)
 ==============
