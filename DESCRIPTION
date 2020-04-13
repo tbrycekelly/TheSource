@@ -14,7 +14,7 @@ RoxygenNote: 7.1.0
 Depends: R (>= 3.5)
 LinkingTo: Rcpp
 Imports: 
-  Rcpp (>= 1.0.2)
+  Rcpp (>= 1.0.2),
   pals,
   oce,
   ocedata,
