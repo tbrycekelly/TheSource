@@ -1,0 +1,9 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.o
+.dll
+.sync*
+.Rproj
+.so

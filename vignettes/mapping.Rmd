@@ -1,0 +1,42 @@
+---
+  title: "Mapping Tutorial for TheSource"
+  author: "Thomas Bryce Kelly"
+  date: '`r Sys.Date()`'
+  output: rmarkdown::html_vignette
+  vignette: >
+    %\VignetteIndexEntry{Mapping Tutorial for TheSource}
+    %\VignetteEngine{knitr::rmarkdown}
+    \usepackage[utf8]{inputenc}
+---
+
+Making and sharing maps can be one of he most useful and, at times, trying experiences do to the variety of recommendations and range in complexity associated with the range of approaches available. While \emph{TheSource} package will not provide a comprehensive set of mapping tools for all cases, it will (and does) provide a simple approach to mapping that attempts to bring together the best parts of several other pacakges into a common grammer. Without further ado, let's start with an example.
+
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Here is an included test function provided with \emph{TheSource}:
+
+``` {r}
+library(TheSource)
+test.map.california()
+```
+
+There are a number of projection that can be used, here's a summary of some combination of choices:
+
+```{r}
+#par(mfrow=c(2,2))
+
+for (i in 1:8) {
+  p = make.proj(i)
+  
+  map = make.map(p = p)
+  mtext(p, side = 3, line = 1, col = 'red', adj = 1, cex = 0.5)
+  
+}
+```

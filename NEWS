@@ -1,0 +1,78 @@
+TheSource v0.2.0 (Release date: 2020-02-)
+==============
+
+Changes:
+
+* Make gridIDW a CPP optimized function
+* Added gridODV for gridding like ODV
+* Added gridKrig for krige-based gridding
+* Updated build.section to carrry LAT/LON information
+* Updated add.section.bathy to use LAT/LON info
+
+TheSource v0.2.0 (Release date: 2019-11-)
+==============
+
+Changes:
+
+* Major improvements to gridding function performance
+* Reorganized gridding functions
+* Renamed add.contour to add.section.contour
+* Rewrote add.section.contour
+
+
+TheSource v0.1.8 (Release date: 2019-11-3)
+==============
+
+Changes:
+
+* Updated is.within() to accept multiple bounds
+* Include cruise name in load.beta() and summarize.beta()
+* Added load.beta.icpms() for yield analysis
+* Fixed DESCRIPTION file that prevented install
+
+
+TheSource v0.1.7 (Release date: 2019-10-05)
+==============
+
+Changes:
+
+* Improved documentation for add.colorbar()
+* Enabled horizontal support for add.colorbar()
+
+* Improved load.beta() function
+* Added summarize.beta()
+* Added correct.beta.names()
+
+* Improved build.section() performance (x5)
+* Removed neighborhood from build.section()
+* Added print.nc()
+* Added load.roms()
+* Added get.roms.time()
+* Added get.zlevel.roms()
+* Added load.ltrans()
+* Updated uncertainty in gridders to 1e-12
+* Removed "old" gridders
+* Include gridding function in grid.meta for all sections
+* Improved out of range color handling in plot.section()
+
+* Added conv.uM.to.ml()
+* Reworked which.within() and added is.within()
+
+
+TheSource v0.1.6 (Release date: 2019-10-01)
+==============
+
+Changes:
+
+* Updated calc.k.reuer() to reduce risk of breaking and to improve computation
+* Added is.inside() function
+
+
+TheSource v0.1.5 (Release date: 2019-09-19)
+==============
+
+Changes:
+
+* Initial NEWS release
+* First publically available release, all source files should be updated to reflect TheSource package
+* Renamed colnames in the results of parameter.search to reflect cost function arguments

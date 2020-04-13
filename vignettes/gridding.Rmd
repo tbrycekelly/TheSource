@@ -1,0 +1,42 @@
+---
+title: "Gridding Datasets with TheSource"
+author: "Thomas Bryce Kelly"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Gridding Datasets with TheSource}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(TheSource)
+```
+
+*TheSource* comes prepackaged with some example datasets, which can be used to learn some of the features of gridding and plotting oceanographic data. Here we'll use the salinity data taken from an ocean transect to visualize how gridding parameters change the final product.
+
+```{r}
+section = build.section(x = Geotraces.GA01.Sal$Station,
+                        y = Geotraces.GA01.Sal$`PRESSURE.[dbar]`,
+                        z = Geotraces.GA01.Sal$CTDSAL)
+
+plot.section(section, xlab = 'Station', ylab = 'Water Pressure', zlim = c(34, 36))
+
+```
+
+The default for gridding is to make a 50 x 50 grid based on the range of x and y given. It also defaults to assuming that x and y units are the same. This can be adjusted by modifying x.factor and/or y.factor. By increasing x.factor, a greater weight will be placed on differences in y:
+
+```{r}
+section = build.section(x = Geotraces.GA01.Sal$Station,
+                        y = Geotraces.GA01.Sal$`PRESSURE.[dbar]`,
+                        z = Geotraces.GA01.Sal$CTDSAL, x.factor = 10)
+
+plot.section(section, xlab = 'Station', ylab = 'Water Pressure', zlim = c(34, 36))
+
+```
+
+The x.factor and y.factor values are useful when either units are different between the x and y variables or when physical properies (such as diffusivity) imply preferential directions in the interpolation.
