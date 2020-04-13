@@ -5,7 +5,9 @@
 \alias{Geotraces.GA01.Sal}
 \title{Geotraces' GA01 Salinity and Temperature Data
 A dataframe containing T and S with various metadata.}
-\format{A Dataframe containing 5103 observations of 12 variables}
+\format{
+A Dataframe containing 5103 observations of 12 variables
+}
 \source{
 See the Geotraces Intermediate Data Product and refences at http://www.geotraces.org/dp/idp2017
 }

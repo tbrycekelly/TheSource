@@ -13,6 +13,8 @@ plot.TS(
   cex.lab = 1,
   drawlabels = TRUE,
   labels = NULL,
+  freezing.line = T,
+  freezing.col = "#00000030",
   col = "grey",
   lwd = 1,
   lty = 1,

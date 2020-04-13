@@ -10,21 +10,21 @@ Description: It helps all of us to do more of what we intend to do.
 License: The "be nice to you and me" license (also known as MIT non-commercial license with attributation)
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.0.2
-Depends:
-  R (>= 3.5)
-Imports: Rcpp (>= 1.0.2)
+RoxygenNote: 7.1.0
+Depends: R (>= 3.5)
 LinkingTo: Rcpp
-Suggests: 
+Imports: 
+  Rcpp (>= 1.0.2)
   pals,
   oce,
   ocedata,
   lmodel2,
   openxlsx,
   marmap,
-  ncdf4,
-  polynom,
   knitr,
-  automap,
   dplyr
+Suggests:
+  polynom,
+  ncdf4,
+  automap
 URL: https://github.com/tbrycekelly/TheSource

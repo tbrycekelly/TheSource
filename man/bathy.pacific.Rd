@@ -6,7 +6,9 @@
 \title{Pacific Bathymetry
 
 A Matrix containing elevation data taken from NOAA via marmap.}
-\format{A list}
+\format{
+A list
+}
 \source{
 NOAA Bathymetric Database
 }
