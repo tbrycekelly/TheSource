@@ -4,8 +4,21 @@
 \alias{add.section.bathy}
 \title{Add Section Bathymetry}
 \usage{
-add.section.bathy(section, stn.lon, stn.lat, stn.depth = NULL,
-  by.lat = TRUE, bathy.col = "darkgrey", res = 2)
+add.section.bathy(
+  section,
+  bathy = bathy.global,
+  binning = 1,
+  bathy.col = "darkgrey"
+)
+}
+\arguments{
+\item{section}{a section object from build.section()}
+
+\item{bathy}{a bathymetric object such as "bathy.global" (the default)}
+
+\item{binning}{a smoothing paramter; must be an odd integer}
+
+\item{bathy.col}{the color of the bathymetry}
 }
 \description{
 Add Section Bathymetry

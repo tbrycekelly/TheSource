@@ -6,8 +6,11 @@
 \usage{
 conv.kahru.chl(x)
 }
+\arguments{
+\item{x}{Raw value}
+}
 \description{
-Convert Data to Chl (Kahru)
+Convert Kahru's data to mg Chl m-2
 }
 \author{
 Thomas Bryce Kelly

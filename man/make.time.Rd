@@ -4,8 +4,30 @@
 \alias{make.time}
 \title{Make Datetime Object}
 \usage{
-make.time(year = NULL, month = 1, day = 1, hour = 0, minute = 0,
-  second = 0, tz = "GMT")
+make.time(
+  year = NULL,
+  month = 1,
+  day = 1,
+  hour = 0,
+  minute = 0,
+  second = 0,
+  tz = "GMT"
+)
+}
+\arguments{
+\item{year}{Year (e.g. 2016)}
+
+\item{month}{Month (1-12)}
+
+\item{day}{Day (1-31)}
+
+\item{hour}{Hour (0-23)}
+
+\item{minute}{Minute (0-59)}
+
+\item{second}{Second (0-59)}
+
+\item{tz}{System available timezone}
 }
 \description{
 A helper function to generate a datetime object

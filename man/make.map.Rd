@@ -4,9 +4,23 @@
 \alias{make.map}
 \title{Make Map}
 \usage{
-make.map(coast = NULL, lon.min = -180, lon.max = 180, lat.min = 55,
-  lat.max = 90, p = "+proj=stere +lat_0=90", land.col = "lightgray",
-  grid = TRUE, dlon = 5, dlat = 5)
+make.map(
+  coast = NULL,
+  lon.min = -75,
+  lon.max = 75,
+  lat.min = -45,
+  lat.max = 45,
+  p = NULL,
+  land.col = "lightgray",
+  grid = TRUE,
+  dlon = 15,
+  dlat = 15
+)
+}
+\arguments{
+\item{coast}{Should be the name of a coastline data object. A value of NULL sets the default cosatline to 'coastlineWorld'.}
+
+\item{lon.min}{The minimum longitude displayed on the map.}
 }
 \description{
 Default settings are for Arctic, lowest resolution coastline.

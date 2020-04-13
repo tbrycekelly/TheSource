@@ -4,7 +4,7 @@
 \alias{parameter.search}
 \title{Parameter Search}
 \usage{
-parameter.search(n, cost, ..., bounds, splits = 10)
+parameter.search(n, cost, ..., bounds, splits = 10, progression = NULL)
 }
 \arguments{
 \item{n}{Number of recursions to perform}
@@ -16,6 +16,8 @@ parameter.search(n, cost, ..., bounds, splits = 10)
 \item{bounds}{A dataframe containing the minimum and maximum values permitted of each parameter}
 
 \item{splits}{The number of subdivisions to perform for each dimension (so grid size is n x splits ^ dimensionality)}
+
+\item{progression}{The size of the new search-space to interrogate. A value between 1 and splits/2. Default value (NULL) will yeield a progression of 1, most rapid convergence.}
 }
 \description{
 Implements a recursive grid search routine to solve optimization problems in arbitrary dimensions.

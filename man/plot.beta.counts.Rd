@@ -4,8 +4,21 @@
 \alias{plot.beta.counts}
 \title{Plot Beta Counts}
 \usage{
-plot.beta.counts(data, ylim = NULL, cols = pals::glasbey(5),
-  show.legend = TRUE)
+plot.beta.counts(
+  data,
+  ylim = NULL,
+  cols = pals::glasbey(5),
+  show.legend = TRUE
+)
+}
+\arguments{
+\item{data}{A beta counter object as returned by _load.beta()_.}
+
+\item{ylim}{The ylim to use. The default uses the limits of the data.}
+
+\item{cols}{A set of 5 colors to use in the plot.}
+
+\item{show.legend}{A boolean flag to turn the legend on and off.}
 }
 \description{
 A helper function to quickly plot up raw data from a beta count data file.

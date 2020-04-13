@@ -4,8 +4,7 @@
 \alias{add.log.axis}
 \title{Add Log Axis}
 \usage{
-add.log.axis(side = 1, base = 10, col = "black",
-  color.minor = "grey")
+add.log.axis(side = 1, base = 10, col = "black", color.minor = "grey")
 }
 \description{
 A helper function to add log axis to a plot.

@@ -6,9 +6,17 @@
 \usage{
 get.section.bathy(lon, lat, res = 10)
 }
+\arguments{
+\item{lon}{longitudes}
+
+\item{lat}{latitudes}
+
+\item{res}{the resolution of the bathymetry (arc minutes, e.g. 10)}
+}
 \description{
-Get Section Bathymetry
+retreive bathymetry for a section plot
 }
 \author{
 Thomas Bryce Kelly
 }
+\keyword{Bathymetry}

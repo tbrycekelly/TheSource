@@ -1,14 +1,30 @@
 Package: TheSource
 Type: Package
 Title: TheSource: It Will Hold Your Beer
-Version: 0.1.4
-Author: Thomas Bryce Kelly
+Version: 0.2.4
+Author:
+  Thomas Bryce Kelly <tbk14@fsu.edu> <http://tkelly.org>
+  Laura Whitmore <laura.whitmore@usm.edu> <http://whitmorescience.com/>
 Maintainer: Thomas Bryce Kelly <tom@tkelly.org>
 Description: It helps all of us to do more of what we intend to do. 
 License: The "be nice to you and me" license (also known as MIT non-commercial license with attributation)
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.1
-Requires: pals, oce, ocedata, lmodel2, openxlsx
-Suggests: knitr, rmarkdown, polynom, marmap
-VignetteBuilder: knitr
+RoxygenNote: 7.0.2
+Depends:
+  R (>= 3.5)
+Imports: Rcpp (>= 1.0.2)
+LinkingTo: Rcpp
+Suggests: 
+  pals,
+  oce,
+  ocedata,
+  lmodel2,
+  openxlsx,
+  marmap,
+  ncdf4,
+  polynom,
+  knitr,
+  automap,
+  dplyr
+URL: https://github.com/tbrycekelly/TheSource

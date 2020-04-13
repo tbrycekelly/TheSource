@@ -4,9 +4,22 @@
 \alias{add.map.layer}
 \title{Add Map Layer}
 \usage{
-add.map.layer(lon, lat, z, zlim = NULL, pal = "ocean.algae",
-  col.na = NA, n = 255, col.low = NA, col.high = NA, rev = FALSE,
-  filled = FALSE, indicate = TRUE, verbose = FALSE)
+add.map.layer(
+  lon,
+  lat,
+  z,
+  zlim = NULL,
+  pal = "ocean.algae",
+  col.na = NA,
+  n = 255,
+  refinement = NA,
+  col.low = NA,
+  col.high = NA,
+  rev = FALSE,
+  filled = FALSE,
+  indicate = TRUE,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{lon}{longitude of the data}
@@ -22,6 +35,8 @@ add.map.layer(lon, lat, z, zlim = NULL, pal = "ocean.algae",
 \item{col.na}{the color with which any NAs should be drawn with. A value of NA skips this step.}
 
 \item{n}{the number of distinct colors to request from the palette function.}
+
+\item{refinement}{the level of bilinear refinement to apply to the image grid}
 }
 \description{
 Add a image layer to the map!

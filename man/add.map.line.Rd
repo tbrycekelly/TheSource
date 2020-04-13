@@ -16,8 +16,6 @@ add.map.line(lon, lat, col = "black", lty = 1, lwd = 1)
 \item{lty}{the type of line to be drawn}
 
 \item{lwd}{the width of the line to be drawn}
-
-\item{lty}{the type of line to be drawn}
 }
 \description{
 Add Map Line

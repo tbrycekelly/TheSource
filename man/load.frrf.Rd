@@ -6,6 +6,11 @@
 \usage{
 load.frrf(input.dir, file.names)
 }
+\arguments{
+\item{input.dir}{the input directory}
+
+\item{files.names}{the name of the file in the input directory}
+}
 \description{
 Load FRRF Datafiles
 }

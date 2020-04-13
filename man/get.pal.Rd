@@ -4,7 +4,7 @@
 \alias{get.pal}
 \title{Get Pal}
 \usage{
-get.pal(n = 10, pal = "ocean.haline", rev = FALSE)
+get.pal(n = 10, pal = pals::ocean.haline, rev = FALSE)
 }
 \arguments{
 \item{n}{The number of colors desired.}

@@ -6,8 +6,11 @@
 \usage{
 conv.kahru.sst(x)
 }
+\arguments{
+\item{x}{The pixel values (or a vector or matrix)}
+}
 \description{
-Convert Data to SST (Kahru)
+Convert
 }
 \author{
 Thomas Bryce Kelly

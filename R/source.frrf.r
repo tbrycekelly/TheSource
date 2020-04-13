@@ -1,9 +1,22 @@
+## Functions for analyzing FRRF Output
+##
+## Author: Thomas Bryce Kelly (tbk14 at fsu.edu)
+## http://about.tkelly.org/
+##
+## Dept of Earth, Ocean & Atmospherical Sciences
+## Florida State University
+##
+## Center for Ocean & Atmospheric Prediction Studies
+## Florida State University
+##
+## National High Magnetic Field Laboratory
+## Florida State University
+
 
 #' @title Load FRRF Datafiles
 #' @author Thomas Bryce Kelly
-#' @description
-#' @param input.dir
-#' @param files.names
+#' @param input.dir the input directory
+#' @param files.names the name of the file in the input directory
 #' @export
 load.frrf = function(input.dir, file.names) {
     result = list()

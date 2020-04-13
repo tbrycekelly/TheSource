@@ -9,8 +9,5 @@ get.seconds(x)
 \description{
 Get Seconds
 }
-\author{
-Thomas Bryce Kelly
-}
 \keyword{Convert}
 \keyword{Time}

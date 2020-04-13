@@ -4,21 +4,32 @@
 \alias{add.map.bathy}
 \title{Add Map Bathymetry}
 \usage{
-add.map.bathy(map, bathy, bathy.levels = c(-100, -1000, -2500),
-  bathy.col = "darkgrey", bathy.lwd = 1, bathy.lty = 1)
+add.map.bathy(
+  map,
+  bathy,
+  levels = c(-100, -1000, -2500),
+  bathy.col = "darkgrey",
+  bathy.lwd = 1,
+  bathy.lty = 1,
+  drawlabels = TRUE,
+  cex.lab = 1,
+  bathy.levels = NULL
+)
 }
 \arguments{
 \item{map}{a map object as returned by make.map()}
 
 \item{bathy}{a bathymetry dataframe as produced by get.bathy()}
 
-\item{bathy.levels}{a vector of elevations for which to draw contours. NB: depths are negative elevation.}
-
 \item{bathy.col}{the color of the lines to be drawn}
 
 \item{bathy.lwd}{the weight of the lines}
 
 \item{bathy.lty}{the type of line to be drawn}
+
+\item{drawlabels}{boolean value to draw labels (default: TRUE)}
+
+\item{bathy.levels}{a vector of elevations for which to draw contours. NB: depths are negative elevation.}
 }
 \description{
 add bathymetry contours

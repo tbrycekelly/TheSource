@@ -4,9 +4,26 @@
 \alias{build.section}
 \title{Build Section}
 \usage{
-build.section(x, y, z, xlim = NULL, ylim = NULL, x.factor = 1,
-  y.factor = 1, x.scale = NULL, y.scale = NULL,
-  uncertainty = 1e-12, field.name = "z", neighborhood = -1)
+build.section(
+  x,
+  y,
+  z,
+  lat = NULL,
+  lon = NULL,
+  xlim = NULL,
+  ylim = NULL,
+  x.factor = 1,
+  y.factor = 1,
+  x.scale = NULL,
+  y.scale = NULL,
+  uncertainty = 1e-12,
+  p = 3,
+  gridder = gridIDW,
+  field.names = NULL,
+  nx = 50,
+  ny = 50,
+  by.lat = FALSE
+)
 }
 \description{
 Build Section
@@ -14,3 +31,4 @@ Build Section
 \author{
 Thomas Bryce Kelly
 }
+\keyword{Gridding}

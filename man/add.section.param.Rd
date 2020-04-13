@@ -6,9 +6,13 @@
 \usage{
 add.section.param(x, y, z, section, field.name)
 }
+\arguments{
+\item{x}{x}
+}
 \description{
 Add Section Parameter
 }
 \author{
 Thomas Bryce Kelly
 }
+\keyword{Gridding}

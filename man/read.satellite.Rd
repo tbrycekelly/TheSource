@@ -4,11 +4,15 @@
 \alias{read.satellite}
 \title{Read Satellite Data}
 \usage{
-read.satellite(input.dir, file, conv = function(x) {     x },
-  entry = 1)
+read.satellite(input.dir, file, conv = function(x) {
+    x
+}, entry = 1)
+}
+\arguments{
+\item{input.dir}{the input directory}
 }
 \description{
-Read Satellite Data
+read
 }
 \author{
 Thomas Bryce Kelly

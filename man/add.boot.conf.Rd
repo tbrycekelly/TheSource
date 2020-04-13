@@ -4,8 +4,14 @@
 \alias{add.boot.conf}
 \title{Add Bootstrapped Confidence Intervals}
 \usage{
-add.boot.conf(model, new.x = c(-1000:1000), col = "#55555540",
-  conf = c(0.025, 0.975), border = FALSE, trendline = FALSE)
+add.boot.conf(
+  model,
+  new.x = c(-1000:1000),
+  col = "#55555540",
+  conf = c(0.025, 0.975),
+  border = FALSE,
+  trendline = FALSE
+)
 }
 \arguments{
 \item{model}{A bootstrap object (i.e. a dataframe) containing bootstrapped estimates of m and b.}

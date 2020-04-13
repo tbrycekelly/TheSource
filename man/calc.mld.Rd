@@ -4,8 +4,7 @@
 \alias{calc.mld}
 \title{Calculate MLD}
 \usage{
-calc.mld(depth, density, set.depth = 10, delta = 0.1,
-  resolution = 0.1)
+calc.mld(depth, density, set.depth = 10, delta = 0.1, resolution = 0.1)
 }
 \arguments{
 \item{depth}{depth}

@@ -6,8 +6,11 @@
 \usage{
 get.satellite.times(x)
 }
+\arguments{
+\item{x}{raw}
+}
 \description{
-Get Satellite Times
+time
 }
 \author{
 Thomas Bryce Kelly

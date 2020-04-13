@@ -6,8 +6,11 @@
 \usage{
 conv.nasa.chl(x)
 }
+\arguments{
+\item{x}{raw value}
+}
 \description{
-Convert Data to Chl (NASA)
+convert
 }
 \author{
 Thomas Bryce Kelly

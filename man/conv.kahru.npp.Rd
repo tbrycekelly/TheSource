@@ -6,8 +6,11 @@
 \usage{
 conv.kahru.npp(x)
 }
+\arguments{
+\item{x}{raw value}
+}
 \description{
-Convert Data to NPP (Kahru)
+Converts kahru's data to npp
 }
 \author{
 Thomas Bryce Kelly

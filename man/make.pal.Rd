@@ -4,8 +4,15 @@
 \alias{make.pal}
 \title{Make Pal}
 \usage{
-make.pal(x, n = 255, min = NA, max = NA, pal = "ocean.haline",
-  rev = FALSE, clip = FALSE)
+make.pal(
+  x,
+  n = 255,
+  min = NA,
+  max = NA,
+  pal = "ocean.haline",
+  rev = FALSE,
+  clip = FALSE
+)
 }
 \description{
 Make Pal

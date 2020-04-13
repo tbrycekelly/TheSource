@@ -4,8 +4,18 @@
 \alias{add.boxplot.box}
 \title{Add Boxplot Box}
 \usage{
-add.boxplot.box(x, y, col = "white", border = "black", CI = 0.95,
-  width = 0.7, lty = 1, lcol = "black", lwd = 1, xlwd = NULL)
+add.boxplot.box(
+  x,
+  y,
+  col = "white",
+  border = "black",
+  CI = 0.95,
+  width = 0.7,
+  lty = 1,
+  lcol = "black",
+  lwd = 1,
+  xlwd = NULL
+)
 }
 \description{
 Add a box to a boxplot that was initialized by plot.boxplot.

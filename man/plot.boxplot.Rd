@@ -4,8 +4,19 @@
 \alias{plot.boxplot}
 \title{Plot Boxplot}
 \usage{
-plot.boxplot(n = 10, ylim = c(0, 1), at = NULL, main = NULL,
-  labels = NULL, ylab = NULL, xlab = NULL)
+plot.boxplot(
+  n = 10,
+  ylim = c(0, 1),
+  at = NULL,
+  main = NULL,
+  labels = NULL,
+  ylab = NULL,
+  xlab = NULL,
+  ...
+)
+}
+\arguments{
+\item{n}{The}
 }
 \description{
 Generate a blank boxplot

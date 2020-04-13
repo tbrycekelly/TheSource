@@ -4,9 +4,18 @@
 \alias{add.map.bathy.shade}
 \title{Add Map Bathymetry (shaded)}
 \usage{
-add.map.bathy.shade(map, bathy, pal = "ocean.ice", n = 255,
-  zlim = NULL, rev = FALSE, filled = TRUE, col.low = NA,
-  col.high = NA)
+add.map.bathy.shade(
+  map,
+  bathy,
+  pal = "ocean.ice",
+  n = 255,
+  zlim = NULL,
+  rev = FALSE,
+  filled = TRUE,
+  col.low = NA,
+  col.high = NA,
+  refinement = 1
+)
 }
 \arguments{
 \item{map}{a map object returned by the function make.map()}
@@ -26,6 +35,8 @@ add.map.bathy.shade(map, bathy, pal = "ocean.ice", n = 255,
 \item{col.low}{the color used when painting data that is below the zlim range. A value of NA causes the data not to be drawn, and a value of '' uses the lowest color value for out of range data.}
 
 \item{col.high}{same as \emph{col.low} but for data that is out of range above the zlim.}
+
+\item{refinement}{the level of bilinear refinement to apply to the image grid}
 }
 \description{
 Add Map Bathymetry (shaded)

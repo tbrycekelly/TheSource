@@ -108,7 +108,6 @@ calc.NeSol = function(S = 35, T = 10) {
 
 #' @title Calcualte O2 Solubility
 #' @author Thomas Bryce Kelly
-#' @description
 #' @param S Salinity in PSU
 #' @param T Temperature in centigrade
 #' @export
@@ -144,7 +143,6 @@ calc.O2sol = function(S=35, T=10) { ## umol Kg-1
 
 #' @title Calculate Density
 #' @author Thomas Bryce Kelly
-#' @description
 #' @param S Salinity in PSU
 #' @param T Temperature in centigrade
 #' @param p Pressure in db
@@ -179,7 +177,6 @@ calc.rho = function(S=30, T=15, p=0) {
 
 #' @title Calculate Adiabatic Temperature Gradient
 #' @author Thomas Bryce Kelly
-#' @description
 #' @param P Pressure in db
 #' @param S Salinity in PSU
 #' @param T Temperature in centigrade
@@ -216,7 +213,6 @@ calc.adiabatic.temp.grad = function(S, T, P) {
 
 #' @title Calculate Potential Temperature
 #' @author Thomas Bryce Kelly
-#' @description
 #' @param S Salinity in PSU
 #' @param T Temperature in centigrade
 #' @param P Sample pressure in db
@@ -261,6 +257,20 @@ calc.ptemp = function(S, T, P, P.ref) {
 calc.sigma.theta = function(S, T, P, P.ref = 0) {
     ## Potential density anomaly
     calc.rho(S = S, T = calc.ptemp(S = S, T = T, P = P, P.ref= P.ref), p = P.ref) - 1000
+}
+
+
+#' @title Convert Oxygen Units
+#' @export
+#' @author Thomas Bryce Kelly
+#' @references https://ocean.ices.dk/tools/unitconversion.aspx
+conv.uM.to.ml = function(x, rev = FALSE, verbose = FALSE) {
+  if (rev) {
+    if (verbose) {print('Converting oxygen from ml/l to uM')}
+    return(x/0.022391)
+  }
+  if (verbose) {print('Converting oxygen from uM to ml/l')}
+  return(x * 0.022391)
 }
 
 
@@ -355,6 +365,35 @@ conv.p.to.d = function(p=1e4, latitude = 30, geo.anom = 0, d = NULL, rev = FALSE
 }
 
 
+
+#' @title Calculate AOU
+#' @export
+#' @param T temperature
+#' @param S salinity
+#' @param P pressure
+#' @param oxy oxygen in umol kg-1
+calc.AOU = function(T, S, P, oxy) { #T = Celcius, P = dbar, P, oxy = umol kg-1
+  Osat = calc.O2sol(S = S, T = T) ##uM
+  Osat = (Osat*1000)/calc.rho(S=S, T=T, p=P) #convert to umol kg-1
+  Osat - oxy
+}
+
+#' @title Calculate Phosphate Star (PO4Star)
+#' @export
+#' @references broeker and peng 1998
+calc.POstar = function(Oxy, PO4, R = 1/175){ ## using defined redfield. #umol kg
+  PO4 + oxy*R - 1.95
+}
+
+#' @title Calculate Preformed Phosphate
+#' @export
+#' @references broeker and peng 1998
+calc.pref.PO4 = function(AOU, PO4, R = 1/175){ #umol kg (calculate preformed PO4)
+  PO4 - R * AOU
+}
+
+
+
 #####################################
 #####################################
 ##### Air Sea Gas Exchange  #########
@@ -404,31 +443,41 @@ calc.k = function(u, SST) { # m/d
 
 
 #' @title Calculate k (Reuer)
-#' @description This function calculates the temporal length scale of the NCP measurement. Essentially it calculates the ventilation based on water column and wind speed over a sequence of measurements (equally spaced).
-#' @param ws A vector of prior windspeeds ordered from most recent to oldest.
-#' @param mld Mixed layer depth in meters
-#' @param SST Mixed layer temperature in C
-#' @param dt a numeric or vector of the temporal spacing of the wind speed observations in days
-#' @param teeter.mod A boolean flag to turn on or off the modified version of Reuer's weighting scheme as outlined in Teeter et al. 2018.
+#' @description This function calculates the temporal length scale of the NCP measurement, aka a piston velocity (m/d). Essentially it calculates the ventilation based on water column and wind speed over a sequence of wind speed measurements (at 10 m height).
+#' @param time the time at which you are calculating k for
+#' @param wtime a vector of times at which a wind speed is recorded
+#' @param wspeed a vector of prior windspeeds ordered from most recent to oldest
+#' @param mld mixed layer depth in meters
+#' @param SST mixed layer temperature in C
+#' @param teeter.mod a boolean flag to turn on or off the modified version of Reuer's weighting scheme as outlined in Teeter et al. 2018.
 #' @author Thomas Bryce Kelly
 #' @references Reuer, M. K., Barnett, B. A., Bender, M. L., Falkowski, P. G., and Hendricks, M. B. (2007). New estimates of Southern Ocean biological production rates from O2/Ar ratios and the triple isotope composition of O2. Deep Sea Research Part I: Oceanographic Research Papers 54, 951–974. doi:10.1016/j.dsr.2007.02.007.
+#' @references Teeter, L., Hamme, R. C., Ianson, D., and Bianucci, L. (2018). Accurate Estimation of Net Community Production From O 2 /Ar Measurements. Global Biogeochem. Cycles. doi:10.1029/2017GB005874.
 #' @export
 #' @keywords Air-sea Oceanography NCP
-#' @return It will return a list with the individual weights and weighted sum (for dianostics), the k value (that you want), the instantaneous k (also useful), k.hist showing the history of k values (diagnostic), and time is time before measurement that each diagnostic is referenced against (for diagnostics).
-calc.k.reuer = function(ws, mld, SST, dt, teeter.mod = TRUE) { ## m d-1
-
-  ## Start
-  weights = rep(1, length(ws)) # initialize to weights of 1
-  k.result = calc.k(ws, SST) # k's for each time point (m/d)
-
-  if (length(dt) == 1) {
-    dt = rep(dt, length(ws))
+#' @return It will return a list with the individual weights and weighted sum (for dianostics), the k value (that you want, m/d), the instantaneous k (also useful, m/d), k.hist showing the history of k values (diagnostic), and time is time before measurement that each diagnostic is referenced against (for diagnostics, d).
+calc.k.reuer = function(time, wtime, wspeed, mld, SST, teeter.mod = TRUE) { ## m d-1
+  if (is.na(mld)) {
+    return(list(dt = NA,
+                weights = NA,
+                w.sum = NA,
+                k = NA,
+                k.inst = NA,
+                k.hist = NA,
+                time = 0,
+                integration.time = 0)
+           )
   }
+  ## Start
+  weights = rep(1, length(wspeed)) # initialize to weights of 1
+  k.result = calc.k(wspeed, SST) # k's for each time point (m/d)
 
-  if (length(ws) > 1) {
+  dt = as.numeric(difftime(time, wtime, units = 'days')) # positive values are before
+  dt = c(dt[1], diff(dt)) # delta time between each point
+
+  if (length(wspeed) > 1) {
     ## Loop through and sequentially calculate the transfer velocities and weighting of ventilation
-    for (i in 2:length(ws)) {
-
+    for (i in 2:length(wspeed)) {
       ## Calculate the weighting per Reuer et al. (2007)
       f = max(0, min(k.result[i-1] * dt[i] / mld, 1))
       weights[i] = weights[i-1] * (1 - f)
@@ -437,19 +486,48 @@ calc.k.reuer = function(ws, mld, SST, dt, teeter.mod = TRUE) { ## m d-1
   w = sum(weights)
   weights = weights / w ## Normalize
 
+  if (any(is.na(weights))) { warning('Weights contain an NA, check data for problems!')}
   #### Final Calculations
-  if (teeter.mod) { k.final = sum(weights * k.result) }
-  else { k.final = sum(weights * k.result) / (1 - weigths[length(weights)]) }
+  if (teeter.mod) { k.final = sum(weights * k.result, na.rm = TRUE) }
+  else { k.final = sum(weights * k.result, na.rm = TRUE) / (1 - weigths[length(weights)]) }
 
+  tau = NA
   tau = approx(cumsum(weights), cumsum(dt), 0.9, rule = 2)$y
 
-  list(weights = weights,
+  list(dt = dt,
+       weights = weights,
        w.sum = w,
        k = k.final,
        k.inst = k.result[1],
        k.hist = k.result,
        time = cumsum(dt),
        integration.time = tau)
+}
+
+
+#' @title Make TS Plot
+#' @export
+#' @author Thomas Bryce Kelly
+plot.TS = function(x, y, xlim = c(25,36), ylim = c(-5, 15), levels = seq(0, 40, by = 2),
+                   cex.lab = 1, drawlabels = TRUE, labels = NULL, freezing.line = T, freezing.col = '#00000030',
+                   col = 'grey', lwd = 1, lty = 1, xlab = 'Practical Salinity', ylab = 'Potential Temperature',
+                   pch = 1, col.pch = 'black', cex.pch = 1, main = NULL) {
+
+  T = seq(ylim[1], ylim[2], length.out = 100)
+  S = seq(xlim[1], xlim[2], length.out = 100)
+  grid = expand.grid(S = S, T = T)
+  sigma = calc.sigma.theta(S = grid$S, T = grid$T, P = 0, P.ref = 0)
+
+  contour(x = S, y = T, z = matrix(sigma, nrow = length(S)), levels = levels, lwd = lwd, lty = lty, col = col,
+          xaxs = 'i', yaxs = 'i', xlab = xlab, ylab = ylab, main = main, xlim = xlim, ylim = ylim,
+          labcex = cex.lab, drawlabels = drawlabels, labels = labels)
+  points(x, y, pch = pch, col = col.pch, cex = cex.pch)
+
+  if (freezing.line) {
+    x = seq(xlim[1], xlim[2], length.out = 1000)
+    y = calc.freezing.point(x, 0)
+    polygon(x = c(x, rev(x)), c(y, rep(-100, length(x))), col = freezing.col, border = NA, density = 20)
+  }
 }
 
 
@@ -509,4 +587,46 @@ calc.mld = function(depth, density, set.depth = 10, delta = 0.1, resolution = 0.
     min(depth.new[l])
 }
 
+
+calc.freezing.point = function(S, p, f = 0) {
+  ## Constants
+  c0 = 0.002519
+  c1 = -5.946302841607319
+  c2 =  4.136051661346983
+  c3 = -1.115150523403847e1
+  c4 =  1.476878746184548e1
+  c5 = -1.088873263630961e1
+  c6 =  2.96101883964073
+  c7 = -7.433320943962606
+  c8 = -1.561578562479883
+  c9 =  4.073774363480365e-2
+  c10 =  1.158414435887717e-2
+  c11 = -4.122639292422863e-1
+  c12 = -1.123186915628260e-1
+  c13 =  5.715012685553502e-1
+  c14 =  2.021682115652684e-1
+  c15 =  4.140574258089767e-2
+  c16 = -6.034228641903586e-1
+  c17 = -1.205825928146808e-2
+  c18 = -2.812172968619369e-1
+  c19 =  1.877244474023750e-2
+  c20 = -1.204395563789007e-1
+  c21 =  2.349147739749606e-1
+  c22 =  2.748444541144219e-3
+
+  ## Rescale
+  SA_r = S * 1e-2
+  x = sqrt(SA_r)
+  p_r = p * 1e-4
+
+  tf.1 = c0 + SA_r * (c1 + x * (c2 + x * (c3 + x * (c4 + x * (c5 + c6 * x)))))
+  tf.2 =  p_r * (c7 + p_r * (c8 + c9 * p_r))
+  tf.3 =  SA_r * p_r * (c10 + p_r * (c12 + p_r * (c15 + c21 * SA_r)) + SA_r * (c13 + c17 * p_r + c19 * SA_r) +
+                          x * (c11 + p_r * (c14 + c18 * p_r)  + SA_r * (c16 + c20 * p_r + c22 * SA_r)))
+  tf = tf.1 + tf.2 + tf.3
+
+  t_freezing = tf - f * (1e-3) * (2.4 - S / 70.33008) ## Adjust for fraction of air
+
+  t_freezing
+}
 

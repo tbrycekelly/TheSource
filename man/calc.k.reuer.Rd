@@ -4,27 +4,31 @@
 \alias{calc.k.reuer}
 \title{Calculate k (Reuer)}
 \usage{
-calc.k.reuer(ws, mld, SST, dt, teeter.mod = TRUE)
+calc.k.reuer(time, wtime, wspeed, mld, SST, teeter.mod = TRUE)
 }
 \arguments{
-\item{ws}{A vector of prior windspeeds ordered from most recent to oldest.}
+\item{time}{the time at which you are calculating k for}
 
-\item{mld}{Mixed layer depth in meters}
+\item{wtime}{a vector of times at which a wind speed is recorded}
 
-\item{SST}{Mixed layer temperature in C}
+\item{wspeed}{a vector of prior windspeeds ordered from most recent to oldest}
 
-\item{dt}{a numeric or vector of the temporal spacing of the wind speed observations in days}
+\item{mld}{mixed layer depth in meters}
 
-\item{teeter.mod}{A boolean flag to turn on or off the modified version of Reuer's weighting scheme as outlined in Teeter et al. 2018.}
+\item{SST}{mixed layer temperature in C}
+
+\item{teeter.mod}{a boolean flag to turn on or off the modified version of Reuer's weighting scheme as outlined in Teeter et al. 2018.}
 }
 \value{
-It will return a list with the individual weights and weighted sum (for dianostics), the k value (that you want), the instantaneous k (also useful), k.hist showing the history of k values (diagnostic), and time is time before measurement that each diagnostic is referenced against (for diagnostics).
+It will return a list with the individual weights and weighted sum (for dianostics), the k value (that you want, m/d), the instantaneous k (also useful, m/d), k.hist showing the history of k values (diagnostic), and time is time before measurement that each diagnostic is referenced against (for diagnostics, d).
 }
 \description{
-This function calculates the temporal length scale of the NCP measurement. Essentially it calculates the ventilation based on water column and wind speed over a sequence of measurements (equally spaced).
+This function calculates the temporal length scale of the NCP measurement, aka a piston velocity (m/d). Essentially it calculates the ventilation based on water column and wind speed over a sequence of wind speed measurements (at 10 m height).
 }
 \references{
 Reuer, M. K., Barnett, B. A., Bender, M. L., Falkowski, P. G., and Hendricks, M. B. (2007). New estimates of Southern Ocean biological production rates from O2/Ar ratios and the triple isotope composition of O2. Deep Sea Research Part I: Oceanographic Research Papers 54, 951–974. doi:10.1016/j.dsr.2007.02.007.
+
+Teeter, L., Hamme, R. C., Ianson, D., and Bianucci, L. (2018). Accurate Estimation of Net Community Production From O 2 /Ar Measurements. Global Biogeochem. Cycles. doi:10.1029/2017GB005874.
 }
 \author{
 Thomas Bryce Kelly

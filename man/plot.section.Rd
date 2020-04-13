@@ -4,11 +4,27 @@
 \alias{plot.section}
 \title{Plot Section}
 \usage{
-plot.section(section, field = "z", xlim = NULL, ylim = NULL,
-  xlab = "x", ylab = "y", log = FALSE, base = 10, zlim = NULL,
-  pal = "ocean.matter", rev = FALSE, include.data = FALSE,
-  mark.points = TRUE, include.pch = 21, include.cex = 1,
-  main = NULL, col.low = "", col.high = "")
+plot.section(
+  section,
+  field = NULL,
+  xlim = NULL,
+  ylim = NULL,
+  xlab = "x",
+  ylab = "y",
+  log = FALSE,
+  base = 10,
+  zlim = NULL,
+  pal = "ocean.matter",
+  rev = FALSE,
+  include.data = FALSE,
+  mark.points = FALSE,
+  include.pch = 21,
+  include.cex = 1,
+  main = NULL,
+  col.low = "",
+  col.high = "",
+  N = 255
+)
 }
 \arguments{
 \item{field}{Parameter name to be plotted (z-axis).}

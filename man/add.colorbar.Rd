@@ -4,14 +4,69 @@
 \alias{add.colorbar}
 \title{Add Colorbar}
 \usage{
-add.colorbar(min, max, labels = NULL, ticks = NULL,
-  pal = "ocean.algae", rev = FALSE, units = "", col.high = "",
-  col.low = "", log = FALSE, base = 10, x.pos = 0.875,
-  width = 0.05, y.pos = 0.5, height = 0.6, cex = 1,
-  cex.units = 1, n = 255)
+add.colorbar(
+  min,
+  max,
+  labels = NULL,
+  ticks = NULL,
+  pal = "ocean.algae",
+  rev = FALSE,
+  units = "",
+  col.high = "",
+  col.low = "",
+  log = FALSE,
+  base = 10,
+  x.pos = 0.875,
+  width = 0.05,
+  y.pos = 0.5,
+  height = 0.8,
+  cex = 1,
+  cex.units = 1,
+  n = 255,
+  horizontal = FALSE
+)
+}
+\arguments{
+\item{min}{The minimum value of the colorbar palette}
+
+\item{max}{The maximum value of the colorbar palette}
+
+\item{labels}{The values where labels should be included}
+
+\item{ticks}{The values where tick marks should be included}
+
+\item{pal}{The name of a color palette or a color palette function itself}
+
+\item{rev}{Boolean if the palette color should be reversed}
+
+\item{units}{A string for the zaxis label}
+
+\item{col.high}{Color for above range values}
+
+\item{col.low}{Color for below range values}
+
+\item{log}{A boolean if the zaxis should be log tranformed}
+
+\item{base}{The base for the log transformation}
+
+\item{x.pos}{the position that the x-axis should be centered on (y axis if horizontal)}
+
+\item{width}{The width of the colorbar}
+
+\item{y.pos}{the position that the x-axis should be centered on (x axis if horizontal)}
+
+\item{height}{The length of the colorbar}
+
+\item{cex}{Size}
+
+\item{cex.units}{The text size of the units string text}
+
+\item{n}{The number of colors to be used in the colorbar}
+
+\item{horizontal}{Whether the colorbar should be placed horizontally rather than vertically}
 }
 \description{
-Add Colorbar
+Add a color bar to any graphical device such as a plot or map. The color bar can be based on any color palette function and be placed either vertically or horizontally.
 }
 \author{
 Thomas Bryce Kelly

@@ -4,9 +4,18 @@
 \alias{make.map.cce}
 \title{Make Map (CCE)}
 \usage{
-make.map.cce(coast = "coastlineWorldFine", lon.min = -126,
-  lon.max = -119, lat.min = 31, lat.max = 36, p = "+proj=merc",
-  land.col = "lightgray", grid = TRUE, dlon = 5, dlat = 5)
+make.map.cce(
+  coast = "coastlineWorldFine",
+  lon.min = -126,
+  lon.max = -119,
+  lat.min = 31,
+  lat.max = 36,
+  p = "+proj=merc",
+  land.col = "lightgray",
+  grid = TRUE,
+  dlon = 5,
+  dlat = 5
+)
 }
 \description{
 An example map of the CCE study region.

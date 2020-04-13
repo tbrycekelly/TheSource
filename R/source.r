@@ -51,13 +51,13 @@ conv.time.matlab = function (x, tz = "GMT") {
 
 #' @title Make Datetime Object
 #' @description A helper function to generate a datetime object
-#' @param year
-#' @param month
-#' @param day
-#' @param hour
-#' @param minute
-#' @param second
-#' @param tz
+#' @param year Year (e.g. 2016)
+#' @param month Month (1-12)
+#' @param day Day (1-31)
+#' @param hour Hour (0-23)
+#' @param minute Minute (0-59)
+#' @param second Second (0-59)
+#' @param tz System available timezone
 #' @export
 make.time = function (year = NULL, month = 1, day = 1, hour = 0, minute = 0, second = 0, tz = 'GMT') {
   if (is.null(year)) {return(Sys.time())}
@@ -80,8 +80,6 @@ get.minutes = function (x) {
 }
 
 #' @title Get Seconds
-#' @author Thomas Bryce Kelly
-#' @description
 #' @keywords Convert Time
 #' @export
 get.seconds = function (x) {
@@ -114,22 +112,39 @@ is.POSIXct = function(x) {inherits(x, "POSIXct")}
 #' @title Which Unique
 #' @author Thomas Bryce Kelly
 #' @description Find the indicies of the unique entries.
-#' @keywords
 #' @param x A vector of entries.
 #' @export
 which.unique = function(x) {
     which(!duplicated(x))
 }
 
+#' @title Is Within
+#' @author Thomas Bryce Kelly
+#' @description Filter a vector of entries with fall between a set of bounds (i.e. on a closed interval).
+#' @param x A vector of any type with strict ordering (i.e. where '>' or '<' are valid operators).
+#' @param bounds A vector of either two entries, where bounds[1] is the lower bound and bounds[2] is the upper, or a data.frame of two columns.
+#' @export
+is.within = function(x, bounds) {
+  if (is.null(dim(bounds))) { ## works for one set of bounds and any length x
+    return(x >= bounds[1] & x <= bounds[2])
+  }
+  if (length(x) > 1) { stop('Is.within() should be used with either multiple x values OR multiple bounds, but not multiple of both.')}
+  result = rep(NA, nrow(bounds))
+  for (i in 1:nrow(bounds)) {
+      result = x >= bounds[i,1] & x <= bounds[i,2]
+  }
+  return(results)
+}
+
+
 #' @title Which Within
 #' @author Thomas Bryce Kelly
 #' @description Filter a vector of entries with fall between a set of bounds (i.e. on a closed interval).
-#' @keywords
 #' @param x A vector of any type with strict ordering (i.e. where '>' or '<' are valid operators).
 #' @param bounds A vector of two entries, where bounds[1] is the lower bound and bounds[2] is the upper.
 #' @export
 which.within = function(x, bounds) {
-    which(x >= bounds[1] & x <= bounds[2])
+  which(is.within(x, bounds))
 }
 
 ##############################
@@ -145,7 +160,8 @@ which.within = function(x, bounds) {
 #' @param rev A boolean used to flip the order of the colors.
 #' @import pals
 #' @export
-get.pal = function(n=10, pal='ocean.haline', rev = FALSE) {
+get.pal = function(n=10, pal= pals::ocean.haline, rev = FALSE) {
+  library(pals)
     pal = do.call(pal, list(n = n))
     if (rev) {
         pal = rev(pal)
@@ -156,11 +172,9 @@ get.pal = function(n=10, pal='ocean.haline', rev = FALSE) {
 
 #' @title Make Pal
 #' @author Thomas Bryce Kelly
-#' @description
-#' @keywords
 #' @export
 make.pal = function(x, n = 255, min = NA, max = NA, pal='ocean.haline', rev = FALSE, clip = FALSE) {
-    cols = get.pal(n, pal = pal, rev = rev)
+    cols = get.pal(n+1, pal = pal, rev = rev)
 
     if (is.na(min)) {  ## set a minimum
         min = base::min(x, na.rm=TRUE)
@@ -177,7 +191,7 @@ make.pal = function(x, n = 255, min = NA, max = NA, pal='ocean.haline', rev = FA
         x[x < min] = min
         x[x > max] = max
     }
-    x = (x-min) * n / (max-min) ## Scale so x falls between [0 -> n]
+    x = (x-min) * n / (max-min) ## Scale so x falls between [0,n]
     cols = cols[floor(x)+1] # return the colors
     cols[is.na(x)] = '#00000000'
 
@@ -187,8 +201,6 @@ make.pal = function(x, n = 255, min = NA, max = NA, pal='ocean.haline', rev = FA
 
 #' @title Make Qualitative Palette
 #' @author Thomas Bryce Kelly
-#' @description
-#' @keywords
 #' @export
 ## Make pal for categorical data
 make.qual.pal = function(x=100, pal='tol', rev = FALSE) {
@@ -203,18 +215,36 @@ make.qual.pal = function(x=100, pal='tol', rev = FALSE) {
 
 #' @title Add Colorbar
 #' @author Thomas Bryce Kelly
-#' @description
+#' @param min The minimum value of the colorbar palette
+#' @param max The maximum value of the colorbar palette
+#' @param labels The values where labels should be included
+#' @param ticks The values where tick marks should be included
+#' @param pal The name of a color palette or a color palette function itself
+#' @param rev Boolean if the palette color should be reversed
+#' @param units A string for the zaxis label
+#' @param col.high Color for above range values
+#' @param col.low Color for below range values
+#' @param log A boolean if the zaxis should be log tranformed
+#' @param base The base for the log transformation
+#' @param x.pos the position that the x-axis should be centered on (y axis if horizontal)
+#' @param width The width of the colorbar
+#' @param y.pos the position that the x-axis should be centered on (x axis if horizontal)
+#' @param height The length of the colorbar
+#' @param cex Size
+#' @param cex.units The text size of the units string text
+#' @param n The number of colors to be used in the colorbar
+#' @param horizontal Whether the colorbar should be placed horizontally rather than vertically
+#' @description Add a color bar to any graphical device such as a plot or map. The color bar can be based on any color palette function and be placed either vertically or horizontally.
 #' @keywords Plotting
 #' @export
 add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'ocean.algae', rev = FALSE, units = '',
                         col.high = '', col.low = '', log = FALSE, base = 10, x.pos = 0.875, width = 0.05,
-                        y.pos = 0.5, height = 0.6, cex = 1, cex.units = 1, n = 255) {
+                        y.pos = 0.5, height = 0.8, cex = 1, cex.units = 1, n = 255, horizontal = FALSE) {
 
   ## Setup
   par.original = par('mar')
   bty.original = par('bty')
   plt.original = par('plt')
-  #mar.scale = par('fin')[1] / par('csi')
 
   x = 1
   y = c(0:n)
@@ -242,10 +272,17 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'ocean.alga
   }
 
   ## Now we get to work actually doing stuff:
-  par(new = TRUE, bty = 'n', plt = c(x.pos - width/2, x.pos + width / 2, y.pos - height/2, y.pos + height/2))
 
-  image(x, y, z, col = get.pal(n = length(y), pal = pal, rev = rev), ylim = c(-0.1 * n, 1.1 * n), zlim = range(z),
-        yaxt = 'n', xaxt = 'n', ylab = NA, xlab = NA, xlim = c(0,1))
+  if (horizontal) {
+    par(new = TRUE, bty = 'n', plt = c(y.pos - height/2, y.pos + height/2, x.pos - width/2, x.pos + width/2))
+    image(y, x, t(z), col = get.pal(n = length(y), pal = pal, rev = rev), xlim = c(-0.1 * n, 1.1 * n), zlim = range(z),
+          yaxt = 'n', xaxt = 'n', ylab = NA, xlab = NA, ylim = c(0,1))
+  }
+  else {
+    par(new = TRUE, bty = 'n', plt = c(x.pos - width/2, x.pos + width/2, y.pos - height/2, y.pos + height/2))
+    image(x, y, z, col = get.pal(n = length(y), pal = pal, rev = rev), ylim = c(-0.1 * n, 1.1 * n), zlim = range(z),
+          yaxt = 'n', xaxt = 'n', ylab = NA, xlab = NA, xlim = c(0,1))
+  }
 
   if (!is.na(col.high)) {
     if (col.high == '') {
@@ -262,15 +299,15 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'ocean.alga
   }
 
   mtext(units, side = 1, line = -1, cex = cex.units)
-  #mtext(, side = 3, line = -1)
-
 
   if (!is.null(ticks)) {
-    axis(4, at = ticks.delta * (n+1) - 0.5, labels = NA, las = 1)
+    if (horizontal) { axis(3, at = ticks.delta * (n+1) - 0.5, labels = NA, las = 1) }
+    else { axis(4, at = ticks.delta * (n+1) - 0.5, labels = NA, las = 1) }
   }
 
   if (!is.null(labels)) {
-    axis(4, at = delta * (n+1) - 0.5, labels = labels, las = 1, cex = cex)
+    if (horizontal) { axis(3, at = delta * (n+1) - 0.5, labels = labels, las = 1, cex = cex) }
+    else { axis(4, at = delta * (n+1) - 0.5, labels = labels, las = 1, cex = cex) }
   }
 
   ## Return margins to default
@@ -282,11 +319,12 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'ocean.alga
 #' @author Thomas Bryce Kelly
 #' @description Generate a blank boxplot
 #' @keywords Plotting
+#' @param n The
 #' @export
 plot.boxplot = function(n = 10, ylim = c(0,1), at = NULL, main = NULL,
-                        labels = NULL, ylab = NULL, xlab = NULL) {
+                        labels = NULL, ylab = NULL, xlab = NULL, ...) {
 
-    plot(NULL, NULL, xlim = c(1-1, n+1), xaxs='i', ylim = ylim, yaxs = 'i', ylab = ylab, xlab = xlab, xaxt = 'n', main = main)
+    plot(NULL, NULL, xlim = c(1-1, n+1), xaxs='i', ylim = ylim, yaxs = 'i', ylab = ylab, xlab = xlab, xaxt = 'n', main = main, ...)
     if(is.null(labels)) { labels = c(1:n)}
     if (is.null(at)) { at = c(1:length(labels)) }
 
@@ -329,7 +367,6 @@ add.shade = function(x, col = 'grey', border = NA) {
 
 #' @title Add Nighttime
 #' @author Thomas Bryce Kelly
-#' @description
 #' @keywords Light
 #' @export
 add.night = function(time, par, col = '#00000020') {
@@ -342,6 +379,21 @@ add.night = function(time, par, col = '#00000020') {
         #rect(time[k[i]], -1e6, time[k[i+1]], 1e6, col = col, border = NA)
         polygon(x = c(time[k[i]], time[k[i+1]],time[k[i+1]],time[k[i]]), y = c(-1e6,-1e6,1e6,1e6), col = col, border = NA)
     }
+}
+
+#' @title Calculate point sizes
+#' @author Thomas Bryce Kelly
+#' @description Returns a vector of cex values for use in plotting points with size dependent on a vector of values. For example, plotting a scatter plot where point size is proportional to population size.
+#' @export
+#' @import dplyr
+make.cex = function(x, min = 0.4, max = 4, log = FALSE, base = 10) {
+  if (log) { x = log(x, base)}
+
+  library(dplyr)
+  splits <- (ntile(x, 100) - 1) / 99 # give svalues of [0 - 1]
+  cex = splits * (max - min) + min
+
+  cex
 }
 
 ##############################
@@ -428,7 +480,6 @@ bootstrap = function(x, s.x, y, s.y, n = 1000) {
 
 #' @title Bootstrap 2
 #' @author Thomas Bryce Kelly
-#' @description
 #' @keywords Statistics
 #' @import lmodel2
 #' @export
@@ -453,7 +504,7 @@ bootstrap.2 = function(x, s.x, y, s.y, n = 1000) {
         temp.x = rnorm(num.x, x[l], s.x[l])
         temp.y = rnorm(num.x, y[l], s.y[l])
 
-        model = lmodel2(temp.y ~ temp.x, nperm = 0)
+        model = lmodel2::lmodel2(temp.y ~ temp.x, nperm = 0)
 
         result = rbind(result, as.numeric(model$regression.results[3,c(3,2)]))
     }
@@ -461,14 +512,12 @@ bootstrap.2 = function(x, s.x, y, s.y, n = 1000) {
     result
 }
 
-#' @title
 #' @author Thomas Bryce Kelly
-#' @description
 #' @keywords Statistics
 #' @import lmodel2
 #' @export
 bootstrap.lmodel2.both = function(x, s.x, y, s.y, n=100) {
-    mod = lmodel2(y ~ x)$regression.results
+    mod = lmodel2::lmodel2(y ~ x)$regression.results
     results.OLS = mod[1,c(2:3)]
     results.MA = mod[2,c(2:3)]
 
@@ -501,10 +550,8 @@ add.boot.trendline = function(model, new.x, col = 'black', lty = 2, lwd=1) {
 }
 
 
-#' @title
+
 #' @author Thomas Bryce Kelly
-#' @description
-#' @keywords
 #' @export
 add.boot.trendline2 = function(res, new.x, col = 'black', lty = 2) {
     m = mean(res[,2], rm.na = TRUE)
@@ -585,10 +632,8 @@ get.boot.vals = function(model, x, conf = 0.5) {
     y
 }
 
-#' @title
+#' @title trendline
 #' @author Thomas Bryce Kelly
-#' @description
-#' @keywords
 #' @export
 add.boot.trendline.sig = function(model, new.x, p = 0.01, sig = 0, lty = 2, lwd = 1, col = 'black') {
     if(ecdf(model$m)(sig) < p | ecdf(model$m)(sig) > 1 - p) {
@@ -597,10 +642,8 @@ add.boot.trendline.sig = function(model, new.x, p = 0.01, sig = 0, lty = 2, lwd 
 }
 
 
-#' @title
+#' @title lmodel boot
 #' @author Thomas Bryce Kelly
-#' @description
-#' @keywords
 #' @export
 build.lmodel2.boot = function(lmodel2, n = 1000, model = 3) {
     slope = lmodel2$regression.results$Slope[model]
@@ -623,7 +666,6 @@ build.lmodel2.boot = function(lmodel2, n = 1000, model = 3) {
 
 #' @title Calcualte Bootstrapped R Squared
 #' @author Thomas Bryce Kelly
-#' @description
 #' @keywords Statistics
 #' @export
 calc.boot.r.squared = function(model, x, y) {
@@ -823,3 +865,43 @@ add.log.axis = function(side = 1, base = 10, col = 'black', color.minor = 'grey'
     axis(side = side, at = log(k, base), labels = FALSE, col = color.minor)
     axis(side = side, at = log(k[w>1], base), labels = k[w > 1], col = col)
 }
+
+#' @title Is Inside Polygon
+#' @description Useful to determine if a set of coordinates lies inside or outside a closed polygon. Currently works for
+#'  2D coordinates such as x,y or lat,lon. Example box argument: box = data.frame(x = c(-1, 1, 1, -1), y = c(1, 1, -1, -1)).
+#' @author Thomas Bryce Kelly
+#' @export
+is.inside = function(pos, box, verbose = FALSE) {
+  d = rep(0, nrow(box))
+  ## first line
+  n = nrow(box)
+  a = (box[1,1] - box[n,1]) * (pos[2] - box[n,2])
+  b = (box[1,2] - box[n,2]) * (pos[1] - box[n,1])
+  d[1] = a-b
+
+  for (k in 2:nrow(box)) {
+    a = (box[k,1] - box[k-1,1]) * (pos[2] - box[k-1,2])
+    b = (box[k,2] - box[k-1,2]) * (pos[1] - box[k-1,1])
+    d[k] = a-b
+  }
+
+  if (verbose) { print(d)}
+  if(all(d > -1e-12)) {return(TRUE)}
+  if(all(d < 1e-12)) {return(TRUE)}
+  return(FALSE)
+}
+
+
+#' @title Quiver Plot
+#' @author Thomas Bryce Kelly
+#' @export
+plot.quiver = function(x, y, u, v, scale = NULL, xlim = NULL, ylim = NULL, col = 'black', ...) {
+  if (is.null(xlim)) { xlim = range(x)}
+  if (is.null(ylim)) { ylim = range(y)}
+  if (is.null(scale)) { scale = (xlim[2] - xlim[1]) / sqrt(mean(u)^2 + mean(v)^2) / length(u) * 1.5 }
+
+  plot(x, y, xlim = xlim, ylim = ylim, xaxs = 'i', yaxs = 'i', pch = 20, cex = 0.8)
+  arrows(x0 = x, x1 = x + u * scale, y0 = y, y1 = y + v * scale, length = scale/5, col = col)
+}
+
+

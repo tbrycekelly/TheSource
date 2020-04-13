@@ -4,14 +4,31 @@
 \alias{build.section.3d}
 \title{Build Section (3D)}
 \usage{
-build.section.3d(x, y, z, zz, xlim = NULL, ylim = NULL, zlim = NULL,
-  x.factor = 1, y.factor = 1, z.factor = 1, x.scale = NULL,
-  y.scale = NULL, z.scale = NULL, uncertainty = 1e-06,
-  neighborhood = 20, field.name = "zz")
+build.section.3d(
+  x,
+  y,
+  z,
+  zz,
+  xlim = NULL,
+  ylim = NULL,
+  zlim = NULL,
+  x.factor = 1,
+  y.factor = 1,
+  z.factor = 1,
+  x.scale = NULL,
+  y.scale = NULL,
+  z.scale = NULL,
+  uncertainty = 1e-12,
+  field.name = "zz",
+  p = 3
+)
 }
 \description{
-Build Section (3D)
+A function to build a 3d section using IDW interpolations. WARNING: Not currently maintained.
 }
 \author{
 Thomas Bryce Kelly
 }
+\keyword{Interpolation}
+\keyword{Oceanography}
+\keyword{Section}

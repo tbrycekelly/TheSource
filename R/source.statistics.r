@@ -1,3 +1,41 @@
+## Useful Statistically Oriented Functions
+##
+## Author: Thomas Bryce Kelly (tbk14 at fsu.edu)
+## http://about.tkelly.org/
+##
+## Dept of Earth, Ocean & Atmospherical Sciences
+## Florida State University
+##
+## Center for Ocean & Atmospheric Prediction Studies
+## Florida State University
+##
+## National High Magnetic Field Laboratory
+## Florida State University
+
+
+#' @title Is Prime?
+#' @author Thomas Bryce Kelly
+#' @param n a numeric or vector of numerics to test if values are prime
+#' @export
+is.prime = function(n) {
+    p = rep(TRUE, length(n))
+    for (i in 1:length(n)) {
+        ## Divisible by 2?
+        if (n[i] %% 2 == 0) {
+            p[i] = FALSE
+        } else {
+            ## Divisible by odd between 3 and sqrt(n)?
+            for (k in seq(3, floor(sqrt(n[i])), by = 2)) {
+                if (n[i] %% k == 0) {
+                    n[i] = FALSE
+                }
+            }
+        }
+    }
+    p
+}
+
+
 #' @title York Regression
 #' @author Thomas Bryce Kelly
 #' @export
