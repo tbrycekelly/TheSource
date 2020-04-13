@@ -2,8 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
-.o
-.dll
-.sync*
-.Rproj
-.so
+*.o
+*.dll
+*.sync*
+*.Rproj
+*.so
