@@ -1,7 +1,7 @@
 Package: TheSource
 Type: Package
 Title: TheSource: It Will Hold Your Beer
-Version: 0.2.4
+Version: 0.2.5
 Author:
   Thomas Bryce Kelly <tbk14@fsu.edu> <http://tkelly.org>
   Laura Whitmore <laura.whitmore@usm.edu> <http://whitmorescience.com/>
@@ -13,18 +13,18 @@ LazyData: true
 RoxygenNote: 7.1.0
 Depends: R (>= 3.5)
 LinkingTo: Rcpp
-Imports: 
+Imports:
   Rcpp (>= 1.0.2),
   pals,
   oce,
   ocedata,
   lmodel2,
-  openxlsx,
+  openxlsx, 
   marmap,
   knitr,
-  dplyr
-Suggests:
+  dplyr,
   polynom,
   ncdf4,
-  automap
+  automap,
+  sp
 URL: https://github.com/tbrycekelly/TheSource

@@ -33,6 +33,7 @@ load.beta = function(filepath, tz = 'US/Eastern', lookup = NULL) {
                                 Time.Mid = NA,
                                 Time.End = NA,
                                 Counts = NA,
+                                Guard = NA,
                                 Durration = NA,
                                 DPM = NA,
                                 s.DPM = NA),
@@ -42,8 +43,8 @@ load.beta = function(filepath, tz = 'US/Eastern', lookup = NULL) {
   ## Detector line to pull sample names from:
   temp = strsplit(strsplit(raw[3], ':')[[1]], '\\s+')
 
-  if (length(temp) == 6) { names = c(temp[[2]][2], temp[[3]][2], temp[[4]][2], temp[[5]][2], temp[[6]][2], 'Guard')
-  } else { names = c('D1', 'D2', 'D3', 'D4', 'D5', 'Guard') }
+  if (length(temp) == 6) { names = c(temp[[2]][2], temp[[3]][2], temp[[4]][2], temp[[5]][2], temp[[6]][2])
+  } else { names = c('D1', 'D2', 'D3', 'D4', 'D5') }
 
   ## Fix names
   if (!is.null(lookup)) {

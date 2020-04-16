@@ -353,7 +353,7 @@ conv.p.to.d = function(p=1e4, latitude = 30, geo.anom = 0, d = NULL, rev = FALSE
 
         for (i in 1:length(d)) {
             V = (d - geo.anom/9.8) * g
-            p = solve(polynomial(c(-V[i],a1, a2, a3, a4)))
+            p = solve(polynom::polynomial(c(-V[i],a1, a2, a3, a4)))
             p = Re(p)
             ans[i] = p[which(p > 0 & p < 2 * d[i])]
         }

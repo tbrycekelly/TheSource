@@ -132,15 +132,16 @@ gridNN = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
 #' @author Thomas Bryce Kelly
 #' @export
 #' @import automap
+#' @importFrom sp coordinates
 gridKrig = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
 
   data = data.frame(x = x, y = y, z = z)
   grid = data.frame(x = gx, y = gy)
 
   ## Set coordinate system (SpatialPointsDataFrame)
-  coordinates(data) = ~x + y
-  coordinates(grid) = ~x + y
-  krige = autoKrige(z ~ 1, data, new_data = grid)
+  sp::coordinates(data) = ~x + y
+  sp::coordinates(grid) = ~x + y
+  krige = automap::autoKrige(z ~ 1, data, new_data = grid)
 
   ## Return
   krige$krige_output$var1.pred

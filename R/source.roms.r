@@ -20,12 +20,9 @@
 #' @export
 #' @import ncdf4
 print.nc = function(file) {
-    file = nc_open(file)
-
+    file = ncdf4::nc_open(file)
     print(file)
-    w = ncvar_get(file, 'w')
-
-    nc_close(file)
+    ncdf4::nc_close(file)
 }
 
 
@@ -46,15 +43,15 @@ conv.time.roms = function(x, tz='UTC') {
 get.roms.time = function(path, convert = TRUE) {
 
     ## Open the nc file
-    roms = nc_open(path, write=FALSE)
+    roms = ncdf4::nc_open(path, write=FALSE)
 
-    nhist = ncvar_get(roms, varid = 'nHIS') # dt * nHist = time between records
-    dstart = ncvar_get(roms, varid = 'dstart') # days since 1900-01-01 00:00:00
-    dt = ncvar_get(roms, varid = 'dt') # Sec
-    ntimes = ncvar_get(roms, varid = 'ntimes') # number of time frames
+    nhist = ncdf4::ncvar_get(roms, varid = 'nHIS') # dt * nHist = time between records
+    dstart = ncdf4::ncvar_get(roms, varid = 'dstart') # days since 1900-01-01 00:00:00
+    dt = ncdf4::ncvar_get(roms, varid = 'dt') # Sec
+    ntimes = ncdf4::ncvar_get(roms, varid = 'ntimes') # number of time frames
 
     ## Close the nc file
-    nc_close(roms)
+    ncdf4::nc_close(roms)
 
     ## Calculate the times (seconds from 1900-01-01)
     roms.times = seq(from = dstart, by = dt * nhist / 86400, length.out = ntimes/nhist) * 86400
@@ -71,31 +68,31 @@ get.roms.time = function(path, convert = TRUE) {
 #' @author Thomas Bryce Kelly
 #' @import ncdf4
 load.roms = function(path) {
-    file = nc_open(path, write=FALSE)
+    file = ncdf4::nc_open(path, write=FALSE)
 
     #### Load variables
     ## Vertical Grid
-    h = ncvar_get(file, 'h')
-    hc = ncvar_get(file, 'hc')
-    theta = ncvar_get(file, 'theta_s')
+    h = ncdf4::ncvar_get(file, 'h')
+    hc = ncdf4::ncvar_get(file, 'hc')
+    theta = ncdf4::ncvar_get(file, 'theta_s')
     N = 42 # Hard coded
 
     h = (h[2:dim(h)[1],] + h[1:(dim(h)[1] - 1),]) / 2 ## interpolate to center of each grid cell
     h = (h[,2:dim(h)[2]] + h[,1:(dim(h)[2] - 1)]) / 2
 
     ## Horizontal
-    lat = ncvar_get(file, 'lat_psi')
-    lon = ncvar_get(file, 'lon_psi')
+    lat = ncdf4::ncvar_get(file, 'lat_psi')
+    lon = ncdf4::ncvar_get(file, 'lon_psi')
     grid = list(lat = c(lat), lon = c(lon))
 
     ## Advect
-    u = ncvar_get(file, 'u')
+    u = ncdf4::ncvar_get(file, 'u')
     u = (u[,2:dim(u)[2],,] + u[,1:(dim(u)[2] - 1),,]) / 2
 
-    v = ncvar_get(file, 'v')
+    v = ncdf4::ncvar_get(file, 'v')
     v = (v[2:dim(v)[1],,,] + v[1:(dim(v)[1] - 1),,,]) / 2
 
-    w = ncvar_get(file, 'w')
+    w = ncdf4::ncvar_get(file, 'w')
     w = (w[,,2:dim(w)[3],] + w[,,1:(dim(w)[3] - 1),]) / 2 # depth averaged w
     w = (w[2:dim(w)[1],,,] + w[1:(dim(w)[1] - 1),,,]) / 2
     w = (w[,2:dim(w)[2],,] + w[,1:(dim(w)[2] - 1),,]) / 2
@@ -106,10 +103,10 @@ load.roms = function(path) {
     dim(w) = dims
 
     ## Diffusivity
-    AKt = ncvar_get(file, 'AKt')
+    AKt = ncdf4::ncvar_get(file, 'AKt')
 
     ## Fields
-    temp = ncvar_get(file, 'temp')
+    temp = ncdf4::ncvar_get(file, 'temp')
     if ('rho' %in% names(file$var)) {rho = ncvar_get(file, 'rho')} else {rho = NULL}
     salt = ncvar_get(file, 'salt')
 
@@ -150,16 +147,16 @@ load.roms = function(path) {
 #' @export
 #' @import ncdf4
 load.ltrans = function(path, roms.path, backward = TRUE) {
-    cycle = nc_open(path, write=FALSE)
-    lat = ncvar_get(cycle, 'lat')
-    lon = ncvar_get(cycle, 'lon')
-    S = ncvar_get(cycle, 'salinity')
-    T = ncvar_get(cycle, 'temperature')
-    age = ncvar_get(cycle, 'age')
-    dob = ncvar_get(cycle, 'dob')
-    depth = ncvar_get(cycle, 'depth')
-    model.time = ncvar_get(cycle, 'model_time')
-    nc_close(cycle)
+    cycle = ncdf4::nc_open(path, write=FALSE)
+    lat = ncdf4::ncvar_get(cycle, 'lat')
+    lon = ncdf4::ncvar_get(cycle, 'lon')
+    S = ncdf4::ncvar_get(cycle, 'salinity')
+    T = ncdf4::ncvar_get(cycle, 'temperature')
+    age = ncdf4::ncvar_get(cycle, 'age')
+    dob = ncdf4::ncvar_get(cycle, 'dob')
+    depth = ncdf4::ncvar_get(cycle, 'depth')
+    model.time = ncdf4::ncvar_get(cycle, 'model_time')
+    ncdf4::nc_close(cycle)
 
     rt = get.roms.time(roms.path, FALSE)
 
