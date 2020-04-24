@@ -21,8 +21,7 @@ build.section(
   gridder = gridIDW,
   field.names = NULL,
   nx = 50,
-  ny = 50,
-  by.lat = FALSE
+  ny = 50
 )
 }
 \description{

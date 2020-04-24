@@ -26,5 +26,7 @@ Imports:
   polynom,
   ncdf4,
   automap,
-  sp
+  sp,
+  missForest,
+  Hmisc
 URL: https://github.com/tbrycekelly/TheSource

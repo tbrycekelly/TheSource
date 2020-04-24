@@ -1,0 +1,68 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(TheSource)
+```
+
+```{r}
+## Load in the data from BCO-DMO
+# Note: the unit line is the second row, so to get the header values and the data we have to use two read operations.
+data = read.csv('https://erddap.bco-dmo.org/erddap/tabledap/bcodmo_dataset_668083.csv', stringsAsFactors = F, skip = 2, header = F)
+colnames(data) = read.csv('https://erddap.bco-dmo.org/erddap/tabledap/bcodmo_dataset_668083.csv', stringsAsFactors = F, nrows = 1, header = F)
+
+```
+
+
+First, we will plot a map of the stations so we can make sense of where they are.
+```{r}
+map = make.map(lon.min = min(data$longitude), lon.max = max(data$longitude),
+               lat.min = min(data$latitude), lat.max = max(data$latitude))
+add.map.text(data$longitude, data$lat, data$STNNBR)
+```
+
+Let's plot a section using stations >=7
+```{r}
+l = which(data$STNNBR >= 7)
+
+section = build.section(x = data$longitude[l],
+                        y = data$DEPTH_MAX[l],
+                        z = data$Y_SPT_CONC_PUMP[l],
+                        lat = data$latitude[l],
+                        lon = data$longitude[l], field.names = 'Yttrium', x.factor = 50)
+
+plot.section(section, mark.points = T, ylim = c(5000, 0))
+add.section.bathy(section, bathy.col = '#555555e0')
+
+```
+
+How about a higher resolution interpolation?
+
+```{r}
+l = which(data$STNNBR >= 7)
+
+section = build.section(x = data$longitude[l],
+                        y = data$DEPTH_MAX[l],
+                        z = data$Y_SPT_CONC_PUMP[l],
+                        lat = data$latitude[l],
+                        lon = data$longitude[l], field.names = 'Yttrium',
+                        x.scale = 0.2, y.scale = 10,
+                        x.factor = 50)
+
+plot.section(section, mark.points = T, ylim = c(5000, 0))
+add.section.bathy(section, bathy.col = '#555555e0')
+
+```
+
+And let's add a color bar:
+
+```{r}
+par(plt = c(0.1, 0.8, 0.1, 0.9))
+plot.section(section, mark.points = T, ylim = c(5000, 0))
+add.section.bathy(section, bathy.col = '#555555e0')
+add.colorbar(min = 10^-0.011, max = 10^4.5555, labels = c(1, 10, 100, 1000, 10000), pal = ocean.matter, log = T)
+```
+
+

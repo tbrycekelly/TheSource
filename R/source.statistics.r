@@ -153,3 +153,26 @@ cor2cov2 = function(sX,sY,rXY){
     ## Return
     covmat
 }
+
+
+#' @title Impute Missing Values
+#' @param x the data frame with missing values
+#' @param method the imputation method: 'mean', 'median', 'forest
+#' @import Hmisc
+#' @import missForest
+build.impute = function(x, method = 'forest') {
+    x = data.frame(x)
+
+    if (method %in% c('mean', 'median', 'min', 'max')) {
+        for (i in 1:ncol(x)) {
+            x[,i] = Hmisc::impute(x[,i], eval(parse(text = method)))
+        }
+    } else {
+        result = missForest::missForest(x)
+        message('Out of bag NRMSE: ', result$OOBerror[1])
+        x = result$ximp
+    }
+
+    x
+}
+

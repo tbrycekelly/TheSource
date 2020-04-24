@@ -180,7 +180,6 @@ load.frrf = function(input.dir, file.names) {
 
     close(con)
 
-
     ## Generate Datetime stamp:
     year = substr(file.name, 1, 4)
     month = substr(file.name, 5, 6)
@@ -198,3 +197,39 @@ load.frrf = function(input.dir, file.names) {
     ## Return
     result
 }
+
+
+#' @title Webb 1974 Light Curve
+#' @param alpha the initial slope of the P vs E curve
+#' @param Ek a light staturation parameter
+#' @param E the photosynthetically active radiation
+#' @export
+model.Webb1974 = function(alpha, Ek, E) {
+    alpha * Ek * (1 - exp(-E/Ek))
+}
+
+#' @title Platt 1980 Light Curve
+#' @export
+#' @inheritParams model.Webb1974
+model.Platt1980 = function(alpha, beta, Ps, E) {
+    Ps * (1 - exp(-1 * alpha * E / Ps)) * exp(-beta * E / Ps)
+}
+
+#' @title Jassby 1976 Light Model
+#' @export
+#' @inheritParams model.Webb1974
+model.Jassby1976 = function(alpha, Ek, E) {
+    alpha * Ek * tanh(E / Ek)
+}
+
+#' @title Eilers 1988 Light Model
+#' @export
+#' @inheritParams model.Webb1974
+model.Eilers1988 = function(alpha, Eopt, Pm, E) {
+    a = 1 / (alpha * Eopt^2)
+    b = 1 / Pm - 2 / (alpha * Eopt)
+    c = 1/ alpha
+
+    E / (a * E^2 + b * E + c)
+}
+

@@ -34,7 +34,7 @@ build.section = function(x, y, z, lat = NULL, lon = NULL,
                          x.factor = 1, y.factor = 1,
                          x.scale = NULL, y.scale = NULL,
                          uncertainty = 1e-12, p = 3, gridder = gridIDW,
-                         field.names = NULL, nx = 50, ny = 50, by.lat = FALSE) {
+                         field.names = NULL, nx = 50, ny = 50) {
 
   z = data.matrix(z)
   ## Remove NAs
@@ -42,6 +42,8 @@ build.section = function(x, y, z, lat = NULL, lon = NULL,
   x = x[l]
   y = y[l]
   z = data.matrix(z[l,])
+  if (!is.null(lat)) {lat = lat[l]}
+  if (!is.null(lon)) {lon = lon[l]}
 
 
   if (uncertainty == 0) { warning('Uncertainty of zero may produce NAs!') }

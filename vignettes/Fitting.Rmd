@@ -1,0 +1,17 @@
+---
+title: "Fitting Data using TheSource"
+author: "Thomas Bryce Kelly"
+date: '`r Sys.Date()`'
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fitting Data using TheSource}
+%\VignetteEngine{knitr::rmarkdown}
+\usepackage[utf8]{inputenc}
+---
+
+
+```{r}
+library(TheSource)
+
+```
+
