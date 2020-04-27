@@ -17,7 +17,7 @@ parameter.search(n, cost, ..., bounds, splits = 10, progression = NULL)
 
 \item{splits}{The number of subdivisions to perform for each dimension (so grid size is n x splits ^ dimensionality)}
 
-\item{progression}{The size of the new search-space to interrogate. A value between 1 and splits/2. Default value (NULL) will yeield a progression of 1, most rapid convergence.}
+\item{progression}{The size of the new search-space to interrogate. A value between 1 and splits/2. Default value (NULL) will yeield a progression of max(1, splits/4), good for most problems.}
 }
 \description{
 Implements a recursive grid search routine to solve optimization problems in arbitrary dimensions.
