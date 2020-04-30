@@ -4,7 +4,24 @@
 \alias{add.log.axis}
 \title{Add Log Axis}
 \usage{
-add.log.axis(side = 1, base = 10, col = "black", color.minor = "grey")
+add.log.axis(
+  side = 1,
+  base = 10,
+  col = "black",
+  color.minor = "grey",
+  grid = F
+)
+}
+\arguments{
+\item{side}{Side for the axis: 1 = bottom, 2 = left...}
+
+\item{base}{the log bsae for the axis}
+
+\item{col}{the color of the major axis labels}
+
+\item{color.minor}{the color for the minor ticks and grid (if specified)}
+
+\item{grid}{boolean, draw grid?}
 }
 \description{
 A helper function to add log axis to a plot.
@@ -12,5 +29,3 @@ A helper function to add log axis to a plot.
 \author{
 Thomas Bryce Kelly
 }
-\keyword{Axis}
-\keyword{Log}

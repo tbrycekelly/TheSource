@@ -28,5 +28,7 @@ Imports:
   automap,
   sp,
   missForest,
-  Hmisc
+  Hmisc,
+  rgdal,
+  devtools
 URL: https://github.com/tbrycekelly/TheSource

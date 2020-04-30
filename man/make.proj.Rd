@@ -6,6 +6,17 @@
 \usage{
 make.proj(projection = NULL, lat = NULL, lon = NULL, h = NULL, dlat = 10)
 }
+\arguments{
+\item{projection}{A string or number corresponding to a base projection (e.g. 1 = 'merc')}
+
+\item{lat}{the primary latitude for the projection, may or may not be applicable based on projection}
+
+\item{lon}{same as lat for longitude}
+
+\item{h}{The viewing height in meters (used only for some projections)}
+
+\item{dlat}{The distance to the secondary latitude (in degrees). Only applicable to some projections}
+}
 \description{
 Make Map Projection
 }

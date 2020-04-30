@@ -396,6 +396,42 @@ make.cex = function(x, min = 0.4, max = 4, log = FALSE, base = 10) {
   cex
 }
 
+
+#' @title Add Barplot Bar (auto-stacked)
+#' @author Thomas Bryce Kelly
+#' @param dataa vector or numeric for the height of the bar to draw
+#' @param sd the uncertainty of data (absolute units)
+#' @param x the x position to plot the bar
+#' @param width the width of the bars drawn
+#' @param col the colors for the bars, should be same length as data
+#' @param pal the color pallete used in get.pal() if col is not defined
+#' @param rev.pal boolean, reverse color assignment?
+#' @param border option passed to rect() controlling border appearance
+#' @param angle the angle of the hash-marks if density is given
+#' @param density the density of hash-marks on shape.
+#' @export
+add.barplot.bar = function(data, sd = NULL, x = 1, width = 0.6, col = NULL, pal = ocean.haline, rev.pal = F, border = NA,
+                           angle = NULL, density = NULL) {
+
+  if (is.null(col)) { col = get.pal(length(data), pal = pal, rev = rev.pal) }
+  if (!is.null(angle) & length(angle) == 1) { angle = rep(angle, length(data))}
+  if (!is.null(angle) & length(density) == 1) { density = rep(density, length(data))}
+
+  ## Rationalize sd values
+  if (is.null(sd)) { sd = rep(0, length(data)) } else { if (length(sd) == 1) { sd = rep(sd, length(data)) } }
+
+  data = c(0, cumsum(data))
+  for (i in 2:length(data)) {
+    rect(xleft = x - width/2, ybottom = data[i-1],
+         xright = x + width/2, ytop = data[i],
+         col = col[i-1], border = border,
+         density = density[i-1], angle = angle[i-1])
+
+    ## Add SD lines
+    if (sd[i-1] > 0) { lines(x = rep(x, 2), y = c(data[i] + sd[i-1], data[i] - sd[i-1])) }
+  }
+}
+
 ##############################
 ## Statistics ################
 ##############################
@@ -851,19 +887,31 @@ add.error.bars.logy = function(x, s.x, y, s.y, base, col = 'black') {
 #' @title Add Log Axis
 #' @author Thomas Bryce Kelly
 #' @description A helper function to add log axis to a plot.
-#' @keywords Log Axis
+#' @param side Side for the axis: 1 = bottom, 2 = left...
+#' @param base the log bsae for the axis
+#' @param col the color of the major axis labels
+#' @param color.minor the color for the minor ticks and grid (if specified)
+#' @param grid boolean, draw grid?
 #' @export
-add.log.axis = function(side = 1, base = 10, col = 'black', color.minor = 'grey') {
-    k.small = c(1:9)
+add.log.axis = function(side = 1, base = 10, col = 'black', color.minor = 'grey', grid = F) {
+    k.small = c(1:(base-1))
     k = c()
     for (i in c(-10:10)) {
         k = c(k, k.small * base^(i))
     }
-    w = c(2, rep(1, 8))
+
+    w = c(2, rep(1, base-2))
     w = rep(w, length(k/length(w)))
 
-    axis(side = side, at = log(k, base), labels = FALSE, col = color.minor)
+    axis(side = side, at = log(k, base), tick = T, labels = rep('', length(k)), col = color.minor)
     axis(side = side, at = log(k[w>1], base), labels = k[w > 1], col = col)
+
+    if (grid & (side == 1 | side == 3)) {
+      abline(v = log(k, base), col = color.minor, lty = 3)
+    }
+    if (grid & (side == 2 | side == 4)) {
+      abline(h = log(k, base), col = color.minor, lty = 3)
+    }
 }
 
 #' @title Is Inside Polygon
@@ -902,6 +950,29 @@ plot.quiver = function(x, y, u, v, scale = NULL, xlim = NULL, ylim = NULL, col =
 
   plot(x, y, xlim = xlim, ylim = ylim, xaxs = 'i', yaxs = 'i', pch = 20, cex = 0.8)
   arrows(x0 = x, x1 = x + u * scale, y0 = y, y1 = y + v * scale, length = scale/5, col = col)
+}
+
+
+
+#' @title Update TheSource
+#' @author Thomas Bryce Kelly
+#' @import devtools
+#' @export
+TheSource.update = function() {
+  user = readline(prompt = 'Update installation of TheSource? [Y|y] ')
+  if (user == 'Y' | user == 'y') {
+    devtools::install_github('tbrycekelly/TheSource')
+  } else {
+    message('User aborted update. Exiting.')
+  }
+}
+
+
+#' @title Get version of TheSource
+#'
+#' @export
+TheSource.version = function() {
+  '0.2.5'
 }
 
 

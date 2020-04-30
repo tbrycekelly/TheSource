@@ -87,49 +87,4 @@ NF18.1 = function(){as.POSIXct(c('2018-05-05 13:15:00', '2018-05-08 14:30:00'), 
 NF18.2 = function(){as.POSIXct(c('2018-05-14 18:00:00', '2018-05-19 06:00:00'), tz = 'US/Eastern')}
 
 
-## Override the default mapping function when CCE is loaded
 
-## make.map()
-## default settings are for Arctic, lowest resolution coastline.
-# coast = NULL: should be the name of a coastline data object. A value of NULL sets the default cosatline to 'coastlineWorld'.
-#
-
-
-#' @title Make Map (CCE)
-#' @author Thomas Bryce Kelly
-#' @description An example map of the CCE study region.
-#' @import oce
-#' @import marmap
-#' @export
-make.map.cce = function (coast = "coastlineWorldFine",
-                    lon.min = -126,
-                    lon.max = -119,
-                    lat.min = 31,
-                    lat.max = 36,
-                    p = '+proj=merc',
-                    land.col = 'lightgray',
-                    grid = TRUE,
-                    dlon = 5,
-                    dlat = 5) {
-
-
-  if (is.null(coast)) { coast = 'coastlineWorld' }
-
-  ## get coastlines
-  get.coast(coast = coast)
-
-  ## make the base plot (oce)
-  mapPlot(eval(parse(text = coast)), projection = p, col = land.col,
-          longitudelim = c(lon.min, lon.max), latitudelim = c(lat.min, lat.max),
-          grid = FALSE)
-
-  ## add a grid at the lat and lon interval you set (oce)
-  if (grid) {
-    mapGrid(dlongitude = dlon, dlatitude = dlat)
-  }
-  box()
-
-  list(coast = coast, lon.min = lon.min, lon.max = lon.max,
-       lat.min = lat.min, lat.max = lat.max, p = p, land.col = land.col,
-       grid.dlon = dlon, grid.dlat = dlat, grid = grid)
-}

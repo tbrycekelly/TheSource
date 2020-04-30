@@ -4,7 +4,17 @@
 \alias{test.map.california}
 \title{Test Map of California}
 \usage{
-test.map.california()
+test.map.california(
+  coast = "coastlineWorldFine",
+  p = "+proj=merc",
+  lat.min = 31,
+  lat.max = 36,
+  lon.min = -126,
+  lon.max = -119,
+  dlat = 5,
+  dlon = 5,
+  grid = T
+)
 }
 \description{
 Test Map of California

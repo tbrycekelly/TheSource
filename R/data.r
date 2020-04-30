@@ -49,4 +49,8 @@
 #' @format A Dataframe containing 5103 observations of 12 variables
 "Geotraces.GA01.Sal"
 
-
+#' @title Sample FRRF Datafile
+#' A sample of an FRRF datafile for use in the demonstrations and tutorials.
+#' @source Sven A Kranz, see Kranz et al. 2020 in JGR: Oceans.
+#' @format a list containing the datastructure returned by TheSource::load.frrf()
+"sample.frrf"
