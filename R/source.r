@@ -976,3 +976,16 @@ TheSource.version = function() {
 }
 
 
+#' @title Is NAN (extension of R base)
+#' @param x object to test for NAN
+#' @author Christian Fender
+#' @export
+is.nan = function(x) {
+  if (class(x) == 'data.frame') {
+    do.call(cbind, lapply(x, .Primitive('is.nan')))
+  } else {
+    return(.Primitive('is.nan')(x))
+  }
+}
+
+
