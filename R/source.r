@@ -147,6 +147,21 @@ which.within = function(x, bounds) {
   which(is.within(x, bounds))
 }
 
+
+#' @title Is NAN (extension of R base)
+#' @description A simple extension to the base is.nan() function to permit operation on data.frames.
+#' @param x object to test for NAN
+#' @author Christian Fender
+#' @export
+is.nan = function(x) {
+  if (class(x) == 'data.frame') {
+    do.call(cbind, lapply(x, .Primitive('is.nan')))
+  } else {
+    return(.Primitive('is.nan')(x))
+  }
+}
+
+
 ##############################
 ## Plotting ################
 ##############################
@@ -319,7 +334,14 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'ocean.alga
 #' @author Thomas Bryce Kelly
 #' @description Generate a blank boxplot
 #' @keywords Plotting
-#' @param n The
+#' @param n The width of the x axis, i.e. n = 10 corresponds to xlim = c(1,10)
+#' @param ylim the y axis limit
+#' @param at Values to draw x-axis labels
+#' @param main The plot's main title
+#' @param labels The labels to use for the x-axis
+#' @param ylab The y axis label
+#' @param xlab The x axis label
+#' @param ... Optional arguemnts passed to plot()
 #' @export
 plot.boxplot = function(n = 10, ylim = c(0,1), at = NULL, main = NULL,
                         labels = NULL, ylab = NULL, xlab = NULL, ...) {
@@ -335,24 +357,36 @@ plot.boxplot = function(n = 10, ylim = c(0,1), at = NULL, main = NULL,
 #' @author Thomas Bryce Kelly
 #' @description Add a box to a boxplot that was initialized by plot.boxplot.
 #' @keywords Plotting
+#' @param x The x locations for the boxs
+#' @param y The y values that will be plotted.
 #' @export
-add.boxplot.box = function(x, y, col = 'white', border = 'black', CI = 0.95, width = 0.7, lty = 1, lcol = 'black',
-                           lwd = 1, xlwd = NULL) {
+add.boxplot.box = function(x, y, col = 'grey', border = 'black', width = 0.7, lty = 1, lcol = 'black',
+                           lwd = 1, xlwd = NULL, outliers = T, pcol = 'black', pch = 1, cex = 1) {
 
-    if(is.null(xlwd)) { xlwd = width / 3 }
-    delta = (1 - CI)/2
+    for (xx in unique(x)) {
+      l = which(x == xx)
+      if(is.null(xlwd)) { xlwd = width / 3 }
 
-    ## Outside
-    y.outside = quantile(y, probs = c(delta, 1 - delta), na.rm = TRUE)
-    lines(rep(x, 2), y.outside, lty = lty, col = lcol)
-    lines(c(x - xlwd/2, x + xlwd/2), rep(y.outside[1], 2), col = lcol, lwd = lwd)
-    lines(c(x - xlwd/2, x + xlwd/2), rep(y.outside[2], 2), col = lcol, lwd = lwd)
+      ## statistics
+      q1 = quantile(y[l], probs = 0.25)
+      q3 = quantile(y[l], probs = 0.75)
+      iqr = IQR(y[l], na.rm = TRUE)
+      m = median(y[l], na.rm = TRUE)
 
-    ## Box
-    iqr = IQR(y, na.rm = TRUE)
-    m = mean(y, na.rm = TRUE)
-    rect(xleft = x - width/2, ybottom = m - iqr/2, xright = x + width/2, ytop = m + iqr/2, col = col, border = border)
-    lines(x = c(x - width/2, x + width/2), y= rep(m,2))
+      ## Box
+      rect(xleft = xx - width/2, ybottom = q1, xright = xx + width/2, ytop = q3, col = col, border = border)
+      lines(x = c(xx - width/2, xx + width/2), y = rep(m,2)) # Horizontal
+
+      ## Add whiskers
+      lines(x = rep(xx, 2), y = c(q1, q1 - 1.5 * iqr), col = lcol, lwd = lwd)
+      lines(x = rep(xx, 2), y = c(q3, q3 + 1.5 * iqr), col = lcol, lwd = lwd)
+      lines(x = c(xx - xlwd/2, xx + xlwd/2), y = rep(q1 - 1.5 * iqr, 2), col = lcol, lwd = lwd)
+      lines(x = c(xx - xlwd/2, xx + xlwd/2), y = rep(q3 + 1.5 * iqr, 2), col = lcol, lwd = lwd)
+
+      ## Add outliers
+      k = which(y[l] < q1 - 1.5 * iqr | y[l] > q3 + 1.5 * iqr)
+      if (length(k) > 0) { points(x = rep(xx, length(k)), y = y[l[k]], pch = pch, col = pcol, cex = cex) }
+    }
 }
 
 
@@ -976,16 +1010,5 @@ TheSource.version = function() {
 }
 
 
-#' @title Is NAN (extension of R base)
-#' @param x object to test for NAN
-#' @author Christian Fender
-#' @export
-is.nan = function(x) {
-  if (class(x) == 'data.frame') {
-    do.call(cbind, lapply(x, .Primitive('is.nan')))
-  } else {
-    return(.Primitive('is.nan')(x))
-  }
-}
 
 
