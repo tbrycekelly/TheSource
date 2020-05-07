@@ -7,15 +7,23 @@
 add.boxplot.box(
   x,
   y,
-  col = "white",
+  col = "grey",
   border = "black",
-  CI = 0.95,
   width = 0.7,
   lty = 1,
   lcol = "black",
   lwd = 1,
-  xlwd = NULL
+  xlwd = NULL,
+  outliers = T,
+  pcol = "black",
+  pch = 1,
+  cex = 1
 )
+}
+\arguments{
+\item{x}{The x locations for the boxs}
+
+\item{y}{The y values that will be plotted.}
 }
 \description{
 Add a box to a boxplot that was initialized by plot.boxplot.

@@ -16,7 +16,21 @@ plot.boxplot(
 )
 }
 \arguments{
-\item{n}{The}
+\item{n}{The width of the x axis, i.e. n = 10 corresponds to xlim = c(1,10)}
+
+\item{ylim}{the y axis limit}
+
+\item{at}{Values to draw x-axis labels}
+
+\item{main}{The plot's main title}
+
+\item{labels}{The labels to use for the x-axis}
+
+\item{ylab}{The y axis label}
+
+\item{xlab}{The x axis label}
+
+\item{...}{Optional arguemnts passed to plot()}
 }
 \description{
 Generate a blank boxplot

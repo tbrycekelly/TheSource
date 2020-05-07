@@ -23,6 +23,29 @@ build.section.3d(
   p = 3
 )
 }
+\arguments{
+\item{x}{dimensions (e.g. lat, lon, depth, section distance, time, etc)}
+
+\item{y}{dimensions (e.g. lat, lon, depth, section distance, time, etc)}
+
+\item{z}{signal to be gridded (e.g. T, S, ...)}
+
+\item{xlim}{Limits of the gridding. These are the bounds of the new x-y grid. Default: NULL will set it based on the data + 10%.}
+
+\item{ylim}{Limits of the gridding. These are the bounds of the new x-y grid. Default: NULL will set it based on the data + 10%.}
+
+\item{x.factor}{The relative scale difference between x and y, used to calculate distances. Take into account actual scale AND the relevent scaling of the system (vertical distance tends to be more important than horizontal distance).}
+
+\item{y.factor}{The relative scale difference between x and y, used to calculate distances. Take into account actual scale AND the relevent scaling of the system (vertical distance tends to be more important than horizontal distance).}
+
+\item{x.scale}{The step size in the new x-y grid. By default the scale is set to generate a grid that is 50x50.}
+
+\item{y.scale}{The step size in the new x-y grid. By default the scale is set to generate a grid that is 50x50.}
+
+\item{uncertainty}{= 0: Scaling applied to the distance from the cener of a grid cell to a vertex, used to add a base-line distance to all measurements. 0 = no minimum, 1 = minimum = to half a grid cell.}
+
+\item{field.name}{Sets the name of the new interpolated field. By default the name is 'z1'}
+}
 \description{
 A function to build a 3d section using IDW interpolations. WARNING: Not currently maintained.
 }

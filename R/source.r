@@ -32,6 +32,7 @@ conv.time.excel = function (x, tz = "GMT", rev = FALSE) {
     as.POSIXct(x*86400, origin = "1899-12-30 00:00:00", tz = tz)
 }
 
+
 #' @title Convert Time Unix
 #' @description A function used to convert a unix timestamp into a POSIXct object.
 #' @description Typical examples of unix timestamps include any POSIX object that has been coerced into a numeric.
@@ -42,12 +43,14 @@ conv.time.unix = function(x, tz='GMT') {
     as.POSIXct(x, origin="1970-01-01", tz=tz)
 }
 
+
 #' @title Convert Time Matlab
 #' @param x The numeric timestamp that will be converted.
 #' @export
 conv.time.matlab = function (x, tz = "GMT") {
     as.POSIXct((x - 1)*86400, origin = "0000-01-01", tz = tz)
 }
+
 
 #' @title Make Datetime Object
 #' @description A helper function to generate a datetime object
@@ -64,6 +67,7 @@ make.time = function (year = NULL, month = 1, day = 1, hour = 0, minute = 0, sec
   as.POSIXct(paste0(year, '-', month, '-', day, ' ', hour, ':', minute, ':', second), tz = tz)
 }
 
+
 #' @title Get Hour
 #' @description A helper function used to pull the our information from a POSIX object.
 #' @param x An object of class POSIX or a vector containing POSIX.
@@ -73,11 +77,13 @@ get.hour = function (x) {
     as.POSIXlt(x)$hour
 }
 
+
 #' @title Get Minutes
 #' @export
 get.minutes = function (x) {
     as.POSIXlt(x)$min
 }
+
 
 #' @title Get Seconds
 #' @keywords Convert Time
@@ -85,6 +91,7 @@ get.minutes = function (x) {
 get.seconds = function (x) {
     as.POSIXlt(x)$sec
 }
+
 
 #' @title Which Closest Time
 #' @description  Find the indicies of the closest times for each entry of x
@@ -102,12 +109,14 @@ which.closest.time = function(x, y) {
     l
 }
 
+
 #' @title Is POSIXct
 #' @author Thomas Bryce Kelly
 #' @description A helper function to determine if an object or a vector of objects is POSIX.
 #' @keywords Time Helper
 #' @export
 is.POSIXct = function(x) {inherits(x, "POSIXct")}
+
 
 #' @title Which Unique
 #' @author Thomas Bryce Kelly
@@ -171,11 +180,11 @@ is.nan = function(x) {
 #' @description A helper function to retrieve a vector of colors derived from a given palette generating function.
 #' @keywords Colormap
 #' @param n The number of colors desired.
-#' @param pal A character string of the pallet generating function.
+#' @param pal A character string of the pallet generating function, defaults to pals::ocean.haline
 #' @param rev A boolean used to flip the order of the colors.
 #' @import pals
 #' @export
-get.pal = function(n=10, pal= pals::ocean.haline, rev = FALSE) {
+get.pal = function(n = 10, pal = pals::ocean.haline, rev = FALSE) {
   library(pals)
     pal = do.call(pal, list(n = n))
     if (rev) {
@@ -187,8 +196,15 @@ get.pal = function(n=10, pal= pals::ocean.haline, rev = FALSE) {
 
 #' @title Make Pal
 #' @author Thomas Bryce Kelly
+#' @param x the values to be color coded
+#' @param n the number of distinct colors to use
+#' @param min the minimum value to correspond to the first color
+#' @param max the maximum value to correspond to the last color
+#' @param pal the pallete to use, default is ocean.haline
+#' @param rev Boolean, reverse the color pallete?
+#' @param clip boolean, remove out of range values? Defaults to False
 #' @export
-make.pal = function(x, n = 255, min = NA, max = NA, pal='ocean.haline', rev = FALSE, clip = FALSE) {
+make.pal = function(x, n = 255, min = NA, max = NA, pal = pals::ocean.haline, rev = FALSE, clip = FALSE) {
     cols = get.pal(n+1, pal = pal, rev = rev)
 
     if (is.na(min)) {  ## set a minimum
@@ -216,9 +232,12 @@ make.pal = function(x, n = 255, min = NA, max = NA, pal='ocean.haline', rev = FA
 
 #' @title Make Qualitative Palette
 #' @author Thomas Bryce Kelly
+#' @param x The categorical values to be colored
+#' @param pal The palette to be used, default tol
+#' @param rev Boolean, reverse the colors?
 #' @export
 ## Make pal for categorical data
-make.qual.pal = function(x=100, pal='tol', rev = FALSE) {
+make.qual.pal = function(x, pal='tol', rev = FALSE) {
     x[is.na(x)] = 'other'
     ## Determine numeric values
     a = sapply(x, function(xx) {which(xx == unique(x))})
@@ -327,6 +346,28 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'ocean.alga
 
   ## Return margins to default
   par(bty = bty.original, plt = plt.original)
+}
+
+
+#' @title Quiver Plot
+#' @author Thomas Bryce Kelly
+#' @param x x locations for quivers
+#' @param y y locations for quivers
+#' @param u The x component for the quiver arrow
+#' @param v The y component for the quiver arrow
+#' @param scale Used to scale the arrow length (optional)
+#' @param xlim xlim
+#' @param ylim ylim
+#' @param col the quiver color
+#' @param ... optional arguments passed to plot()
+#' @export
+plot.quiver = function(x, y, u, v, scale = NULL, xlim = NULL, ylim = NULL, col = 'black', ...) {
+  if (is.null(xlim)) { xlim = range(x)}
+  if (is.null(ylim)) { ylim = range(y)}
+  if (is.null(scale)) { scale = (xlim[2] - xlim[1]) / sqrt(mean(u)^2 + mean(v)^2) / length(u) * 1.5 }
+
+  plot(x, y, xlim = xlim, ylim = ylim, xaxs = 'i', yaxs = 'i', pch = 20, cex = 0.8, ...)
+  arrows(x0 = x, x1 = x + u * scale, y0 = y, y1 = y + v * scale, length = scale/5, col = col)
 }
 
 
@@ -974,19 +1015,6 @@ is.inside = function(pos, box, verbose = FALSE) {
 }
 
 
-#' @title Quiver Plot
-#' @author Thomas Bryce Kelly
-#' @export
-plot.quiver = function(x, y, u, v, scale = NULL, xlim = NULL, ylim = NULL, col = 'black', ...) {
-  if (is.null(xlim)) { xlim = range(x)}
-  if (is.null(ylim)) { ylim = range(y)}
-  if (is.null(scale)) { scale = (xlim[2] - xlim[1]) / sqrt(mean(u)^2 + mean(v)^2) / length(u) * 1.5 }
-
-  plot(x, y, xlim = xlim, ylim = ylim, xaxs = 'i', yaxs = 'i', pch = 20, cex = 0.8)
-  arrows(x0 = x, x1 = x + u * scale, y0 = y, y1 = y + v * scale, length = scale/5, col = col)
-}
-
-
 
 #' @title Update TheSource
 #' @author Thomas Bryce Kelly
@@ -1006,7 +1034,7 @@ TheSource.update = function() {
 #'
 #' @export
 TheSource.version = function() {
-  '0.2.5'
+  '0.2.7'
 }
 
 

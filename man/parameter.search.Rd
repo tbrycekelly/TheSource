@@ -4,7 +4,15 @@
 \alias{parameter.search}
 \title{Parameter Search}
 \usage{
-parameter.search(n, cost, ..., bounds, splits = 10, progression = NULL)
+parameter.search(
+  n,
+  cost,
+  grid = NULL,
+  ...,
+  bounds,
+  splits = 10,
+  progression = NULL
+)
 }
 \arguments{
 \item{n}{Number of recursions to perform}

@@ -21,19 +21,25 @@
 #' @author Thomas Bryce Kelly
 #' @keywords Gridding
 #' @export
-## Build a section object
-# x, y: dimensions (e.g. lat, lon, depth, section distance, time, etc)
-# z: signal to be gridded (e.g. T, S, ...)
-# xlim, ylim = NULL: Limits of the gridding. These are the bounds of the new x-y grid. Default: NULL will set it based on the data + 10%.
-# x.factor, y.factor = 1: The relative scale difference between x and y, used to calculate distances. Take into account actual scale AND the relevent scaling of the system (vertical distance tends to be more important than horizontal distance).
-# x.scale, y.scale = NULL: The step size in the new x-y grid. By default the scale is set to generate a grid that is 50x50.
-# uncertainty = 0: Scaling applied to the distance from the cener of a grid cell to a vertex, used to add a base-line distance to all measurements. 0 = no minimum, 1 = minimum = to half a grid cell.
-# field.name = 'z1': Sets the name of the new interpolated field. By default the name is 'z', but setting it to 'T' for temperature makes sense.
+#' @param x dimensions (e.g. lat, lon, depth, section distance, time, etc)
+#' @param y dimensions (e.g. lat, lon, depth, section distance, time, etc)
+#' @param z signal to be gridded (e.g. T, S, ...)
+#' @param xlim Limits of the gridding. These are the bounds of the new x-y grid. Default: NULL will set it based on the data + 10%.
+#' @param ylim Limits of the gridding. These are the bounds of the new x-y grid. Default: NULL will set it based on the data + 10%.
+#' @param x.factor The relative scale difference between x and y, used to calculate distances. Take into account actual scale AND the relevent scaling of the system (vertical distance tends to be more important than horizontal distance).
+#' @param y.factor The relative scale difference between x and y, used to calculate distances. Take into account actual scale AND the relevent scaling of the system (vertical distance tends to be more important than horizontal distance).
+#' @param x.scale The step size in the new x-y grid. By default the scale is set to generate a grid that is 50x50.
+#' @param y.scale The step size in the new x-y grid. By default the scale is set to generate a grid that is 50x50.
+#' @param uncertainty = 0: Scaling applied to the distance from the cener of a grid cell to a vertex, used to add a base-line distance to all measurements. 0 = no minimum, 1 = minimum = to half a grid cell.
+#' @param field.name Sets the name of the new interpolated field. By default the name is 'z1'
+#' @param gridder A function to perform gridding, options gridIDW (default: inverse distance), gridNN (nearest neighbor), gridNNI (natural neighbor) or gridKrige (Krigging)
+#' @param nx The number of splits to make in the x direction (defaults to 50). Used only if x.scale is not set.
+#' @param ny The number of splits to make in the y direction (defaults to 50). Used only if y.scale is not set.
 build.section = function(x, y, z, lat = NULL, lon = NULL,
                          xlim = NULL, ylim = NULL,
                          x.factor = 1, y.factor = 1,
                          x.scale = NULL, y.scale = NULL,
-                         uncertainty = 1e-12, p = 3, gridder = gridIDW,
+                         uncertainty = 1e-12, p = 3, gridder = NULL,
                          field.names = NULL, nx = 50, ny = 50) {
 
   z = data.matrix(z)
@@ -44,6 +50,10 @@ build.section = function(x, y, z, lat = NULL, lon = NULL,
   z = data.matrix(z[l,])
   if (!is.null(lat)) {lat = lat[l]}
   if (!is.null(lon)) {lon = lon[l]}
+  if (is.null(gridder)) {
+    gridder = gridIDW
+    message('No gridder specified, defaulting to gridIDW. Other options: gridNN, gridNNI and gridKrige.')
+  }
 
 
   if (uncertainty == 0) { warning('Uncertainty of zero may produce NAs!') }
@@ -75,9 +85,7 @@ build.section = function(x, y, z, lat = NULL, lon = NULL,
   y.scale = y.scale * y.factor
   ylim = ylim * y.factor
 
-  ## field = matrix (1 - 300 m depth x 0 - max dist)
-  n.y = (ylim[2] - ylim[1]) / y.scale
-  n.x = (xlim[2] - xlim[1]) / x.scale
+
   y.new = seq(ylim[1], ylim[2], by = y.scale)
   x.new = seq(xlim[1], xlim[2], by = x.scale)
 
@@ -130,8 +138,49 @@ gridNN = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
 }
 
 
+#' @title Grid via Natural Neighbor Interpolation
+#' @author Thomas Bryce Kelly
+#' @inheritParams gridIDW
+#' @export
+gridNNI = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
+
+  gz = rep(NA, length(gx))
+
+  ## Build standard NN index field
+  gtemp1 = rep(1, length(gx))
+  for (i in 1:length(gx)) {
+    gtemp1[i] = which.min(abs(gx[i] - x)^p + abs(gy[i] - y)^p)
+  }
+
+  for (i in 1:length(gx)) {
+
+    ## Setup
+    xx = c(x, gx[i])
+    yy = c(y, gy[i])
+
+    gtemp2 = gtemp1 ## Assume no change
+
+    ## Find all the values that are likely to change
+    dd = abs(x - gx[i])^p + abs(y - gy[i])^p
+    l = which(abs(gx - gx[i])^p + abs(gy - gy[i])^p < dd[order(dd)[min(5, length(dd))]]) ## only look at points within circle defined by the 4th closest data point
+
+    for (k in l) {
+      gtemp2[k] = which.min(abs(gx[k] - xx)^p + abs(gy[k] - yy)^p)
+    }
+    w = gtemp2 - gtemp1
+    w[w != 0] = 1
+    w = w / sum(w)## weight based on number of entries that were changed
+    gz[i] = sum(w * z[gtemp1])
+  }
+
+  gz ## Return
+}
+
+
+
 #' @title Grid via Krigging
 #' @author Thomas Bryce Kelly
+#' @inheritParams gridIDW
 #' @export
 #' @import automap
 #' @importFrom sp coordinates
