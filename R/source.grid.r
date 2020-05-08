@@ -107,7 +107,7 @@ build.section = function(x, y, z, lat = NULL, lon = NULL,
                 y.scale = y.scale / y.factor,
                 x.factor = x.factor,
                 y.factor = y.factor,
-                n.x = n.x, n.y = n.y,
+                nx = nx, ny = ny,
                 uncertainty = uncertainty,
                 p = p,
                 gridder = gridder
@@ -128,7 +128,7 @@ build.section = function(x, y, z, lat = NULL, lon = NULL,
 #' @title Grid via Nearest Neighbor
 #' @author Thomas Bryce Kelly
 #' @export
-gridNN = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
+gridNN.old = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
   gz = rep(NA, length(gx))
 
   for (i in 1:length(gz)) {
@@ -162,7 +162,7 @@ gridNNI = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
 
     ## Find all the values that are likely to change
     dd = abs(x - gx[i])^p + abs(y - gy[i])^p
-    l = which(abs(gx - gx[i])^p + abs(gy - gy[i])^p < dd[order(dd)[min(5, length(dd))]]) ## only look at points within circle defined by the 4th closest data point
+    l = which(abs(gx - gx[i])^p + abs(gy - gy[i])^p < dd[order(dd)[min(5, length(dd))]] / 2) ## only look at points within circle defined by the 4th closest data point
 
     for (k in l) {
       gtemp2[k] = which.min(abs(gx[k] - xx)^p + abs(gy[k] - yy)^p)
@@ -214,7 +214,7 @@ add.section.param = function(x, y, z, section, field.name) {
   l = !is.na(x) & !is.na(y) & !is.na(z)
   x = x[l]; y = y[l]; z = z[l]
 
-  section$grid[[field.name]] = gridIDW(grid, x, y, z, p,
+  section$grid[[field.name]] = section$grid.meta$gridder(grid, x, y, z, p,
                                         section$grid.meta$x.scale,
                                         section$grid.meta$y.scale,
                                         section$grid.meta$uncertainty)

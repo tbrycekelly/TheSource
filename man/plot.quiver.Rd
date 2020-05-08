@@ -16,6 +16,25 @@ plot.quiver(
   ...
 )
 }
+\arguments{
+\item{x}{x locations for quivers}
+
+\item{y}{y locations for quivers}
+
+\item{u}{The x component for the quiver arrow}
+
+\item{v}{The y component for the quiver arrow}
+
+\item{scale}{Used to scale the arrow length (optional)}
+
+\item{xlim}{xlim}
+
+\item{ylim}{ylim}
+
+\item{col}{the quiver color}
+
+\item{...}{optional arguments passed to plot()}
+}
 \description{
 Quiver Plot
 }

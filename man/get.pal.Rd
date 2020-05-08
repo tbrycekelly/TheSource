@@ -9,7 +9,7 @@ get.pal(n = 10, pal = pals::ocean.haline, rev = FALSE)
 \arguments{
 \item{n}{The number of colors desired.}
 
-\item{pal}{A character string of the pallet generating function.}
+\item{pal}{A character string of the pallet generating function, defaults to pals::ocean.haline}
 
 \item{rev}{A boolean used to flip the order of the colors.}
 }

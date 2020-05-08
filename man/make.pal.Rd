@@ -9,10 +9,25 @@ make.pal(
   n = 255,
   min = NA,
   max = NA,
-  pal = "ocean.haline",
+  pal = pals::ocean.haline,
   rev = FALSE,
   clip = FALSE
 )
+}
+\arguments{
+\item{x}{the values to be color coded}
+
+\item{n}{the number of distinct colors to use}
+
+\item{min}{the minimum value to correspond to the first color}
+
+\item{max}{the maximum value to correspond to the last color}
+
+\item{pal}{the pallete to use, default is ocean.haline}
+
+\item{rev}{Boolean, reverse the color pallete?}
+
+\item{clip}{boolean, remove out of range values? Defaults to False}
 }
 \description{
 Make Pal

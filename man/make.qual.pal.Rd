@@ -4,7 +4,14 @@
 \alias{make.qual.pal}
 \title{Make Qualitative Palette}
 \usage{
-make.qual.pal(x = 100, pal = "tol", rev = FALSE)
+make.qual.pal(x, pal = "tol", rev = FALSE)
+}
+\arguments{
+\item{x}{The categorical values to be colored}
+
+\item{pal}{The palette to be used, default tol}
+
+\item{rev}{Boolean, reverse the colors?}
 }
 \description{
 Make Qualitative Palette

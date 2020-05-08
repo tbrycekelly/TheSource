@@ -1023,7 +1023,9 @@ is.inside = function(pos, box, verbose = FALSE) {
 TheSource.update = function() {
   user = readline(prompt = 'Update installation of TheSource? [Y|y] ')
   if (user == 'Y' | user == 'y') {
+    detach("package:TheSource", unload=TRUE)
     devtools::install_github('tbrycekelly/TheSource')
+    library(TheSource)
   } else {
     message('User aborted update. Exiting.')
   }
