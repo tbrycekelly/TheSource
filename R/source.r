@@ -171,6 +171,22 @@ is.nan = function(x) {
 }
 
 
+#' @title Make dataframe
+#' @export
+#' @author Thomas Bryce Kelly
+data.frame = function(...) {
+  x = list(...)
+  a = rep(NA, length(x))
+
+  for (i in 1:length(x)) { a[i] = length(x[[i]]) }
+  k = which(a != max(a) & a != 1)
+  if (length(k) > 0) { stop('Number of elements inconsistent. Column(s) ', k, ' contain ', a[k], ' entries, expecting ', max(a), ' or 1!') }
+
+  ## Return
+  base::data.frame(...)
+}
+
+
 ##############################
 ## Plotting ################
 ##############################

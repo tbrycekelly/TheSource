@@ -1,6 +1,12 @@
 ---
-title: "R Notebook"
-output: html_notebook
+title: "Playing with Oceanographic Data"
+author: "Thomas Bryce Kelly"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Gridding Datasets with TheSource}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r}
@@ -33,7 +39,7 @@ section = build.section(x = data$longitude[l],
                         lat = data$latitude[l],
                         lon = data$longitude[l], field.names = 'Yttrium', x.factor = 50)
 
-plot.section(section, mark.points = T, ylim = c(5000, 0))
+plot.section(section, mark.points = T, ylim = c(5000, 0), zlim = c(0,4))
 add.section.bathy(section, bathy.col = '#555555e0')
 
 ```
@@ -51,7 +57,7 @@ section = build.section(x = data$longitude[l],
                         x.scale = 0.2, y.scale = 10,
                         x.factor = 50)
 
-plot.section(section, mark.points = T, ylim = c(5000, 0))
+plot.section(section, mark.points = T, ylim = c(5000, 0), zlim = c(0, 4))
 add.section.bathy(section, bathy.col = '#555555e0')
 
 ```
@@ -60,9 +66,82 @@ And let's add a color bar:
 
 ```{r}
 par(plt = c(0.1, 0.8, 0.1, 0.9))
-plot.section(section, mark.points = T, ylim = c(5000, 0))
+plot.section(section, mark.points = T, ylim = c(5000, 0), zlim = c(0, 4))
 add.section.bathy(section, bathy.col = '#555555e0')
-add.colorbar(min = 10^-0.011, max = 10^4.5555, labels = c(1, 10, 100, 1000, 10000), pal = ocean.matter, log = T)
+add.colorbar(min = 0, max = 4, labels = c(1:4), pal = ocean.matter)
 ```
+
+
+```{r}
+l = which(data$STNNBR >= 7)
+
+section.idw = build.section(x = data$longitude[l],
+                        y = data$DEPTH_MAX[l],
+                        z = data$Y_SPT_CONC_PUMP[l],
+                        lat = data$latitude[l],
+                        lon = data$longitude[l], field.names = 'Yttrium',
+                        nx = 100, ny = 100,
+                        x.factor = 50)
+
+section.NN = build.section(x = data$longitude[l],
+                        y = data$DEPTH_MAX[l],
+                        z = data$Y_SPT_CONC_PUMP[l],
+                        lat = data$latitude[l],
+                        lon = data$longitude[l], field.names = 'Yttrium',
+                        nx = 100, ny = 100,
+                        x.factor = 50, gridder = gridNN)
+
+section.NNI = build.section(x = data$longitude[l],
+                        y = data$DEPTH_MAX[l],
+                        z = data$Y_SPT_CONC_PUMP[l],
+                        lat = data$latitude[l],
+                        lon = data$longitude[l], field.names = 'Yttrium',
+                        nx = 100, ny = 100,
+                        x.factor = 50, gridder = gridNNI)
+
+section.krige = build.section(x = data$longitude[l],
+                        y = data$DEPTH_MAX[l],
+                        z = data$Y_SPT_CONC_PUMP[l],
+                        lat = data$latitude[l],
+                        lon = data$longitude[l], field.names = 'Yttrium',
+                        nx = 100, ny = 100,
+                        x.factor = 50, gridder = gridKrig)
+
+
+
+```
+
+Let's take a look at how the various gridding products compare graphically. The __kriging__ product does a good job of minimizing the influence of the concentration peak around 1500m. Unfortunately, this peak also corresponds to a low-sampling resolution region in the data overall as seen in the __nearest neighbor__ interpolation (the peak corresponds to a large polygon rather than a small one). This has a direct impact on the __natural neighbor__ interpolation. The __inverse distance__ interpolation falls somewhere between these two more extreme treatments of that peak with smooth transitions and a more limited zone of influence (compared to the __NNI__). 
+
+```{R}
+
+## Standard IDW
+plot.section(section.idw, mark.points = T, ylim = c(5000, 0), main = 'IDW', zlim = c(0, 4))
+add.section.bathy(section.idw, bathy.col = '#555555e0')
+
+## NN
+plot.section(section.NN, mark.points = T, ylim = c(5000, 0), main = 'Nearest Neighbor', zlim = c(0, 4))
+add.section.bathy(section.NN, bathy.col = '#555555e0')
+
+## NNI
+plot.section(section.NNI, mark.points = T, ylim = c(5000, 0), main = 'Natural Neighbor', zlim = c(0, 4))
+add.section.bathy(section.NNI, bathy.col = '#555555e0')
+
+## Krige
+plot.section(section.krige, mark.points = T, ylim = c(5000, 0), main = 'Kriging', zlim = c(0, 4))
+add.section.bathy(section.krige, bathy.col = '#555555e0')
+
+```
+
+Since the sections were plotted with the same grid constraints (extent and resolution), we can simply subtract the (log) values to generate a new section. We can then plot this using the name we provide:
+
+```{R}
+section.idw$grid$NNI.minus.IDW = section.NNI$grid$Yttrium - section.idw$grid$Yttrium
+
+plot.section(section.idw, field = 'NNI.minus.IDW', ylim = c(5000, 0), zlim = c(-2, 2), pal = ocean.delta)
+add.section.bathy(section.idw, bathy.col = '#555555e0')
+
+```
+
 
 
