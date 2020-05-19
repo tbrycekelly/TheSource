@@ -35,8 +35,15 @@ parameter.search = function(n, cost, grid = NULL, ..., bounds, splits = 10, prog
   ## Setup search grid
   b = list()
   for (i in 1:nrow(bounds)) {
-    b[[i]] = seq(bounds[i,1], bounds[i,2], length.out = splits)
+    if (bounds[i,1] == bounds[i,2]) {
+      b[[i]] = bounds[i,1]
+    } else {
+        b[[i]] = seq(bounds[i,1], bounds[i,2], length.out = splits)
+    }
   }
+  argnames = formalArgs(cost)
+  argnames = argnames[!argnames %in% names(list(...))] # don't include arguments passed through elipsis
+
   grid = do.call('expand.grid', b)
   colnames(grid) = formalArgs(cost)[1:dim]
   grid$cost = NA
@@ -44,12 +51,92 @@ parameter.search = function(n, cost, grid = NULL, ..., bounds, splits = 10, prog
   ## Calculate cost function at each grid location
   for (i in 1:nrow(grid)) {
     args = as.list(grid[i, 1:dim])
-    names(args) = formalArgs(cost)[1:length(args)]
+    names(args) = argnames[1:length(args)]
     args = c(args, list(...))
 
-    if (length(args) > length(formalArgs(cost))) { stop('Number of function arguments exceeds what function is expecting.') }
+    #if (length(args) > length(formalArgs(cost))) { stop('Number of function arguments exceeds what function is expecting.') }
     grid$cost[i] = do.call(cost, args) # cost(grid[i, 1:dim])
   }
+
+  ## Best grid location
+  l = which.min(grid$cost)
+  if (n == 1) {
+    res = list(min = grid[l,], bounds = bounds, grid = grid, history = grid[l,])
+  } else{
+
+    ## Setup new bounding box
+    loci = grid[l, 1:dim]
+    bounds.new = data.frame(min = as.numeric(loci), max = as.numeric(loci))
+    for (i in 1:dim) {
+      bounds.new$min[i] = max(bounds$min[i], bounds.new$min[i] - progression * (bounds$max[i] - bounds$min[i]) / splits)
+      bounds.new$max[i] = min(bounds$max[i], bounds.new$max[i] + progression * (bounds$max[i] - bounds$min[i]) / splits)
+    }
+
+    ## Call parameter.search recursively
+    res = parameter.search(n-1, cost, ..., bounds = bounds.new, splits = splits, progression = progression)
+    res$history = rbind(res$history, grid[l,])
+  }
+  ## Return
+  res
+}
+
+#' @title Parameter Search for Parallel Processing
+#' @author Thomas Bryce Kelly
+#' @description Implements a recursive grid search routine to solve optimization problems in arbitrary dimensions.
+#' @param n Number of recursions to perform
+#' @param cost The cost function which must return a numeric value and accept parameter values as the first arguments and in the order they are provided.
+#' @param ... Optional argument that is passed directly onto the cost function
+#' @param bounds A dataframe containing the minimum and maximum values permitted of each parameter
+#' @param splits The number of subdivisions to perform for each dimension (so grid size is n x splits ^ dimensionality)
+#' @param progression The size of the new search-space to interrogate. A value between 1 and splits/2. Default value (NULL) will yeield a progression of max(1, splits/4), good for most problems.
+#' @export
+parameter.search.parallel = function(n, cost, grid = NULL, ..., bounds, splits = 10, progression = NULL) {
+
+  if (splits <= 2) { stop('splits argument must be an integer greater than or equal to 3!')}
+  if(is.null(progression)) { progression = max(1, ceiling(splits / 4))}
+
+  splits = round(splits)
+
+  ## How many dimensions
+  dim = nrow(bounds)
+
+  ## Setup search grid
+  b = list()
+  for (i in 1:nrow(bounds)) {
+    if (bounds[i,1] == bounds[i,2]) {
+      b[[i]] = bounds[i,1]
+    } else {
+      b[[i]] = seq(bounds[i,1], bounds[i,2], length.out = splits)
+    }
+  }
+  grid = do.call('expand.grid', b)
+  colnames(grid) = formalArgs(cost)[1:dim]
+
+  cn = parallel::detectCores() - 1
+  cl = parallel::makeCluster(cn)
+  ### PASS THE OBJECT FROM MASTER PROCESS TO EACH NODE
+  parallel::clusterExport(cl, varlist = c('grid', 'cost', names(list(...))))
+
+  ### DIVIDE THE DATAFRAME BASED ON # OF CORES
+  sp = parallel::parLapply(cl, parallel::clusterSplit(cl = cl, seq = seq(nrow(grid))), function(c) {grid[c,]})
+
+  grid$cost = Reduce(c, parallel::parLapply(cl, sp, fun = function(s) {
+    s = data.frame(s)
+    res = rep(NA, nrow(s))
+    if (length(s) > 0) {
+      for (i in 1:nrow(s)) {
+        args = as.list(s[i,])
+        names(args) = formalArgs(cost)[1:length(args)]
+        args = c(args, list(...))
+
+        res[i] = do.call(cost, args) # cost(grid[i, 1:dim])
+      }
+    } else {
+      return()
+    }
+    return(res)
+  }, chunk.size = 1))
+  parallel::stopCluster(cl)
 
   ## Best grid location
   l = which.min(grid$cost)
@@ -84,7 +171,7 @@ parameter.search = function(n, cost, grid = NULL, ..., bounds, splits = 10, prog
 #' @param progression The step length for each parameter (default is 1% of bounded range).
 #' @param max.iter The maximum number of steps to take before returning (even if n is unsatisfied). **Goal for function to return via n rather than by max.iter.
 #' @export
-parameter.anneal = function (n, cost, ..., bounds, progression = NULL, max.iter = 1e6, k = 2) {
+parameter.walk = function (n, cost, ..., bounds, progression = NULL, max.iter = 1e6, k = 2) {
 
   if (is.null(progression)) {
     progression = as.numeric(bounds[,2] - bounds[,1]) / 100
@@ -114,6 +201,10 @@ parameter.anneal = function (n, cost, ..., bounds, progression = NULL, max.iter 
   for (j in 1:max.iter) {
     ## randomly perturbe the location
     param = start + rnorm(length(start), mean = 0, sd = progression)
+    l = param < bounds[,1]
+    ll = param > bounds[,2]
+    param[l] = bounds[l,1]
+    param[ll] = bounds[ll,2]
 
     args = as.list(param)
     names(args) = formalArgs(cost)[1:length(args)]
@@ -199,4 +290,101 @@ parameter.anneal = function (n, cost, ..., bounds, progression = NULL, max.iter 
   }
 
   list(min = history[i-1,], bounds = bounds, history = history, meta = list(j = j, max.iter = max.iter, progression = progression))
+}
+
+
+#' @title Get Optimization Test Function
+#' @author Thomas Bryce Kelly
+#' @references Wikipedia: https://en.wikipedia.org/wiki/Test_functions_for_optimization
+#' @param n the number of the test function desired.
+test.function = function(n, verbose = T) {
+
+  Rastrigin = function(...) {
+    params = list(...)
+    ans = 10 * length(params)
+    for (i in 1:length(params)) { ans = ans + params[[i]]^2 - 10 * cos(2*pi * params[[i]]) }
+    ans
+  }
+
+  Ackley = function(x, y) {
+    -10 * exp(-0.2 * sqrt(0.5 * (x^2 + y^2))) - exp(-0.5 * (cos(2 * pi * x) + cos(2 * pi * y))) + 2.7182818 + 20
+  }
+
+  Sphere = function(...) {
+    params = list(...)
+    ans = 0
+    for (i in 1:length(params)) {ans = ans + params[[i]]^2}
+    return(ans)
+  }
+
+  Rosenbrock = function(...) {
+    params = list(...)
+    ans = 0
+    for (i in 1:(length(params) - 1)) {ans = ans + 100 * (params[[i+1]] - params[[i]]^2)^2 + (1 - params[[i]])^2}
+    return(ans)
+  }
+
+  Beale = function(x, y) {
+    (1.5 - x + x*y)^2 + (2.25 - x + x * y^2)^2 + (2.625 - x + x * y^3)^2
+  }
+
+  Goldstein.Price  = function(x, y) {
+    a = 1 + (x + y + 1)^2 * (19 - 14*x + 3 * x^2 - 14 * y + 6 * x * y + 3 * y^2)
+    b = (30 + (2 * x - 3 * y)) * (18 - 32 * x + 12 * x^2 + 48 * y - 36 * x * y + 27 * y^2)
+    a * b
+  }
+
+  Booth = function(x, y) {
+    (x + 2 * y - 7)^2 + (2 * x + y - 5)^2
+  }
+
+  Bukin = function(x, y) {
+    100 * sqrt(abs(y - 0.01 * x^2)) + 0.01 * abs(x + 10)
+  }
+
+  Matyas = function(x, y) {
+    0.26 * (x^3 + y^3) - 0.48 * x * y
+  }
+
+  ## Start return series
+  if (n == 1) {
+    if (verbose) { message('Returning Rastrigin test function. Global minimum at f(0,...,0) = 0') }
+    return(Rastrigin)
+  }
+  if (n == 2) {
+    if (verbose) { message('Returning Ackley test function. Global minimum at f(0,0) = 0') }
+    return(Ackley)
+  }
+  if (n == 3) {
+    if (verbose) { message('Returning Sphere test function. Global minimum at f(0,...,0) = 0')}
+    return(Sphere)
+  }
+  if (n == 4) {
+    if (verbose) { message('Returning Rosenbrock test function. Global minimum at f(1,...,1) = 0') }
+    return(Rosenbrock)
+  }
+  if (n == 5) {
+    if (verbose) { message('Returning Beale test function. Global minimum at f(3, 0.5) = 0') }
+    return(Beale)
+  }
+
+  if (n == 6) {
+    if (verbose) { message('Returning Goldstein.Price test function. Global minimum at f(0, -1) = 3') }
+    return(Goldstein.Price)
+  }
+  if (n == 7) {
+    if (verbose) { message('Returning Booth test function. Global minimum at f(1, 3) = 0') }
+    return(Booth)
+  }
+  if (n == 8) {
+    if (verbose) { message('Returning Bukin test function. Global minimum at f(-10,1) = 0') }
+    return(Bukin)
+  }
+  if (n == 9) {
+    if (verbose) { message('Returning Matyas test function. Global minimum at f(0, 0) = 0') }
+    return(Matyas)
+  }
+
+  message('Argument n should be between 1 and 9. Returning trivial test function')
+  return(function(...) {0})
 }

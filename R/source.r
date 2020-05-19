@@ -984,7 +984,7 @@ add.error.bars.logy = function(x, s.x, y, s.y, base, col = 'black') {
 #' @param color.minor the color for the minor ticks and grid (if specified)
 #' @param grid boolean, draw grid?
 #' @export
-add.log.axis = function(side = 1, base = 10, col = 'black', color.minor = 'grey', grid = F) {
+add.log.axis = function(side = 1, base = 10, col = 'black', color.minor = 'grey', grid = F, grid.major = F) {
     k.small = c(1:(base-1))
     k = c()
     for (i in c(-10:10)) {
@@ -1002,6 +1002,12 @@ add.log.axis = function(side = 1, base = 10, col = 'black', color.minor = 'grey'
     }
     if (grid & (side == 2 | side == 4)) {
       abline(h = log(k, base), col = color.minor, lty = 3)
+    }
+    if (grid.major & (side == 1 | side == 3)) {
+      abline(v = log(k[w>1], base), col = color.minor, lty = 3)
+    }
+    if (grid.major & (side == 2 | side == 4)) {
+      abline(h = log(k[w>1], base), col = color.minor, lty = 3)
     }
 }
 

@@ -123,6 +123,130 @@ build.section = function(x, y, z, lat = NULL, lon = NULL,
 }
 
 
+#' @title Build Section with Parallel Processing
+#' @author Thomas Bryce Kelly
+#' @keywords Gridding
+#' @export
+#' @param x dimensions (e.g. lat, lon, depth, section distance, time, etc)
+#' @param y dimensions (e.g. lat, lon, depth, section distance, time, etc)
+#' @param z signal to be gridded (e.g. T, S, ...)
+#' @param xlim Limits of the gridding. These are the bounds of the new x-y grid. Default: NULL will set it based on the data + 10%.
+#' @param ylim Limits of the gridding. These are the bounds of the new x-y grid. Default: NULL will set it based on the data + 10%.
+#' @param x.factor The relative scale difference between x and y, used to calculate distances. Take into account actual scale AND the relevent scaling of the system (vertical distance tends to be more important than horizontal distance).
+#' @param y.factor The relative scale difference between x and y, used to calculate distances. Take into account actual scale AND the relevent scaling of the system (vertical distance tends to be more important than horizontal distance).
+#' @param x.scale The step size in the new x-y grid. By default the scale is set to generate a grid that is 50x50.
+#' @param y.scale The step size in the new x-y grid. By default the scale is set to generate a grid that is 50x50.
+#' @param uncertainty = 0: Scaling applied to the distance from the cener of a grid cell to a vertex, used to add a base-line distance to all measurements. 0 = no minimum, 1 = minimum = to half a grid cell.
+#' @param field.name Sets the name of the new interpolated field. By default the name is 'z1'
+#' @param gridder A function to perform gridding, options gridIDW (default: inverse distance), gridNN (nearest neighbor), gridNNI (natural neighbor) or gridKrige (Krigging)
+#' @param nx The number of splits to make in the x direction (defaults to 50). Used only if x.scale is not set.
+#' @param ny The number of splits to make in the y direction (defaults to 50). Used only if y.scale is not set.
+
+build.section.parallel = function(x, y, z, lat = NULL, lon = NULL,
+                                  xlim = NULL, ylim = NULL,
+                                  x.factor = 1, y.factor = 1,
+                                  x.scale = NULL, y.scale = NULL,
+                                  uncertainty = 1e-12, p = 3, gridder = NULL,
+                                  field.names = NULL, nx = 50, ny = 50) {
+
+  z = data.matrix(z)
+  ## Remove NAs
+  l = !is.na(x) & !is.na(y) & !apply(z, 1, function(x) {any(is.na(x))})
+  x = x[l]
+  y = y[l]
+  z = data.matrix(z[l,])
+  if (!is.null(lat)) {lat = lat[l]}
+  if (!is.null(lon)) {lon = lon[l]}
+  if (is.null(gridder)) {
+    gridder = gridIDW
+    message('No gridder specified, defaulting to gridIDW. Other options: gridNN, gridNNI and gridKrige.')
+  }
+
+
+  if (uncertainty == 0) { warning('Uncertainty of zero may produce NAs!') }
+  if (is.null(field.names)) {
+    field.names = paste0('z', 1:ncol(z))
+    warning('No field.names provided, gridded data will be called ', paste0('z', 1:ncol(z), collapse = ','))
+  }
+
+  ## Set default limits (+10% buffer)
+  if (is.null(xlim)) {
+    xlim = range(x)
+    xlim[1] = xlim[1] - (xlim[2] - xlim[1])/20
+    xlim[2] = xlim[2] + (xlim[2] - xlim[1])/20
+  }
+  if (is.null(ylim)) {
+    ylim = range(y)
+    ylim[1] = ylim[1] - (ylim[2] - ylim[1])/20
+    ylim[2] = ylim[2] + (ylim[2] - ylim[1])/20
+  }
+
+  if (is.null(x.scale)) { x.scale = (xlim[2] - xlim[1]) / nx} ## Default to nx or ny steps
+  if (is.null(y.scale)) { y.scale = (ylim[2] - ylim[1]) / ny}
+
+  ## Rescale x and y based on x.factor and y.factor
+  x = x * x.factor
+  x.scale = x.scale * x.factor
+  xlim = xlim * x.factor
+  y = y * y.factor
+  y.scale = y.scale * y.factor
+  ylim = ylim * y.factor
+
+
+  y.new = seq(ylim[1], ylim[2], by = y.scale)
+  x.new = seq(xlim[1], xlim[2], by = x.scale)
+
+  if (!is.null(lat)) { section.lat = approx(x, lat, xout = x.new, rule = 2)$y } else { section.lat = rep(NA, length(x)); lat = NA }
+  if (!is.null(lon)) { section.lon = approx(x, lon, xout = x.new, rule = 2)$y } else { section.lon = rep(NA, length(y)); lon = NA }
+
+  ## Make grid and fill in
+  cn = parallel::detectCores() - 1
+  cl = parallel::makeCluster(cn)
+  grid = expand.grid(x = x.new, y = y.new)
+
+  ### PASS THE OBJECT FROM MASTER PROCESS TO EACH NODE
+  parallel::clusterExport(cl, varlist = c("grid", "gridder", "x", "y", "z", "p", "x.scale", "y.scale", 'uncertainty'))
+
+  ### DIVIDE THE DATAFRAME BASED ON # OF CORES
+  sp = parallel::parLapply(cl, parallel::clusterSplit(cl = cl, seq = seq(nrow(grid))), function(c) {grid[c,]})
+
+
+  for (kk in 1:length(field.names)) {
+    grid[[field.names[kk]]] =  Reduce(c, parallel::parLapply(cl, sp,
+                                                             function(s) {
+                                                               gridder(s$x, s$y, x, y, z[,kk], p, x.scale, y.scale, uncertainty)
+                                                             }))
+  }
+
+  parallel::stopCluster(cl)
+
+
+  grid$x = grid$x / x.factor
+  grid$y = grid$y / y.factor
+
+  ## Construct return object
+  grid = list(grid = grid,
+              grid.meta = list(
+                x.scale = x.scale / x.factor,
+                y.scale = y.scale / y.factor,
+                x.factor = x.factor,
+                y.factor = y.factor,
+                nx = nx, ny = ny,
+                uncertainty = uncertainty,
+                p = p,
+                gridder = gridder
+              ),
+              x = x.new / x.factor,
+              y = y.new / y.factor,
+              section.lat = section.lat,
+              section.lon = section.lon,
+              data = data.frame(x = x / x.factor, y = y / y.factor, z = z, lat = lat, lon = lon)
+  )
+  ## Return
+  grid
+}
+
+
 #### Alternative Gridding Engines
 
 #' @title Grid via Nearest Neighbor

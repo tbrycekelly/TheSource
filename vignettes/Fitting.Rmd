@@ -15,3 +15,39 @@ library(TheSource)
 
 ```
 
+
+
+
+```{R}
+f = function(x, y) {
+  x^2 + y^2
+}
+
+bounds = data.frame(min = c(-5, -5), max = c(5,5))
+n1 = parameter.search(n = 1, cost = f, bounds = bounds, splits = 10, progression = 2)
+n2 = parameter.search(n = 2, cost = f, bounds = bounds, splits = 10)
+n3 = parameter.search(n = 3, cost = f, bounds = bounds, splits = 10)
+
+
+```
+
+
+
+
+```{r}
+plot(n1$grid$x, n1$grid$y)
+points(n2$grid$x, n2$grid$y, pch = 20)
+points(n3$grid$x, n3$grid$y, pch = 20, col = 'red')
+
+n3$min
+
+```
+
+
+
+
+
+
+
+
+
