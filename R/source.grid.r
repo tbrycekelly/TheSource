@@ -141,13 +141,12 @@ build.section = function(x, y, z, lat = NULL, lon = NULL,
 #' @param gridder A function to perform gridding, options gridIDW (default: inverse distance), gridNN (nearest neighbor), gridNNI (natural neighbor) or gridKrige (Krigging)
 #' @param nx The number of splits to make in the x direction (defaults to 50). Used only if x.scale is not set.
 #' @param ny The number of splits to make in the y direction (defaults to 50). Used only if y.scale is not set.
-
 build.section.parallel = function(x, y, z, lat = NULL, lon = NULL,
-                                  xlim = NULL, ylim = NULL,
-                                  x.factor = 1, y.factor = 1,
-                                  x.scale = NULL, y.scale = NULL,
-                                  uncertainty = 1e-12, p = 3, gridder = NULL,
-                                  field.names = NULL, nx = 50, ny = 50) {
+                         xlim = NULL, ylim = NULL,
+                         x.factor = 1, y.factor = 1,
+                         x.scale = NULL, y.scale = NULL,
+                         uncertainty = 1e-12, p = 3, gridder = NULL,
+                         field.names = NULL, nx = 50, ny = 50) {
 
   z = data.matrix(z)
   ## Remove NAs
@@ -200,26 +199,26 @@ build.section.parallel = function(x, y, z, lat = NULL, lon = NULL,
   if (!is.null(lon)) { section.lon = approx(x, lon, xout = x.new, rule = 2)$y } else { section.lon = rep(NA, length(y)); lon = NA }
 
   ## Make grid and fill in
-  cn = parallel::detectCores() - 1
-  cl = parallel::makeCluster(cn)
   grid = expand.grid(x = x.new, y = y.new)
 
+  # Start Parallel
+  cn = parallel::detectCores() - 1
+  cl = parallel::makeCluster(cn)
   ### PASS THE OBJECT FROM MASTER PROCESS TO EACH NODE
-  parallel::clusterExport(cl, varlist = c("grid", "gridder", "x", "y", "z", "p", "x.scale", "y.scale", 'uncertainty'))
+  parallel::clusterExport(cl,
+                          varlist = c('grid', 'x', 'y', 'z', 'p', 'x.scale', 'y.scale', 'uncertainty', deparse(substitute(gridIDW))),
+                          envir = environment())
 
   ### DIVIDE THE DATAFRAME BASED ON # OF CORES
   sp = parallel::parLapply(cl, parallel::clusterSplit(cl = cl, seq = seq(nrow(grid))), function(c) {grid[c,]})
 
-
   for (kk in 1:length(field.names)) {
-    grid[[field.names[kk]]] =  Reduce(c, parallel::parLapply(cl, sp,
-                                                             function(s) {
-                                                               gridder(s$x, s$y, x, y, z[,kk], p, x.scale, y.scale, uncertainty)
-                                                             }))
+    grid[[field.names[kk]]] = Reduce(c, parallel::parLapply(cl, sp, fun = function(s) {
+      gridder(s$x, s$y, x, y, z[,kk], p, x.scale, y.scale, uncertainty)
+    }))
   }
 
   parallel::stopCluster(cl)
-
 
   grid$x = grid$x / x.factor
   grid$y = grid$y / y.factor

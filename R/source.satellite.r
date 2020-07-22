@@ -79,48 +79,113 @@ conv.nasa.chl = function(x) { 10 ^ x }
 #' @param input.dir the input directory
 #' @export
 ## Read nc file and do preliminary parsing/conversion
-read.satellite = function(input.dir, file, conv = function(x){x}, entry = 1) {
-    nc.file = nc_open(paste0(input.dir, file))
+read.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, entry = 1, verbose = F, trim = T, lon = NULL, lat = NULL) {
 
-    x = ncvar_get(nc.file, varid = names(nc.file$var)[entry])
-    attr = ncatt_get(nc = nc.file, varid = names(nc.file$var)[entry])
+  if (verbose) { message(Sys.time(), ' ~ Loading satellite file: ', file[1]) }
+  sate = list()
 
-    ## Lat and Lon
-    l.lat = which(names(nc.file$dim) == 'lat')
-    l.lon = which(names(nc.file$dim) == 'lon')
+  for (i in 1:length(file)) {
+    if (verbose) { message(Sys.time(), ' ~ Loading satellite file: ', file[i]) }
+    sate[[i]] = load.satellite(input.dir = input.dir, file = file[i], conv = conv, entry = entry)
+    if (trim) { sate[[i]] = trim.satellite(sate[[i]], lon = lon, lat = lat) }
+  }
 
-    ## Determine Lat and Lon
-    if (length(l.lat) > 0 & length(l.lon) > 0) {
-        lat = ncvar_get(nc.file, varid = 'lat')
-        lon = ncvar_get(nc.file, varid = 'lon')
-    } else {
+  if (length(file) > 1) {
+    ## Run checks
+    if (verbose) { message(Sys.time(), ' ~ Running checks on satellite files.') }
+    for (i in 2:length(sate)) {
 
-      ## Determine lat and lon based on presets
-      if (dim(x)[1] == 4320) { ## Standard NASA 4km grid
-        lat = seq(90, -90, length.out = dim(x)[2])
-        lon = seq(-180, 180, length.out = dim(x)[1])
-      }
+      ## Lon check
+      if (any(sate[[i]]$lon != sate[[1]]$lon)) { stop(paste0('Longitudes do not match in files: ', file[1], ' and ', file[i])) }
 
-      else if (dim(x)[1] == 540) {  # Standard 4k
-        lat = seq(45, 30.03597, length.out = dim(x)[2])
-        lon = seq(-140, -115.5454, length.out = dim(x)[1])
-      }
+      ## lat check
+      if (any(sate[[i]]$lat != sate[[1]]$lat)) { stop(paste0('Latitudes do not match in files: ', file[1], ' and ', file[i])) }
 
-      else if (dim(x)[1] == 588) {  ## Calcofi Fit
-        lat = seq(37, 29.51349, length.out = dim(x)[2])
-        lon = seq(-126.125, -116.6828, length.out = dim(x)[1])
-      }
-
-      else {  ## No match.
-        warning('Remote sensing field size is not recognized.')
-        lat = NULL
-        lon = NULL
-      }
+      ## lat check
+      if (length(sate[[i]]$field) != length(sate[[1]]$field)) { stop(paste0('Number of entries do not match in files: ', file[1], ' and ', file[i])) }
     }
-    nc_close(nc.file)
-    x = conv(x)
-    list(field = x, file = file, dir = input.dir, grid = function() {expand.grid(lon = lon, lat = lat)}, lon = lon, lat = lat,
-         times = get.satellite.times(file), conv = conv, attr = function() {attr})
+  }
+  if (verbose) { message(Sys.time(), ' ~ Checks complete (success).') }
+
+  if (length(file) > 1) {
+    n = matrix(0, nrow = nrow(sate[[1]]$field), ncol = ncol(sate[[1]]$field))
+    res = matrix(0, nrow = nrow(sate[[1]]$field), ncol = ncol(sate[[1]]$field))
+    times = list(start = 0, mid = 0, end = 0)
+
+    for (i in 1:length(sate)) {
+      temp = sate[[i]]$field
+      n = n + !is.na(temp)
+      temp[is.na(temp)] = 0
+      res = res + temp
+
+      times$start = times$start + as.numeric(sate[[i]]$times$start)
+      times$mid = times$mid + as.numeric(sate[[i]]$times$mid)
+      times$end = times$end + as.numeric(sate[[i]]$times$end)
+      sate[[1]]$file = c(sate[[1]]$file, sate[[i]]$file)
+    }
+    res = res / n
+    res[!is.finite(res)] = NA
+    sate[[1]]$file = sate[[1]]$file[-1]
+
+    sate[[1]]$field = res
+    sate[[1]]$times$start = conv.time.unix(times$start / length(sate))
+    sate[[1]]$times$mid = conv.time.unix(times$mid / length(sate))
+    sate[[1]]$times$end = conv.time.unix(times$end / length(sate))
+  }
+
+  ## Return
+  sate[[1]]
+}
+
+#' @title Read Satellite Data
+#' @author Thomas Bryce Kelly
+#' @description read
+#' @param input.dir the input directory
+## Read nc file and do preliminary parsing/conversion
+load.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, entry = 1) {
+
+  nc.file = nc_open(paste0(input.dir, file))
+
+  x = ncvar_get(nc.file, varid = names(nc.file$var)[entry])
+  attr = ncatt_get(nc = nc.file, varid = names(nc.file$var)[entry])
+
+  ## Lat and Lon
+  l.lat = which(names(nc.file$dim) == 'lat')
+  l.lon = which(names(nc.file$dim) == 'lon')
+
+  ## Determine Lat and Lon
+  if (length(l.lat) > 0 & length(l.lon) > 0) {
+    lat = ncvar_get(nc.file, varid = 'lat')
+    lon = ncvar_get(nc.file, varid = 'lon')
+  } else {
+
+    ## Determine lat and lon based on presets
+    if (dim(x)[1] == 4320) { ## Standard NASA 4km grid
+      lat = seq(90, -90, length.out = dim(x)[2])
+      lon = seq(-180, 180, length.out = dim(x)[1])
+    }
+
+    else if (dim(x)[1] == 540) {  # Standard 4k
+      lat = seq(45, 30.03597, length.out = dim(x)[2])
+      lon = seq(-140, -115.5454, length.out = dim(x)[1])
+    }
+
+    else if (dim(x)[1] == 588) {  ## Calcofi Fit
+      lat = seq(37, 29.51349, length.out = dim(x)[2])
+      lon = seq(-126.125, -116.6828, length.out = dim(x)[1])
+    }
+
+    else {  ## No match.
+      warning('Remote sensing field size is not recognized.')
+      lat = NULL
+      lon = NULL
+    }
+  }
+  nc_close(nc.file)
+
+  x = conv(x)
+  list(field = x, file = file, dir = input.dir, grid = function() {expand.grid(lon = lon, lat = lat)}, lon = lon, lat = lat,
+       times = get.satellite.times(file), conv = conv, attr = function() {attr})
 }
 
 
@@ -196,11 +261,15 @@ print.nc = function(file) {
 
 #' @title Load NetCDF
 #' @import ncdf4
+#' @param file The location of a .nc file.
 #' @export
 load.nc = function(file) {
-  file = nc_open(file)
-  data = file
-  nc_close(file)
+  file = ncdf4::nc_open(file)
+  data = list()
+  for (var in names(file$var)) {
+    data[[var]] = ncdf4::ncvar_get(nc = file, varid = var)
+  }
+  ncdf4::nc_close(file)
 
   ##return
   data
@@ -217,8 +286,8 @@ load.nc = function(file) {
 #' @description rebuild
 #' @param verbose Flag to print diagnostics
 #' @export
-rebuild.satellite.index = function(dir = 'D:/Data/Data_Satellite/', verbose = FALSE) {
-    files = list.files(pattern = '.nc', path = paste0(dir, 'Raw/'))
+rebuild.satellite.index = function(dir = 'D:/Data/Data_Satellite/Raw', verbose = FALSE) {
+    files = list.files(pattern = '.nc', path = dir)
 
     summary = data.frame(File = files, Sensor = NA, Datetime = NA, Year = NA,
                          Julian.Day = NA, Month = NA, Day = NA, Level = NA,

@@ -44,8 +44,10 @@ parameter.search = function(n, cost, grid = NULL, ..., bounds, splits = 10, prog
   argnames = formalArgs(cost)
   argnames = argnames[!argnames %in% names(list(...))] # don't include arguments passed through elipsis
 
-  grid = do.call('expand.grid', b)
-  colnames(grid) = formalArgs(cost)[1:dim]
+  if (is.null(grid)) {
+    grid = do.call('expand.grid', b)
+    colnames(grid) = formalArgs(cost)[1:dim]
+  }
   grid$cost = NA
 
   ## Calculate cost function at each grid location
@@ -61,7 +63,7 @@ parameter.search = function(n, cost, grid = NULL, ..., bounds, splits = 10, prog
   ## Best grid location
   l = which.min(grid$cost)
   if (n == 1) {
-    res = list(min = grid[l,], bounds = bounds, grid = grid, history = grid[l,])
+    res = list(min = grid[l,], bounds = bounds, grid = grid, history = grid[l,], full.grid = grid)
   } else{
 
     ## Setup new bounding box
@@ -75,6 +77,7 @@ parameter.search = function(n, cost, grid = NULL, ..., bounds, splits = 10, prog
     ## Call parameter.search recursively
     res = parameter.search(n-1, cost, ..., bounds = bounds.new, splits = splits, progression = progression)
     res$history = rbind(res$history, grid[l,])
+    res$full.grid = rbind(res$full.grid, grid)
   }
   ## Return
   res
@@ -115,7 +118,7 @@ parameter.search.parallel = function(n, cost, grid = NULL, ..., bounds, splits =
   cn = parallel::detectCores() - 1
   cl = parallel::makeCluster(cn)
   ### PASS THE OBJECT FROM MASTER PROCESS TO EACH NODE
-  parallel::clusterExport(cl, varlist = c('grid', 'cost', names(list(...))))
+  parallel::clusterExport(cl, varlist = c('grid', 'cost', names(optional.args), ls(envir = globalenv())), envir = environment())
 
   ### DIVIDE THE DATAFRAME BASED ON # OF CORES
   sp = parallel::parLapply(cl, parallel::clusterSplit(cl = cl, seq = seq(nrow(grid))), function(c) {grid[c,]})
@@ -297,6 +300,7 @@ parameter.anneal = function (n, cost, ..., bounds, progression = NULL, max.iter 
 #' @author Thomas Bryce Kelly
 #' @references Wikipedia: https://en.wikipedia.org/wiki/Test_functions_for_optimization
 #' @param n the number of the test function desired.
+#' @export
 test.function = function(n, verbose = T) {
 
   Rastrigin = function(...) {

@@ -6,6 +6,9 @@
 \usage{
 load.nc(file)
 }
+\arguments{
+\item{file}{The location of a .nc file.}
+}
 \description{
 Load NetCDF
 }

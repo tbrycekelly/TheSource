@@ -1,11 +1,11 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-//' Inverse Distance Gridding (as in ODV)
+//' Inverse Metropolis-distance Gridding
 //'
 //' @export
 // [[Rcpp::export]]
-NumericVector gridODV(NumericVector gx, NumericVector gy, NumericVector x, NumericVector y, NumericVector z,
+NumericVector gridIMW(NumericVector gx, NumericVector gy, NumericVector x, NumericVector y, NumericVector z,
                       double p, double xscale, double yscale, double uncertainty) {
   int n = gx.size();
   int nn = x.size();
@@ -15,7 +15,7 @@ NumericVector gridODV(NumericVector gx, NumericVector gy, NumericVector x, Numer
   double wsum;
   double w;
 
-  double deltamin = (pow(abs(xscale/2), p) + pow(abs(yscale/2), p)) * uncertainty;
+  double deltamin = (powf(fabs(xscale/2.0), p) + powf(fabs(yscale/2.0), p)) * uncertainty;
 
   for(int i = 0; i < n; ++i) {
     temp = 0;
@@ -23,7 +23,7 @@ NumericVector gridODV(NumericVector gx, NumericVector gy, NumericVector x, Numer
     wsum = 0;
 
     for(int j = 0; j < nn; j++) {
-      w = 1 / exp(-1*pow(abs(x[j] - gx[i]), 2) - pow(abs(y[j] - gy[i]), 2) - deltamin);
+      w = 1.0 / (fabs(x[j] - gx[i]) + fabs(y[j] - gy[i]) + deltamin);
       temp += w * z[j];
       wsum += w;
     }

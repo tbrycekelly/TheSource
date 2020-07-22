@@ -8,6 +8,13 @@ gridIDW <- function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
     .Call('_TheSource_gridIDW', PACKAGE = 'TheSource', gx, gy, x, y, z, p, xscale, yscale, uncertainty)
 }
 
+#' Inverse Metropolis-distance Gridding
+#'
+#' @export
+gridIMW <- function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
+    .Call('_TheSource_gridIMW', PACKAGE = 'TheSource', gx, gy, x, y, z, p, xscale, yscale, uncertainty)
+}
+
 #' Nearest Neighbor Gridding
 #'
 #' @export

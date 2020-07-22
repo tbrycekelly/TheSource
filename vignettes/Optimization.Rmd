@@ -61,5 +61,9 @@ abline(v = m$min$x)
 
 ```{R}
 
+cost = test.function(1)
+m = parameter.search(n = 10, cost = cost, bounds = b, progression = 1)
+
+
 
 ```

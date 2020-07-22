@@ -15,6 +15,7 @@
 
 #' @title Dunne et al Model
 #' @author Thomas Bryce Kelly
+#' @references Dunne et al.
 #' @export
 model.dunne = function(NPP, SST, Chl) {
     a = -0.0081 * SST + 0.0806 * log(Chl) + 0.426

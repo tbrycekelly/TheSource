@@ -9,6 +9,9 @@ model.dunne(NPP, SST, Chl)
 \description{
 Dunne et al Model
 }
+\references{
+Dunne et al.
+}
 \author{
 Thomas Bryce Kelly
 }

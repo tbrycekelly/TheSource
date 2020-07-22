@@ -111,7 +111,7 @@ calc.NeSol = function(S = 35, T = 10) {
 #' @param S Salinity in PSU
 #' @param T Temperature in centigrade
 #' @export
-calc.O2sol = function(S=35, T=10) { ## umol Kg-1
+calc.O2sol = function(S = 35, T = 10, verbose = F) { ## umol Kg-1
     ## Check value at 35PSU, 10C
     #### 274.61
 
@@ -136,6 +136,8 @@ calc.O2sol = function(S=35, T=10) { ## umol Kg-1
     A.calc = A.0 + A.1*Ts + A.2*Ts^2 + A.3*Ts^3 + A.4*Ts^4 + A.5*Ts^5
     B.calc = B.0 + B.1*Ts + B.2*Ts^2 + B.3*Ts^3
 
+    if (verbose) { message(Sys.time(), ': Calculating O2 Solubility (umol O2 kg-1) with check value (S=35, T=10) of 274.61') }
+
     ## (umol / kg)
     exp(A.calc + S * B.calc + C.0 * S^2)
 }
@@ -144,11 +146,11 @@ calc.O2sol = function(S=35, T=10) { ## umol Kg-1
 #' @title Calculate Density
 #' @author Thomas Bryce Kelly
 #' @param S Salinity in PSU
-#' @param T Temperature in centigrade
-#' @param p Pressure in db
+#' @param T Temperature in centigrade, provide potential temperature for potential density.
+#' @param p Pressure in db, set p=0 for potential density
 #' @references Massel 2015
 #' @export
-calc.rho = function(S=30, T=15, p=0) {
+calc.rho = function(S = 30, T = 15, p = 0, verbose = F) {
     a.0 = 999.842594
     a.1 = 6.793953e-2
     a.2 = -9.095290e-3
@@ -169,6 +171,8 @@ calc.rho = function(S=30, T=15, p=0) {
     c.2 = -1.6546e-6
     d.0 = 4.8314e-4
     C.1 = c.0 + c.1*T + c.2*T^2
+
+    if (verbose) { message(Sys.time(), ': Calculating seawater density based on in situ T, S and pressure. For potential density set p = 0 regardless of in situ pressure and provide potential temperature. Value returned is in kg m-3 with paramterization given in Massel 2015.') }
 
     rho = rho.smow + B.1 * S + C.1 * S^1.5 + d.0 * S^2
     rho

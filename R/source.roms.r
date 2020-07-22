@@ -16,15 +16,6 @@
 ## Florida State University
 
 
-#' @title Print NetCDF
-#' @export
-#' @import ncdf4
-print.nc = function(file) {
-    file = ncdf4::nc_open(file)
-    print(file)
-    ncdf4::nc_close(file)
-}
-
 
 #' @title Convert ROMS Time
 #' @author Thomas Bryce Kelly

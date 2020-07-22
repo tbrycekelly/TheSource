@@ -4,14 +4,14 @@
 \alias{calc.rho}
 \title{Calculate Density}
 \usage{
-calc.rho(S = 30, T = 15, p = 0)
+calc.rho(S = 30, T = 15, p = 0, verbose = F)
 }
 \arguments{
 \item{S}{Salinity in PSU}
 
-\item{T}{Temperature in centigrade}
+\item{T}{Temperature in centigrade, provide potential temperature for potential density.}
 
-\item{p}{Pressure in db}
+\item{p}{Pressure in db, set p=0 for potential density}
 }
 \description{
 Calculate Density

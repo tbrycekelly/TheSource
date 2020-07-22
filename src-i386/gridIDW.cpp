@@ -1,6 +1,9 @@
 #include <Rcpp.h>
 using namespace Rcpp;
-// @export
+
+//' Inverse Distance Gridding
+//'
+//' @export
 // [[Rcpp::export]]
 NumericVector gridIDW(NumericVector gx, NumericVector gy, NumericVector x, NumericVector y, NumericVector z,
                       double p, double xscale, double yscale, double uncertainty) {
