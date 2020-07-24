@@ -216,7 +216,7 @@ plot.image = function(x, y, z, xlab = NULL, ylab = NULL,
     z = matrix(grid$z, nrow = length(xx), ncol = length(yy))
   }
   col = get.pal(n = n, pal = pal, rev = rev)
-  image.default(x = xx, y = yy, z = z, zlim = zlim, xlim = xlim, ylim = ylim,
+  image.default(x = xx[order(xx)], y = yy[order(yy)], z = z[order(xx), order(yy)], zlim = zlim, xlim = xlim, ylim = ylim,
                 col = col, xlab = xlab, ylab = ylab, ...)
 }
 
