@@ -119,7 +119,7 @@ make.qual.pal = function(x, pal = NULL, rev = FALSE) {
 #' @export
 add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'ocean.haline', rev = FALSE, units = '',
                         col.high = '', col.low = '', log = FALSE, base = 10, x.pos = 0.875, width = 0.05,
-                        y.pos = 0.5, height = 0.8, cex = 1, cex.units = 1, n = 255, horizontal = FALSE) {
+                        y.pos = 0.5, height = 0.8, cex = 1, cex.units = 1, n = 255, horizontal = FALSE, col.lab = 'black', col.tck = 'darkgrey') {
 
   ## Setup
   par.original = par('mar')
@@ -140,6 +140,8 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'ocean.hali
     } else {
       delta = (labels - min)/(max - min)
     }
+  } else {
+    labels = pretty(c(min, max))
   }
 
   if (!is.null(ticks)) {
@@ -183,13 +185,13 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'ocean.hali
 
 
   if (!is.null(ticks)) {
-    if (horizontal) { axis(3, at = ticks.delta * (n+1) - 0.5, labels = NA, las = 1) }
-    else { axis(4, at = ticks.delta * (n+1) - 0.5, labels = NA, las = 1) }
+    if (horizontal) { axis(3, at = ticks.delta * (n+1) - 0.5, labels = NA, las = 1, col = col.tck) }
+    else { axis(4, at = ticks.delta * (n+1) - 0.5, labels = NA, las = 1, col = col.tck) }
   }
 
   if (!is.null(labels)) {
-    if (horizontal) { axis(3, at = delta * (n+1) - 0.5, labels = labels, las = 1, cex = cex) }
-    else { axis(4, at = delta * (n+1) - 0.5, labels = labels, las = 1, cex = cex) }
+    if (horizontal) { axis(3, at = delta * (n+1) - 0.5, labels = labels, las = 1, cex = cex, col = col.lab) }
+    else { axis(4, at = delta * (n+1) - 0.5, labels = labels, las = 1, cex = cex, col = col.lab) }
   }
 
   ## Return margins to default

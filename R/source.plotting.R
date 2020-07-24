@@ -204,11 +204,17 @@ plot.image = function(x, y, z, xlab = NULL, ylab = NULL,
     stop('Z must have length equal to the grid generated from the unique values of x and y (i.e. z = f(x,y)).')
   }
 
-  grid = expand.grid(x = xx, y = yy)
-  grid$z = NA
+  ## If data was not originally a matrix format.
+  if (length(xx) != length(x) | length(yy) != length(y)) {
+    z = as.numeric(z) ## Force into vector
+    grid = expand.grid(x = xx, y = yy)
+    grid$z = NA
 
-  for (i in 1:length(z)) { grid$z[i] = z[x == grid$x[i] & y == grid$y[i]] }
-  z = matrix(grid$z, nrow = length(xx), ncol = length(yy))
+    for (i in 1:length(z)) {
+      grid$z[i] = z[x == grid$x[i] & y == grid$y[i]]
+    }
+    z = matrix(grid$z, nrow = length(xx), ncol = length(yy))
+  }
   col = get.pal(n = n, pal = pal, rev = rev)
   image.default(x = xx, y = yy, z = z, zlim = zlim, xlim = xlim, ylim = ylim,
                 col = col, xlab = xlab, ylab = ylab, ...)
