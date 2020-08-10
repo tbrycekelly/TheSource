@@ -135,13 +135,15 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'ocean.hali
   ## Determine axis labels and tick marks
   if(!is.null(labels)) {
     labels = labels[labels >= min & labels <= max]
-    if (log) {
-      delta = (log(labels, base) - log(min, base)) / (log(max, base) - log(min, base))
-    } else {
-      delta = (labels - min)/(max - min)
-    }
   } else {
     labels = pretty(c(min, max))
+    labels[labels < min] = min
+    labels[labels > max] = max
+  }
+  if (log) {
+    delta = (log(labels, base) - log(min, base)) / (log(max, base) - log(min, base))
+  } else {
+    delta = (labels - min)/(max - min)
   }
 
   if (!is.null(ticks)) {

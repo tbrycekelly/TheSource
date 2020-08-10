@@ -77,6 +77,12 @@ plot.boxplot = function(n = 10, ylim = c(0,1), at = NULL, main = NULL,
 add.boxplot.box = function(x, y, col = 'grey', border = 'black', width = 0.7, lty = 1, lcol = 'black',
                            lwd = 1, xlwd = NULL, outliers = T, pcol = 'black', pch = 1, cex = 1) {
 
+  ## Remove NAs before they poison anything...
+  l = which(!is.na(x) | !is.na(y))
+  x = x[-l]
+  y = y[-l]
+
+  ## For each unique x value
   for (xx in unique(x)) {
     l = which(x == xx)
     if(is.null(xlwd)) { xlwd = width / 3 }
@@ -91,15 +97,23 @@ add.boxplot.box = function(x, y, col = 'grey', border = 'black', width = 0.7, lt
     rect(xleft = xx - width/2, ybottom = q1, xright = xx + width/2, ytop = q3, col = col, border = border)
     lines(x = c(xx - width/2, xx + width/2), y = rep(m,2)) # Horizontal
 
-    ## Add whiskers
-    lines(x = rep(xx, 2), y = c(q1, q1 - 1.5 * iqr), col = lcol, lwd = lwd)
-    lines(x = rep(xx, 2), y = c(q3, q3 + 1.5 * iqr), col = lcol, lwd = lwd)
-    lines(x = c(xx - xlwd/2, xx + xlwd/2), y = rep(q1 - 1.5 * iqr, 2), col = lcol, lwd = lwd)
-    lines(x = c(xx - xlwd/2, xx + xlwd/2), y = rep(q3 + 1.5 * iqr, 2), col = lcol, lwd = lwd)
-
     ## Add outliers
     k = which(y[l] < q1 - 1.5 * iqr | y[l] > q3 + 1.5 * iqr)
     if (length(k) > 0) { points(x = rep(xx, length(k)), y = y[l[k]], pch = pch, col = pcol, cex = cex) }
+
+    ## Add whiskers
+    if (length(k) > 0) {
+      lines(x = rep(xx, 2), y = c(q1, min(y[l[-k]])), col = lcol, lwd = lwd)
+      lines(x = rep(xx, 2), y = c(q3, max(y[l[-k]])), col = lcol, lwd = lwd)
+      lines(x = c(xx - xlwd/2, xx + xlwd/2), y = rep(min(y[l[-k]]), 2), col = lcol, lwd = lwd)
+      lines(x = c(xx - xlwd/2, xx + xlwd/2), y = rep(max(y[l[-k]]), 2), col = lcol, lwd = lwd)
+    } else {
+      lines(x = rep(xx, 2), y = c(q1, min(y[l])), col = lcol, lwd = lwd)
+      lines(x = rep(xx, 2), y = c(q3, max(y[l])), col = lcol, lwd = lwd)
+      lines(x = c(xx - xlwd/2, xx + xlwd/2), y = rep(min(y[l]), 2), col = lcol, lwd = lwd)
+      lines(x = c(xx - xlwd/2, xx + xlwd/2), y = rep(max(y[l]), 2), col = lcol, lwd = lwd)
+    }
+
   }
 }
 
@@ -189,7 +203,7 @@ add.barplot.bar = function(data, sd = NULL, x = 1, width = 0.6, col = NULL, pal 
 #' @inheritParams image
 plot.image = function(x, y, z, xlab = NULL, ylab = NULL,
                       xlim = NULL, ylim = NULL, zlim = NULL,
-                      pal = kovesi.rainbow, n = 255, rev = F, ...) {
+                      pal = 'kovesi.rainbow', n = 255, rev = F, ...) {
   if (is.null(xlim)) {xlim = range(x)}
   if (is.null(ylim)) {ylim = range(y)}
   if (is.null(zlim)) {zlim = range(z)}

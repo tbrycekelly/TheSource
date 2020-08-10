@@ -35,7 +35,7 @@
 #' @param gridder A function to perform gridding, options gridIDW (default: inverse distance), gridNN (nearest neighbor), gridNNI (natural neighbor) or gridKrige (Krigging)
 #' @param nx The number of splits to make in the x direction (defaults to 50). Used only if x.scale is not set.
 #' @param ny The number of splits to make in the y direction (defaults to 50). Used only if y.scale is not set.
-build.section = function(x, y, z, lat = NULL, lon = NULL,
+build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL,
                          xlim = NULL, ylim = NULL,
                          x.factor = 1, y.factor = 1,
                          x.scale = NULL, y.scale = NULL,
@@ -93,7 +93,12 @@ build.section = function(x, y, z, lat = NULL, lon = NULL,
   if (!is.null(lon)) { section.lon = approx(x, lon, xout = x.new, rule = 2)$y } else { section.lon = rep(NA, length(y)); lon = NA }
 
   ## Make grid and fill in
-  grid = expand.grid(x = x.new, y = y.new)
+  if (is.null(grid)) {
+    grid = expand.grid(x = x.new, y = y.new)
+  } else {
+    grid = grid
+    colnames(grid) = c('x', 'y')
+  }
   for (kk in 1:length(field.names)) {
     grid[[field.names[kk]]] = gridder(grid$x, grid$y, x, y, z[,kk], p, x.scale, y.scale, uncertainty)
   }

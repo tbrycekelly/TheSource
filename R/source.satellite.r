@@ -210,10 +210,29 @@ trim.satellite = function(satellite, lon = NULL, lat = NULL) {
               grid$lat >= lat[1] & grid$lat <= lat[2])
 
   satellite$field = matrix(satellite$field[l], ncol = length(satellite$lat), nrow = length(satellite$lon))
-  satellite$grid = function() {expand.grid(lon = satellite$lon, lat = satellite$lat)}
+  satellite$grid = expand.grid(lon = satellite$lon, lat = satellite$lat)
 
   ## Return
   satellite
+}
+
+
+load.sss = function(file, lon = NULL, lat = NULL) {
+  ss = load.nc(file)
+  ss$sss = ss$sss * ss$sss_qc ## Apply quality control
+
+  if (!is.null(lon)) {
+    l = which(ss$lon >= lon[1] & ss$lon <= lon[2])
+    ss$sss = ss$sss[l,]
+  }
+  if (!is.null(lat)) {
+    l = which(ss$lat >= lat[1] & ss$lat <= lat[2])
+    ss$sss = ss$sss[,l]
+  }
+  ss$grid = expand.grid(lon = ss$lon, lat = ss$lat)
+
+  ## Return
+  list(lon = ss$lon, lat = ss$lat, time = ss$time, field = ss$sss)
 }
 
 ###########################
@@ -266,9 +285,13 @@ print.nc = function(file) {
 load.nc = function(file) {
   file = ncdf4::nc_open(file)
   data = list()
+  for (dim in names(file$dim)){
+    data[[dim]] = ncdf4::ncvar_get(nc = file, varid = dim)
+  }
   for (var in names(file$var)) {
     data[[var]] = ncdf4::ncvar_get(nc = file, varid = var)
   }
+
   ncdf4::nc_close(file)
 
   ##return
@@ -314,7 +337,7 @@ rebuild.satellite.index = function(dir = 'D:/Data/Data_Satellite/Raw', verbose =
           summary$Timeframe[i] = second[2]
           summary$Resolution[i] = second[length(second)]
           if (length(second) > 4) {
-            summary$Param[i] = paste(second[3], second[4], sep = '.')
+            summary$Param[i] = paste(second[-c(1:2)], collapse = '.')
           } else {
             summary$Param[i] = second[3]
           }
