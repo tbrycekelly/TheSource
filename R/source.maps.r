@@ -36,10 +36,10 @@
 #' @author Thomas Bryce Kelly
 #' @export
 make.map = function (coast = NULL,
-                    lon.min = -75,
-                    lon.max = 75,
-                    lat.min = -45,
-                    lat.max = 45,
+                    lon.min = -180,
+                    lon.max = 180,
+                    lat.min = -80,
+                    lat.max = 80,
                     p = NULL,
                     land.col = 'lightgray',
                     grid = TRUE,
@@ -50,11 +50,13 @@ make.map = function (coast = NULL,
 
   if (is.null(p)) { p = make.proj(projection = 'mill', lat = mean(c(lat.max, lat.min)),
                                   lon = mean(c(lon.min, lon.max)))}
+
+  lon0 = as.numeric(strsplit(strsplit(paste(p, ''), 'lon_0=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
   ## get coastlines
   get.coast(coast = coast)
 
   ## make the base plot (oce)
-  mapPlot(eval(parse(text = coast)), projection = p, col = land.col,
+  mapPlot(coastlineCut(eval(parse(text = coast)), lon_0 = lon0), projection = p, col = land.col,
           longitudelim = c(lon.min, lon.max), latitudelim = c(lat.min, lat.max),
           grid = FALSE, axes = FALSE)
 

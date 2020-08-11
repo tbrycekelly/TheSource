@@ -15,8 +15,6 @@ NumericVector gridNN(NumericVector gx, NumericVector gy, NumericVector x, Numeri
   double temp2;
   double w;
 
-  double deltamin = (pow(abs(xscale/2), p) + pow(abs(yscale/2), p)) * uncertainty;
-
   for(int i = 0; i < n; ++i) {
     temp = pow(abs(x[0] - gx[i]), p) + pow(abs(y[0] - gy[i]), p);
     w = 0;

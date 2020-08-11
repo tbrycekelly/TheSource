@@ -29,6 +29,9 @@ load.advection.mitgcm = function(u.file, v.file, w.file = NULL) {
 
 
 
+
+
+
 load.advection.oscar = function(file, lats = NULL, lons = NULL) {
 
   f = ncdf4::nc_open(file)
@@ -77,6 +80,8 @@ build.advection = function(lon, lat, depth, time) {
   list(lon, lat, depth, time, u, v, w)
 }
 
+
+
 build.roms.grid = function(path) {
   list(lon, lat, depth, time, u, v, w)
 }
@@ -84,7 +89,8 @@ build.roms.grid = function(path) {
 
 
 
-
+#' @title Get Velocity
+#' @author Thomas Bryce Kelly
 get.vel = function(lon, lat, depth, time, advection) {
 
   ## Build return object
@@ -161,6 +167,93 @@ get.vel = function(lon, lat, depth, time, advection) {
 }
 
 
+#' @title Get Velocity (ROMS)
+#' A ROMS specific lookup function to pull and interpolate U,V, and W from a 4D velocity field
+#' @author Thomas Bryce Kelly
+get.vel.roms = function(lon, lat, depth, time, advection) {
+
+  ## Build return object
+  grid = expand.grid(lon = lon, lat = lat, depth = depth, u = NA, v = NA, w = NA)
+  grid$lon[grid$lon < 0] = grid$lon[grid$lon < 0] + 360
+
+  if (time < min(advection$time) | time > max(advection$time)) {
+    stop(paste0('Improper advection product loaded for time = ', time))
+  }
+
+  ## Time weights: linear in time
+  t2 = min(which(advection$time > time))
+  t1 = t2-1
+  t1w = as.numeric(advection$time[t2] - time) / as.numeric(advection$time[t2] - advection$time[t1])
+
+  for (i in 1:nrow(grid)) {
+    ## Find Indicies
+    x2 = min(which(advection$lon > grid$lon[i]))
+    x1 = x2 - 1                         ## Makes assumptions about no boundaries
+    y2 = max(which(advection$lat > grid$lat[i]))
+    y1 = y2 + 1
+    z2 = max(which(advection$depth[x1, y1] > grid$depth[i]))
+    z1 = z2 + 1
+
+
+    if (x1 == 0 | y2 == 0 | z1 == 0 | t1 == 0 | x2 > length(advection$lon) | y1 > length(advection$lat) | z2 > length(advection$depth) | t2 > length(advection$time)){
+      message('Point out of bounds! x1 = ', x1, ', y1 = ', y1, ', z1 = ', z1, ', t1 = ', t1)
+      grid$u[i] = 0
+      grid$v[i] = 0
+      grid$w[i] = 0
+    } else if (!is.null(depth) & (z1 == 0 | z2 > length(advection$depth))) {
+      message('Point out of bounds! x1 = ', x1, ', y1 = ', y1, ', z1 = ', z1, ', t1 = ', t1)
+      grid$u[i] = 0
+      grid$v[i] = 0
+      grid$w[i] = 0
+    } else {
+
+      ## Calculate weights
+      x1w = (advection$lon[x2] - grid$lon[i]) / (advection$lon[x2] - advection$lon[x1])
+      y1w = (advection$lat[y2] - grid$lat[i]) / (advection$lat[y2] - advection$lat[y1])
+      z1w = (advection$depth[z2] - grid$depth[i]) / (advection$depth[z2] - advection$depth[z1])
+
+      ## calculate u
+      u1 = ((advection$u[x1,y1,z1,t1] * x1w + advection$u[x2,y1,z1,t1] * (1 - x1w)) * y1w + (advection$u[x1,y2,z1,t1] * x1w + advection$u[x2,y2,z1,t1] * (1 - x1w)) * (1 - y1w)) * z1w +
+        ((advection$u[x1,y1,z1,t1] * x1w + advection$u[x2,y1,z1,t1] * (1 - x1w)) * y1w + (advection$u[x1,y2,z1,t1] * x1w + advection$u[x2,y2,z1,t1] * (1 - x1w)) * (1 - y1w)) * (1 - z1w)
+      u2 = ((advection$u[x1,y1,z2,t2] * x1w + advection$u[x2,y1,z2,t2] * (1 - x1w)) * y1w + (advection$u[x1,y2,z2,t2] * x1w + advection$u[x2,y2,z2,t2] * (1 - x1w)) * (1 - y1w)) * z1w +
+        ((advection$u[x1,y1,z2,t2] * x1w + advection$u[x2,y1,z2,t2] * (1 - x1w)) * y1w + (advection$u[x1,y2,z2,t2] * x1w + advection$u[x2,y2,z2,t2] * (1 - x1w)) * (1 - y1w)) * (1 - z1w)
+      u = u1 * t1w + u2 * (1 - t1w)
+
+      ## calculate v
+      v1 = ((advection$v[x1,y1,z1,t1] * x1w + advection$v[x2,y1,z1,t1] * (1 - x1w)) * y1w + (advection$v[x1,y2,z1,t1] * x1w + advection$v[x2,y2,z1,t1] * (1 - x1w)) * (1 - y1w)) * z1w +
+        ((advection$v[x1,y1,z1,t1] * x1w + advection$v[x2,y1,z1,t1] * (1 - x1w)) * y1w + (advection$v[x1,y2,z1,t1] * x1w + advection$v[x2,y2,z1,t1] * (1 - x1w)) * (1 - y1w)) * (1 - z1w)
+      v2 = ((advection$v[x1,y1,z1,t2] * x1w + advection$v[x2,y1,z1,t2] * (1 - x1w)) * y1w + (advection$v[x1,y2,z1,t2] * x1w + advection$v[x2,y2,z1,t2] * (1 - x1w)) * (1 - y1w)) * z1w +
+        ((advection$v[x1,y1,z1,t2] * x1w + advection$v[x2,y1,z1,t2] * (1 - x1w)) * y1w + (advection$v[x1,y2,z1,t2] * x1w + advection$v[x2,y2,z1,t2] * (1 - x1w)) * (1 - y1w)) * (1 - z1w)
+      v = v1 * t1w + v2 * (1 - t1w)
+
+      ## calculate w
+      w1 = ((advection$w[x1,y1,z1,t1] * x1w + advection$w[x2,y1,z1,t1] * (1 - x1w)) * y1w + (advection$w[x1,y2,z1,t1] * x1w + advection$w[x2,y2,z1,t1] * (1 - x1w)) * (1 - y1w)) * z1w +
+        ((advection$w[x1,y1,z1,t1] * x1w + advection$w[x2,y1,z1,t1] * (1 - x1w)) * y1w + (advection$w[x1,y2,z1,t1] * x1w + advection$w[x2,y2,z1,t1] * (1 - x1w)) * (1 - y1w)) * (1 - z1w)
+      w2 = ((advection$w[x1,y1,z1,t2] * x1w + advection$w[x2,y1,z1,t2] * (1 - x1w)) * y1w + (advection$w[x1,y2,z1,t2] * x1w + advection$w[x2,y2,z1,t2] * (1 - x1w)) * (1 - y1w)) * z1w +
+        ((advection$w[x1,y1,z1,t2] * x1w + advection$w[x2,y1,z1,t2] * (1 - x1w)) * y1w + (advection$w[x1,y2,z1,t2] * x1w + advection$w[x2,y2,z1,t2] * (1 - x1w)) * (1 - y1w)) * (1 - z1w)
+      w = w1 * t1w + w2 * (1 - t1w)
+
+      grid$u[i] = u
+      grid$v[i] = v
+      grid$w[i] = w
+
+      if (is.na(u)) { grid$u[i] = 0 }
+      if (is.na(v)) { grid$v[i] = 0 }
+      if (is.na(w)) { grid$w[i] = 0 }
+    }
+  }
+  list(u = grid$u, v = grid$v, w = grid$w)
+}
+
+
+#' @title Advect Lagrangian Particle
+#' @author Thomas Bryce Kelly
+#' @param lat Initial latitude of particle
+#' @param lon Initial longitude of particle
+#' @param depth Intial depth of particle
+#' @param time Start time of particle
+#' @param advection An advection list, such as one generated by load.oscar.advection(), that contains U V and W
+#' @param dt Time step for RK4 advection scheme
 advect = function(lat, lon, depth, time, advection, dt) {
 
   ## Initial Guess
