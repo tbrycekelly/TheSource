@@ -96,8 +96,15 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL,
   if (is.null(grid)) {
     grid = expand.grid(x = x.new, y = y.new)
   } else {
-    grid = grid
     colnames(grid) = c('x', 'y')
+    nx = length(unique(grid$x))
+    ny = length(unique(grid$y))
+    xlim = range(grid$x)
+    ylim = range(grid$y)
+
+    grid$x = grid$x * x.factor
+    grid$y = grid$y * y.factor
+
   }
   for (kk in 1:length(field.names)) {
     grid[[field.names[kk]]] = gridder(grid$x, grid$y, x, y, z[,kk], p, x.scale, y.scale, uncertainty)

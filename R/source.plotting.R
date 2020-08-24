@@ -77,10 +77,11 @@ plot.boxplot = function(n = 10, ylim = c(0,1), at = NULL, main = NULL,
 add.boxplot.box = function(x, y, col = 'grey', border = 'black', width = 0.7, lty = 1, lcol = 'black',
                            lwd = 1, xlwd = NULL, outliers = T, pcol = 'black', pch = 1, cex = 1) {
 
+  if (length(x) < length(y)) { x = rep(x, length(y) / length(x))}
   ## Remove NAs before they poison anything...
-  l = which(!is.na(x) | !is.na(y))
-  x = x[-l]
-  y = y[-l]
+  l = which(!is.na(x) & !is.na(y))
+  x = x[l]
+  y = y[l]
 
   ## For each unique x value
   for (xx in unique(x)) {

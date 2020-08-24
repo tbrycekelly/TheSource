@@ -150,7 +150,7 @@ calc.O2sol = function(S = 35, T = 10, verbose = F) { ## umol Kg-1
 #' @param p Pressure in db, set p=0 for potential density
 #' @references Massel 2015
 #' @export
-calc.rho = function(S = 30, T = 15, p = 0, verbose = F) {
+calc.rho = function(S = 30, T = 15, P = 0, verbose = F) {
     a.0 = 999.842594
     a.1 = 6.793953e-2
     a.2 = -9.095290e-3
@@ -175,9 +175,76 @@ calc.rho = function(S = 30, T = 15, p = 0, verbose = F) {
     if (verbose) { message(Sys.time(), ': Calculating seawater density based on in situ T, S and pressure. For potential density set p = 0 regardless of in situ pressure and provide potential temperature. Value returned is in kg m-3 with paramterization given in Massel 2015.') }
 
     rho = rho.smow + B.1 * S + C.1 * S^1.5 + d.0 * S^2
-    rho
+    rho / (1 - 0.1 * P / calc.seawater.compressibility(S, T, P/10))
 }
 
+
+#' @titel Calculate Seawater Compressibility (module)
+#' @author Thomas Bryce Kelly
+#' @param P Pressure in bar
+#' @references https://link.springer.com/content/pdf/bbm%3A978-3-319-18908-6%2F1.pdf
+calc.seawater.compressibility = function(S = 8, T = 10, P = 10, verbose = F) {
+  e0 = 19652.210000
+  e1 = 148.420600
+  e2 = -2.327105
+  e3 = 1.360477e-2
+  e4 = -5.155288e-5
+
+  Kw = e0 + e1 * T + e2 * T^2 + e3 * T^3 + e4 * T^4
+
+  f0 = 54.674600
+  f1 = -0.603459
+  f2 = 1.099870e-2
+  f3 = -6.167000e-5
+
+  F1 = f0 + f1 * T + f2 * T^2 + f3 * T^3
+
+  g0 = 7.9440e-2
+  g1 = 1.6483e-2
+  g2 = -5.3009e-4
+
+  G1 = g0 + g1 * T + g2 * T^2
+
+  ## Calculate module at surface
+  K0 = Kw + F1 * S + G1 * S^1.5
+
+  #### Pressure Correction
+  h0 = 3.23990
+  h1 = 1.43713e-3
+  h2 = 1.16092e-4
+  h3 = -5.77905e-7
+  i0 = 2.28380e-3
+  i1 = -1.09810e-5
+  i2 = -1.6078e-6
+  j0 = 1.91075e-4
+
+  Aw = h0 + h1 * T + h2 * T^2 + h3 * T^3
+  A1 = Aw + (i0 + i1 * T + i2 * T^2) * S + j0 * S^1.5
+
+  k0 = 8.50935e-5
+  k1 = -6.12293e-6
+  k2 = 5.27870e-8
+
+  m0 = -9.9348e-7
+  m1 = 2.0816e-8
+  m2 = 9.1697e-10
+
+  Bw = k0 + k1*T + k2*T^2
+  B2 = Bw + (m0 + m1*T + m2*T^2) * S
+
+  ## Module at pressure P
+  K = K0 + A1 * P + B2 * P^2
+
+  if (verbose) {
+    message('Module of compressibility for Seawater calcualted from UNESCO 1981. Check value for 8PSU, 10C, 0bar = 21351.408.')
+    message('\tKw = ', Kw)
+    message('\tA1 = ', A1)
+    message('\tB2 = ', B2)
+    message('\tK = ', K)
+  }
+
+  K
+}
 
 #' @title Calculate Adiabatic Temperature Gradient
 #' @author Thomas Bryce Kelly

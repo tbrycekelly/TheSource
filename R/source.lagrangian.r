@@ -187,6 +187,8 @@ get.vel.roms = function(lon, lat, depth, time, advection) {
 
   for (i in 1:nrow(grid)) {
     ## Find Indicies
+    delta = (advection$lon - grid$lon[i])^2 + (advection$lat - grid$lat[i])
+    x = order(delta)[1:4]
     x2 = min(which(advection$lon > grid$lon[i]))
     x1 = x2 - 1                         ## Makes assumptions about no boundaries
     y2 = max(which(advection$lat > grid$lat[i]))
