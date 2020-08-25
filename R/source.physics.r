@@ -327,7 +327,7 @@ calc.ptemp = function(S, T, P, P.ref) {
 #' @export
 calc.sigma.theta = function(S, T, P, P.ref = 0) {
     ## Potential density anomaly
-    calc.rho(S = S, T = calc.ptemp(S = S, T = T, P = P, P.ref= P.ref), p = P.ref) - 1000
+    calc.rho(S = S, T = calc.ptemp(S = S, T = T, P = P, P.ref= P.ref), P = P.ref) - 1000
 }
 
 

@@ -67,6 +67,42 @@ make.time = function (year = NULL, month = 1, day = 1, hour = 0, minute = 0, sec
   as.POSIXct(paste0(year, '-', month, '-', day, ' ', hour, ':', minute, ':', second), tz = tz)
 }
 
+#' @title Get Year
+#' @description A helper function used to pull the our information from a POSIX object.
+#' @param x An object of class POSIX or a vector containing POSIX.
+#' @export
+get.year = function (x) {
+  if (!is.POSIXct(x)) {warning('Object passed to get.year is not a POSIX.')}
+  as.POSIXlt(x)$year + 1900
+}
+
+#' @title Get Month
+#' @description A helper function used to pull the our information from a POSIX object.
+#' @param x An object of class POSIX or a vector containing POSIX.
+#' @export
+get.month = function (x) {
+  if (!is.POSIXct(x)) {warning('Object passed to get.month is not a POSIX.')}
+  as.numeric(format(x, '%m'))
+}
+
+#' @title Get Day
+#' @description A helper function used to pull the our information from a POSIX object.
+#' @param x An object of class POSIX or a vector containing POSIX.
+#' @export
+get.day = function (x) {
+  if (!is.POSIXct(x)) {warning('Object passed to get.day is not a POSIX.')}
+  as.numeric(format(x, '%d'))
+}
+
+#' @title Get Julian Day
+#' @description A helper function used to pull the our information from a POSIX object.
+#' @param x An object of class POSIX or a vector containing POSIX.
+#' @export
+get.julian = function (x) {
+  if (!is.POSIXct(x)) {warning('Object passed to get.day is not a POSIX.')}
+  as.numeric(difftime(x, make.time(year = get.year(x)), units = 'days'))
+}
+
 
 #' @title Get Hour
 #' @description A helper function used to pull the our information from a POSIX object.
