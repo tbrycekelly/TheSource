@@ -175,7 +175,7 @@ make.cex = function(x, min = 0.4, max = 4, log = FALSE, base = 10) {
 #' @param angle the angle of the hash-marks if density is given
 #' @param density the density of hash-marks on shape.
 #' @export
-add.barplot.bar = function(data, sd = NULL, x = 1, width = 0.6, col = NULL, pal = ocean.haline, rev.pal = F, border = NA,
+add.barplot.bar = function(data, sd = NULL, x = 1, width = 0.6, col = NULL, pal = 'greyscale', rev.pal = F, border = NA,
                            angle = NULL, density = NULL) {
 
   if (is.null(col)) { col = get.pal(length(data), pal = pal, rev = rev.pal) }
@@ -202,9 +202,11 @@ add.barplot.bar = function(data, sd = NULL, x = 1, width = 0.6, col = NULL, pal 
 #' @author Thomas Bryce Kelly
 #' @export
 #' @inheritParams image
-plot.image = function(x, y, z, xlab = NULL, ylab = NULL,
+plot.image = function(x = NULL, y = NULL, z, xlab = NULL, ylab = NULL,
                       xlim = NULL, ylim = NULL, zlim = NULL,
-                      pal = 'kovesi.rainbow', n = 255, rev = F, ...) {
+                      pal = 'greyscale', n = 255, rev = F, ...) {
+  if (is.null(x)) {x = 1:dim(z[1])}
+  if (is.null(x)) {x = 1:dim(z[2])}
   if (is.null(xlim)) {xlim = range(x)}
   if (is.null(ylim)) {ylim = range(y)}
   if (is.null(zlim)) {zlim = range(z)}

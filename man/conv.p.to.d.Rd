@@ -4,7 +4,14 @@
 \alias{conv.p.to.d}
 \title{Convert Pressure to Depth}
 \usage{
-conv.p.to.d(p = 10000, latitude = 30, geo.anom = 0, d = NULL, rev = FALSE)
+conv.p.to.d(
+  p = 10000,
+  latitude = 30,
+  geo.anom = 0,
+  d = NULL,
+  rev = FALSE,
+  verbose = T
+)
 }
 \arguments{
 \item{p}{Pressure in db}

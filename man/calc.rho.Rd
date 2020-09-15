@@ -4,7 +4,7 @@
 \alias{calc.rho}
 \title{Calculate Density}
 \usage{
-calc.rho(S = 30, T = 15, p = 0, verbose = F)
+calc.rho(S = 30, T = 15, P = 0, verbose = T)
 }
 \arguments{
 \item{S}{Salinity in PSU}

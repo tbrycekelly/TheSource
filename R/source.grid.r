@@ -40,9 +40,12 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL,
                          x.factor = 1, y.factor = 1,
                          x.scale = NULL, y.scale = NULL,
                          uncertainty = 1e-12, p = 3, gridder = NULL,
-                         field.names = NULL, nx = 50, ny = 50) {
+                         field.names = NULL, nx = 50, ny = 50, verbose = T) {
 
+  if (verbose) {message('BUILD.SECTION: Starting section building process (verbose = T).')}
+  time.a = Sys.time()
   z = data.matrix(z)
+
   ## Remove NAs
   l = !is.na(x) & !is.na(y) & !apply(z, 1, function(x) {any(is.na(x))})
   x = x[l]
@@ -52,14 +55,14 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL,
   if (!is.null(lon)) {lon = lon[l]}
   if (is.null(gridder)) {
     gridder = gridIDW
-    message('No gridder specified, defaulting to gridIDW. Other options: gridNN, gridNNI and gridKrige.')
+    message('BUILD.SECTION: No gridder specified, defaulting to gridIDW. Other options: gridNN, gridNNI and gridKrige.')
   }
 
 
-  if (uncertainty == 0) { warning('Uncertainty of zero may produce NAs!') }
+  if (uncertainty == 0) { warning('BUILD.SECTION: Uncertainty of zero may produce NAs!') }
   if (is.null(field.names)) {
     field.names = paste0('z', 1:ncol(z))
-    warning('No field.names provided, gridded data will be called ', paste0('z', 1:ncol(z), collapse = ','))
+    warning('BUILD.SECTION: No field.names provided, gridded data will be called ', paste0('z', 1:ncol(z), collapse = ','))
   }
 
   ## Set default limits (+10% buffer)
@@ -95,7 +98,11 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL,
   ## Make grid and fill in
   if (is.null(grid)) {
     grid = expand.grid(x = x.new, y = y.new)
+    nx = length(x.new)
+    ny = length(y.new)
+    if (verbose) {message('BUILD.SECTION: Building grid with ', nrow(grid), ' positions.')}
   } else {
+    if (verbose) {message('BUILD.SECTION: Grid parameter provided, ignoring nx, ny, xlim, ylim since we are not building a new grid.')}
     colnames(grid) = c('x', 'y')
     nx = length(unique(grid$x))
     ny = length(unique(grid$y))
@@ -106,9 +113,15 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL,
     grid$y = grid$y * y.factor
 
   }
+
+  time.b = Sys.time()
   for (kk in 1:length(field.names)) {
+    if (verbose) {message('BUILD.SECTION: Building grid for field ', field.names[kk], '  ', Sys.time(), '.')}
     grid[[field.names[kk]]] = gridder(grid$x, grid$y, x, y, z[,kk], p, x.scale, y.scale, uncertainty)
   }
+
+  time.c = Sys.time()
+
   grid$x = grid$x / x.factor
   grid$y = grid$y / y.factor
 
@@ -130,6 +143,8 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL,
               section.lon = section.lon,
               data = data.frame(x = x / x.factor, y = y / y.factor, z = z, lat = lat, lon = lon)
   )
+
+  if (verbose) {message('BUILD.SECTION Timings\n Total function time: \t ', time.c - time.a, '\n Preprocessing Time:\t', time.b - time.a, '\n Gridding Time:\t', time.c - time.b)}
   ## Return
   grid
 }
@@ -548,7 +563,7 @@ build.section.3d = function(x, y, z, zz, xlim = NULL, ylim = NULL, zlim = NULL, 
 #' @param  col.low [unimplemented] The color used when plotting out-of-range z values on the low end. Default value of '' indicates to use the minimum value of pal(). A value of NA skips the plotting of these data. Otherwise the color given is used (e.g. col.low = 'blue').
 #' @param  col.high [unimplemented] Same as col.low but for out-of-range high values.
 plot.section = function(section, field = NULL, xlim = NULL, ylim = NULL, xlab = 'x', ylab = 'y', log = FALSE, base = 10,
-                        zlim = NULL, pal='ocean.matter', rev = FALSE, include.data = FALSE, mark.points = FALSE, include.pch = 21,
+                        zlim = NULL, pal = 'greyscale', rev = FALSE, include.data = FALSE, mark.points = FALSE, include.pch = 21,
                        include.cex = 1, main = NULL, col.low = '', col.high = '', N = 255) {
 
     ## Set Defaults

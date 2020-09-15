@@ -9,7 +9,7 @@ add.colorbar(
   max,
   labels = NULL,
   ticks = NULL,
-  pal = "ocean.haline",
+  pal = "greyscale",
   rev = FALSE,
   units = "",
   col.high = "",
@@ -23,7 +23,9 @@ add.colorbar(
   cex = 1,
   cex.units = 1,
   n = 255,
-  horizontal = FALSE
+  horizontal = FALSE,
+  col.lab = "black",
+  col.tck = "darkgrey"
 )
 }
 \arguments{

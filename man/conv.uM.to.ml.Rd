@@ -4,7 +4,7 @@
 \alias{conv.uM.to.ml}
 \title{Convert Oxygen Units}
 \usage{
-conv.uM.to.ml(x, rev = FALSE, verbose = FALSE)
+conv.uM.to.ml(x, rev = FALSE, verbose = T)
 }
 \description{
 Convert Oxygen Units

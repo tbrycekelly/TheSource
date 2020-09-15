@@ -4,7 +4,7 @@
 \alias{calc.sigma.theta}
 \title{Calculate Potential Density Anomaly}
 \usage{
-calc.sigma.theta(S, T, P, P.ref = 0)
+calc.sigma.theta(S, T, P, P.ref = 0, verbose = T)
 }
 \arguments{
 \item{S}{Salinity in PSU}

@@ -4,7 +4,7 @@
 \alias{conv.cond.to.sal}
 \title{Convert Conductivity to Salinity}
 \usage{
-conv.cond.to.sal(C = 10000, T = 10)
+conv.cond.to.sal(C = 10000, T = 10, verbose = T)
 }
 \arguments{
 \item{C}{Conductivity in uS cm-1}

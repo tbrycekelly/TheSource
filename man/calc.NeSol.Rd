@@ -4,7 +4,7 @@
 \alias{calc.NeSol}
 \title{Calculate Neon Solubility}
 \usage{
-calc.NeSol(S = 35, T = 10)
+calc.NeSol(S = 35, T = 10, verbose = T)
 }
 \arguments{
 \item{S}{Salinity in PSU}

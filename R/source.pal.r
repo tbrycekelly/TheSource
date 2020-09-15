@@ -25,12 +25,7 @@
 #' @param rev A boolean used to flip the order of the colors.
 #' @import pals
 #' @export
-get.pal = function(n = 10, pal = NULL, rev = FALSE) {
-  if (is.null(pal)) {
-    message('No palette provided, default to pals::ocean.haline.')
-    pal = pals::ocean.haline
-  }
-
+get.pal = function(n = 10, pal = 'greyscale', rev = FALSE) {
   ## Get pal
   pal = do.call(pal, list(n))
   if (rev) { pal = rev(pal)}
@@ -50,7 +45,7 @@ get.pal = function(n = 10, pal = NULL, rev = FALSE) {
 #' @param rev Boolean, reverse the color pallete?
 #' @param clip boolean, remove out of range values? Defaults to False
 #' @export
-make.pal = function(x, n = 255, min = NA, max = NA, pal = NULL, rev = FALSE, clip = FALSE) {
+make.pal = function(x, n = 255, min = NA, max = NA, pal = 'greyscale', rev = FALSE, clip = FALSE) {
   cols = get.pal(n+1, pal = pal, rev = rev)
 
   if (is.na(min)) {  ## set a minimum
@@ -82,8 +77,7 @@ make.pal = function(x, n = 255, min = NA, max = NA, pal = NULL, rev = FALSE, cli
 #' @param pal The palette to be used, default tol
 #' @param rev Boolean, reverse the colors?
 #' @export
-make.qual.pal = function(x, pal = NULL, rev = FALSE) {
-  if (is.null(pal)) { warning('No palette specified, defaulting to pals::tol.')}
+make.qual.pal = function(x, pal = 'greyscale', rev = FALSE) {
   x[is.na(x)] = 'other.vals'
   ## Determine numeric values
   a = sapply(x, function(xx) {which(xx == unique(x))})
@@ -117,7 +111,7 @@ make.qual.pal = function(x, pal = NULL, rev = FALSE) {
 #' @description Add a color bar to any graphical device such as a plot or map. The color bar can be based on any color palette function and be placed either vertically or horizontally.
 #' @keywords Plotting
 #' @export
-add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'ocean.haline', rev = FALSE, units = '',
+add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'greyscale', rev = FALSE, units = '',
                         col.high = '', col.low = '', log = FALSE, base = 10, x.pos = 0.875, width = 0.05,
                         y.pos = 0.5, height = 0.8, cex = 1, cex.units = 1, n = 255, horizontal = FALSE, col.lab = 'black', col.tck = 'darkgrey') {
 

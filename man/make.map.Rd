@@ -6,10 +6,10 @@
 \usage{
 make.map(
   coast = NULL,
-  lon.min = -75,
-  lon.max = 75,
-  lat.min = -45,
-  lat.max = 45,
+  lon.min = -180,
+  lon.max = 180,
+  lat.min = -80,
+  lat.max = 80,
   p = NULL,
   land.col = "lightgray",
   grid = TRUE,

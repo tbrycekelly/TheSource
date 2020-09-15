@@ -4,7 +4,7 @@
 \alias{calc.ArSol}
 \title{Calculate Argon Solubility}
 \usage{
-calc.ArSol(S = 35, T = 10)
+calc.ArSol(S = 35, T = 10, verbose = T)
 }
 \arguments{
 \item{S}{Salinity in PSU}

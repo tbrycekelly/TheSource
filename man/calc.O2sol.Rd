@@ -4,7 +4,7 @@
 \alias{calc.O2sol}
 \title{Calcualte O2 Solubility}
 \usage{
-calc.O2sol(S = 35, T = 10, verbose = F)
+calc.O2sol(S = 35, T = 10, verbose = T)
 }
 \arguments{
 \item{S}{Salinity in PSU}

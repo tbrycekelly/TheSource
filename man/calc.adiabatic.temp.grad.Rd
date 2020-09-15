@@ -4,7 +4,7 @@
 \alias{calc.adiabatic.temp.grad}
 \title{Calculate Adiabatic Temperature Gradient}
 \usage{
-calc.adiabatic.temp.grad(S, T, P)
+calc.adiabatic.temp.grad(S, T, P, verbose = T)
 }
 \arguments{
 \item{S}{Salinity in PSU}

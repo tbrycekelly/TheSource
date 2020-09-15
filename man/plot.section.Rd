@@ -14,7 +14,7 @@ plot.section(
   log = FALSE,
   base = 10,
   zlim = NULL,
-  pal = "ocean.matter",
+  pal = "greyscale",
   rev = FALSE,
   include.data = FALSE,
   mark.points = FALSE,

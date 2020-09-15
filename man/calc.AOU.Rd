@@ -4,7 +4,7 @@
 \alias{calc.AOU}
 \title{Calculate AOU}
 \usage{
-calc.AOU(T, S, P, oxy)
+calc.AOU(T, S, P, oxy, verbose = T)
 }
 \arguments{
 \item{T}{temperature}

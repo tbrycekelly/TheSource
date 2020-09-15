@@ -128,7 +128,7 @@ load.roms = function(path) {
     time = get.roms.time(path, TRUE)
 
     #### Return object
-    list(path=path, lat=lat, lon=lon, grid=grid, depth= function(x) {-get.zlevel.roms(x, hc, theta, N=N)},
+    list(path=path, lat=lat, lon=lon, grid=grid, depth= function(x) {-get.zlevel.roms(x, hc, theta, N=N)}, z = z,
          h=h, u=u, v=v, w=w, AKt=AKt, T=temp, rho=rho, S=salt, time=time)
 }
 
@@ -162,7 +162,7 @@ load.ltrans = function(path, roms.path, backward = TRUE) {
     rt = conv.time.roms(rt, tz='GMT')
 
     ## Return
-    model = list(file = path, lat = lat, lon = lon, sal = S, temp = T, n.times = length(model.time),
+    list(file = path, lat = lat, lon = lon, sal = S, temp = T, n.times = length(model.time),
                  age = age, dob = dob, depth = depth, time = model.time, n.particles = length(lon[,1]),
                  roms.times = rt)
 }
@@ -170,12 +170,18 @@ load.ltrans = function(path, roms.path, backward = TRUE) {
 
 #' @title Get ROMS z-levels
 #' @author Thomas Bryce Kelly
-get.zlevel.roms = function(h, hc, theta, b=0.6, N) {
+get.zlevel.roms = function(h, hc, theta, b = 0.6, N) {
+    z = array(NA, dim = c(dim(h), N))
     ds = 1 / N
     s = seq(-1 + ds/2, -ds/2, by = ds)
     A = sinh(theta * s) / sinh(theta)
     B = (tanh(theta * (s + 0.5)) - tanh(theta * 0.5)) / (2 * tanh(theta * 0.5))
     C = (1 - b) * A + b * B
 
-    hc * s + (h - hc) * C
+    for (i in 1:dim(h)[1]) {
+        for (j in 1:dim(h)[2]) {
+            z[i,j,] = hc * s + (h[i,j] - hc) * C
+        }
+    }
+    z
 }

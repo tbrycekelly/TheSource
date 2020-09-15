@@ -5,15 +5,15 @@
 \title{Plot Image}
 \usage{
 plot.image(
-  x,
-  y,
+  x = NULL,
+  y = NULL,
   z,
   xlab = NULL,
   ylab = NULL,
   xlim = NULL,
   ylim = NULL,
   zlim = NULL,
-  pal = kovesi.rainbow,
+  pal = "greyscale",
   n = 255,
   rev = F,
   ...

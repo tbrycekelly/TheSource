@@ -4,7 +4,7 @@
 \alias{make.qual.pal}
 \title{Make Qualitative Palette}
 \usage{
-make.qual.pal(x, pal = NULL, rev = FALSE)
+make.qual.pal(x, pal = "greyscale", rev = FALSE)
 }
 \arguments{
 \item{x}{The categorical values to be colored}

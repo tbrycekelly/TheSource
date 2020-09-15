@@ -4,7 +4,7 @@
 \alias{calc.k}
 \title{Calculate k}
 \usage{
-calc.k(u, SST)
+calc.k(u, SST, verbose = T)
 }
 \description{
 Calculate k (aka piston velocity) for a given windspeed and water temperature.

@@ -4,7 +4,15 @@
 \alias{make.pal}
 \title{Make Pal}
 \usage{
-make.pal(x, n = 255, min = NA, max = NA, pal = NULL, rev = FALSE, clip = FALSE)
+make.pal(
+  x,
+  n = 255,
+  min = NA,
+  max = NA,
+  pal = "greyscale",
+  rev = FALSE,
+  clip = FALSE
+)
 }
 \arguments{
 \item{x}{the values to be color coded}

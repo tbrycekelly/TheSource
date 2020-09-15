@@ -4,7 +4,7 @@
 \alias{calc.pref.PO4}
 \title{Calculate Preformed Phosphate}
 \usage{
-calc.pref.PO4(AOU, PO4, R = 1/175)
+calc.pref.PO4(AOU, PO4, R = 1/175, verbose = T)
 }
 \description{
 Calculate Preformed Phosphate

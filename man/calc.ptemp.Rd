@@ -4,7 +4,7 @@
 \alias{calc.ptemp}
 \title{Calculate Potential Temperature}
 \usage{
-calc.ptemp(S, T, P, P.ref)
+calc.ptemp(S, T, P, P.ref, verbose = T)
 }
 \arguments{
 \item{S}{Salinity in PSU}

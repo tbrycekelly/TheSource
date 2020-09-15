@@ -4,7 +4,7 @@
 \alias{conv.watt.to.einstein}
 \title{Convert Light Units}
 \usage{
-conv.watt.to.einstein(x)
+conv.watt.to.einstein(x, verbose = T)
 }
 \description{
 (6.02e23 quanta/Ein) / (86,400 seconds/day * 2.77e18 quanta/s/W)

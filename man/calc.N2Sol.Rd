@@ -4,7 +4,7 @@
 \alias{calc.N2Sol}
 \title{Calculate N2 Solubility}
 \usage{
-calc.N2Sol(S = 35, T = 10)
+calc.N2Sol(S = 35, T = 10, verbose = T)
 }
 \arguments{
 \item{S}{Salinity (numeric or a vector) in PSU}

@@ -569,23 +569,57 @@ calc.r.squared = function(x, y){
 #' @author Thomas Bryce Kelly
 #' @export
 is.inside = function(pos, box, verbose = FALSE) {
-  d = rep(0, nrow(box))
-  ## first line
-  n = nrow(box)
-  a = (box[1,1] - box[n,1]) * (pos[2] - box[n,2])
-  b = (box[1,2] - box[n,2]) * (pos[1] - box[n,1])
-  d[1] = a-b
-
-  for (k in 2:nrow(box)) {
-    a = (box[k,1] - box[k-1,1]) * (pos[2] - box[k-1,2])
-    b = (box[k,2] - box[k-1,2]) * (pos[1] - box[k-1,1])
-    d[k] = a-b
+  if (!is.data.frame(pos)) {
+    warning('`pos` does not appear to be a dataframe. Make sure it is. Attempting to fix...')
+    pos = as.data.frame(matrix(pos, ncol = 2))
+  }
+  if (!is.data.frame(box)) {
+    warning('`box` does not appear to be a dataframe. Make sure it is. Attempting to fix...')
+    box = as.data.frame(matrix(box, ncol = 2))
   }
 
-  if (verbose) { print(d)}
-  if(all(d > -1e-12)) {return(TRUE)}
-  if(all(d < 1e-12)) {return(TRUE)}
-  return(FALSE)
+  ans = rep(F, nrow(pos))
+
+  if (verbose) { message('Results:\tPoint \t\tInside?\tCount')}
+  for (i in 1:nrow(pos)) {
+
+    ## Transform so that test point is at origin:
+    x.poly = box[,1] - pos[i,1]
+    y.poly = box[,2] - pos[i,2]
+    count = 0
+
+    ## Slopes of all line segments
+    ## m[1] = (y2 - y1) / (x2 - x1)
+    m = c(diff(y.poly), y.poly[length(y.poly)] - y.poly[1]) / c(diff(x.poly), x.poly[length(x.poly)] - x.poly[1])
+
+    ## x.intercept[1] = -y[1] / m[1] + x[1]
+    x.intercept = -y.poly / m + x.poly
+
+    for (j in 2:length(x.poly)) {
+      ## if max(y.poly[2], y.poly[1]) >= 0
+      if (max(y.poly[c(j,j-1)]) > 0 & ## one point is at or above x axis
+          min(y.poly[c(j,j-1)]) <= 0 & ## one point is at or below x axis
+          min(y.poly[c(j,j-1)]) != max(y.poly[c(j,j-1)]) & ## But both points are not on the x axis
+          !is.na(x.intercept[j-1]) & ## and the x intercept is not NA (removes parallel lines)
+          x.intercept[j-1] >= 0) { ## but the x intercept is to the right of the origin (only count in one direction)
+        count = count + 1
+      }
+    }
+    ## Close figure
+    if (max(y.poly[c(1,length(x.poly))]) > 0 &
+        min(y.poly[c(1,length(x.poly))]) <= 0 &
+        max(y.poly[c(1,length(x.poly))]) != min(y.poly[c(1,length(x.poly))]) &
+        !is.na(x.intercept[length(x.poly)]) &
+        x.intercept[length(x.poly)] >= 0) {
+      count = count + 1
+    }
+
+    ans[i] = count %% 2 == 1
+    if (any(x.poly == 0 & y.poly == 0)) {ans[i] = 1}
+    if (verbose) { message('\t\t(', format(pos[i,1], digits = 2), ',', format(pos[i,2], digits = 2), ')\t\t', ans[i], '\t', count )}
+  }
+  if (verbose) { message(); message('Number of points inside:\t', length(which(ans)), ' (', format(length(which(ans)) / length(ans), digits = 3),')')}
+  ans
 }
 
 

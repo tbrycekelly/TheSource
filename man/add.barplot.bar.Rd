@@ -10,7 +10,7 @@ add.barplot.bar(
   x = 1,
   width = 0.6,
   col = NULL,
-  pal = ocean.haline,
+  pal = "greyscale",
   rev.pal = F,
   border = NA,
   angle = NULL,

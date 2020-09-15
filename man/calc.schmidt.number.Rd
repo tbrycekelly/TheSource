@@ -4,7 +4,7 @@
 \alias{calc.schmidt.number}
 \title{Calculate Schmidt Number}
 \usage{
-calc.schmidt.number(SST)
+calc.schmidt.number(SST, verbose = T)
 }
 \arguments{
 \item{SST}{Water temperature in degree centigrade}

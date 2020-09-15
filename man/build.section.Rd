@@ -10,6 +10,7 @@ build.section(
   z,
   lat = NULL,
   lon = NULL,
+  grid = NULL,
   xlim = NULL,
   ylim = NULL,
   x.factor = 1,
@@ -21,7 +22,8 @@ build.section(
   gridder = NULL,
   field.names = NULL,
   nx = 50,
-  ny = 50
+  ny = 50,
+  verbose = T
 )
 }
 \arguments{

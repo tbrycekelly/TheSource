@@ -4,7 +4,7 @@
 \alias{calc.POstar}
 \title{Calculate Phosphate Star (PO4Star)}
 \usage{
-calc.POstar(Oxy, PO4, R = 1/175)
+calc.POstar(Oxy, PO4, R = 1/175, verbose = T)
 }
 \description{
 Calculate Phosphate Star (PO4Star)

@@ -4,7 +4,7 @@
 \alias{calc.k.reuer}
 \title{Calculate k (Reuer)}
 \usage{
-calc.k.reuer(time, wtime, wspeed, mld, SST, teeter.mod = TRUE)
+calc.k.reuer(time, wtime, wspeed, mld, SST, teeter.mod = TRUE, verbose = T)
 }
 \arguments{
 \item{time}{the time at which you are calculating k for}
