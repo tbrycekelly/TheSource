@@ -362,7 +362,7 @@ add.error.bars.logy = function(x, s.x, y, s.y, base, col = 'black') {
 #' @param color.minor the color for the minor ticks and grid (if specified)
 #' @param grid boolean, draw grid?
 #' @export
-add.log.axis = function(side = 1, labels = NULL, at = NULL, base = 10, col = 'black', color.minor = 'grey', grid = F, grid.major = F) {
+add.log.axis = function(side = 1, labels = NULL, at = NULL, base = 10, col = 'black', color.minor = 'grey', grid = F, grid.major = F, ...) {
 
   k.small = c(1:(base-1))
     k = c()
@@ -374,8 +374,8 @@ add.log.axis = function(side = 1, labels = NULL, at = NULL, base = 10, col = 'bl
   w = c(2, rep(1, base-2))
   w = rep(w, length(k/length(w)))
 
-  axis(side = side, at = log(k, base), tick = T, labels = rep('', length(k)), col = color.minor)
-  axis(side = side, at = log(k[w>1], base), labels = k[w > 1], col = col)
+  axis(side = side, at = log(k, base), tick = T, labels = rep('', length(k)), col = color.minor, ...)
+  axis(side = side, at = log(k[w>1], base), labels = k[w > 1], col = col, ...)
 
   if (grid & (side == 1 | side == 3)) {
     abline(v = log(k, base), col = color.minor, lty = 3)
