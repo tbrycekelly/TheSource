@@ -641,10 +641,10 @@ TheSource.update = function() {
 
 
 #' @title Get version of TheSource
-#'
+#' @author Thomas Bryce Kelly
 #' @export
 TheSource.version = function() {
-  '0.2.7'
+  '0.2.8'
 }
 
 

@@ -362,12 +362,14 @@ add.error.bars.logy = function(x, s.x, y, s.y, base, col = 'black') {
 #' @param color.minor the color for the minor ticks and grid (if specified)
 #' @param grid boolean, draw grid?
 #' @export
-add.log.axis = function(side = 1, base = 10, col = 'black', color.minor = 'grey', grid = F, grid.major = F) {
+add.log.axis = function(side = 1, labels = NULL, at = NULL, base = 10, col = 'black', color.minor = 'grey', grid = F, grid.major = F) {
+
   k.small = c(1:(base-1))
-  k = c()
-  for (i in c(-10:10)) {
-    k = c(k, k.small * base^(i))
-  }
+    k = c()
+    for (i in c(-10:10)) {
+      k = c(k, k.small * base^(i))
+    }
+
 
   w = c(2, rep(1, base-2))
   w = rep(w, length(k/length(w)))
@@ -388,3 +390,41 @@ add.log.axis = function(side = 1, base = 10, col = 'black', color.minor = 'grey'
     abline(h = log(k[w>1], base), col = color.minor, lty = 3)
   }
 }
+
+
+#' @title Exaggerate (Transform) Data for plotting
+#' @author Thomas Bryce Kelly
+#' @param x data values to be transformed (e.g. depth)
+#' @param power a positive value, typically less than 1, which is the exponent of the transformation (default = 0.8)
+#' @param ... optional values that are passed onto axis()
+add.exaggerated.axis = function(side, power = 0.8, at = NULL, labels = NULL, grid = F, ...) {
+  if (is.null(at)) {
+    if (side == 1 | side == 3) {
+      at = pretty(pmax(0, par('usr')[1:2])^(1/power))
+    } else {
+      at = pretty(pmax(0, par('usr')[3:4])^(1/power))
+    }
+  }
+
+  if (is.null(labels)) { labels = at }
+
+  ## Transform
+  at = at ^ power
+
+  axis(side = side, at = at, labels = labels, ...)
+}
+
+
+#' @title Exaggerate (Transform) Data for plotting
+#' @author Thomas Bryce Kelly
+#' @param x data values to be transformed (e.g. depth)
+#' @param power a positive value, typically less than 1, which is the exponent of the transformation (default = 0.8)
+exaggerate = function(x, power = 0.8) {
+  x^power
+}
+
+par(plt = c(0.3,0.7,0.2,0.9))
+plot(runif(3e3), exaggerate(1:3e3), yaxt = 'n', ylim = c(3e3, 0)^0.8)
+add.exaggerated.axis(4)
+
+

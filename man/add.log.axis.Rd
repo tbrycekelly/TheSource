@@ -6,6 +6,8 @@
 \usage{
 add.log.axis(
   side = 1,
+  labels = NULL,
+  at = NULL,
   base = 10,
   col = "black",
   color.minor = "grey",
