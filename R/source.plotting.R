@@ -362,32 +362,45 @@ add.error.bars.logy = function(x, s.x, y, s.y, base, col = 'black') {
 #' @param color.minor the color for the minor ticks and grid (if specified)
 #' @param grid boolean, draw grid?
 #' @export
-add.log.axis = function(side = 1, labels = NULL, at = NULL, base = 10, col = 'black', color.minor = 'grey', grid = F, grid.major = F, ...) {
-
-  k.small = c(1:(base-1))
-    k = c()
-    for (i in c(-10:10)) {
-      k = c(k, k.small * base^(i))
+add.log.axis = function(side = 1, at = NULL, labels = NULL, ticks = T, base = 10, col = 'black', color.minor = 'grey', grid = F, grid.major = F, ...) {
+  at.default = c(-30:30)
+  if(is.null(at)) {
+    at = at.default
+    if (ticks) {
+      ticks = rep(1:(base-1), length(at)) * base^as.numeric(sapply(at, function(x) {rep(x, base-1)}))
     }
+  } else {
+    at = log(at, base)
+    if (ticks) {
+      ticks = rep(1:(base-1), length(at.default)) * base^as.numeric(sapply(at.default, function(x) {rep(x, base-1)}))
+    }
+  }
 
+  ## If True, setup ticks for each power of the base
+  if (ticks) {
+    ticks = rep(1:(base-1), length(at)) * base^as.numeric(sapply(at, function(x) {rep(x, base-1)}))
+  }
 
-  w = c(2, rep(1, base-2))
-  w = rep(w, length(k/length(w)))
+  ## Default labels are just the transformed values
+  if (is.null(labels)) {
+    labels = base^at
+  }
 
-  axis(side = side, at = log(k, base), tick = T, labels = rep('', length(k)), col = color.minor, ...)
-  axis(side = side, at = log(k[w>1], base), labels = k[w > 1], col = col, ...)
+  ## Draw Axis
+  axis(side = side, at = log(ticks, base), tick = T, labels = F, col = color.minor, ...)
+  axis(side = side, at = at, labels = labels, col = col, ...)
 
   if (grid & (side == 1 | side == 3)) {
-    abline(v = log(k, base), col = color.minor, lty = 3)
+    abline(v = ticks, col = color.minor, lty = 3)
   }
   if (grid & (side == 2 | side == 4)) {
-    abline(h = log(k, base), col = color.minor, lty = 3)
+    abline(h = ticks, col = color.minor, lty = 3)
   }
   if (grid.major & (side == 1 | side == 3)) {
-    abline(v = log(k[w>1], base), col = color.minor, lty = 3)
+    abline(v = at, col = color.minor, lty = 3)
   }
   if (grid.major & (side == 2 | side == 4)) {
-    abline(h = log(k[w>1], base), col = color.minor, lty = 3)
+    abline(h = at, col = color.minor, lty = 3)
   }
 }
 

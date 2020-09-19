@@ -6,13 +6,15 @@
 \usage{
 add.log.axis(
   side = 1,
-  labels = NULL,
   at = NULL,
+  labels = NULL,
+  ticks = T,
   base = 10,
   col = "black",
   color.minor = "grey",
   grid = F,
-  grid.major = F
+  grid.major = F,
+  ...
 )
 }
 \arguments{

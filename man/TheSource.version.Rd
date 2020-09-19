@@ -9,3 +9,6 @@ TheSource.version()
 \description{
 Get version of TheSource
 }
+\author{
+Thomas Bryce Kelly
+}
