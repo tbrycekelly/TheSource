@@ -572,7 +572,7 @@ plot.section = function(section, field = NULL, xlim = NULL, ylim = NULL, xlab = 
       field = colnames(section$grid)[3]
       warning('No field name provided, using first gridded data: ', field)
     }
-    if (is.null(zlim)) { zlim = range(as.numeric(section$grid[,field]), na.rm = TRUE) }
+    if (is.null(zlim)) { zlim = range(pretty(as.numeric(section$grid[,field]), na.rm = TRUE)) }
     if (is.null(main)) { main = field }
     if (is.null(xlim)) { xlim = range(section$x)}
     if (is.null(ylim)) { ylim = range(section$y) }

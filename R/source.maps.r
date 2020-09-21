@@ -239,7 +239,7 @@ add.map.layer = function(lon, lat, z, zlim = NULL, pal = 'ocean.algae', col.na =
     }
   }
 
-  if (is.null(zlim)) { zlim = range(as.numeric(z), na.rm = TRUE) }
+  if (is.null(zlim)) { zlim = range(pretty(as.numeric(z), na.rm = TRUE)) }
 
   if (!is.na(refinement) & refinement > 0) {
     for (i in 1:refinement) {
