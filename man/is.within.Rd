@@ -9,7 +9,7 @@ is.within(x, bounds)
 \arguments{
 \item{x}{A vector of any type with strict ordering (i.e. where '>' or '<' are valid operators).}
 
-\item{bounds}{A vector of either two entries, where bounds[1] is the lower bound and bounds[2] is the upper, or a data.frame of two columns.}
+\item{bounds}{A vector of two entries, where bounds[1] is the lower bound and bounds[2] is the upper.}
 }
 \description{
 Filter a vector of entries with fall between a set of bounds (i.e. on a closed interval).

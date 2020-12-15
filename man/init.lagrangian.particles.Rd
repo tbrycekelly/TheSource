@@ -9,9 +9,9 @@ init.lagrangian.particles(
   lat = NA,
   depth = NA,
   time = NA,
-  sink = NULL,
-  const.depth = NULL,
-  density = NULL,
+  sink = NA,
+  const.depth = NA,
+  density = NA,
   verbose = T
 )
 }

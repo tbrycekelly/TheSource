@@ -11,6 +11,7 @@ build.section(
   lat = NULL,
   lon = NULL,
   grid = NULL,
+  weight = NULL,
   xlim = NULL,
   ylim = NULL,
   x.factor = 1,

@@ -1,7 +1,7 @@
 Package: TheSource
 Type: Package
 Title: TheSource: It Will Hold Your Beer
-Version: 0.2.9
+Version: 0.3.0
 Author:
   Thomas Bryce Kelly <tbk14@fsu.edu> <http://tkelly.org>
   Laura Whitmore <laura.whitmore@usm.edu> <http://whitmorescience.com/>
@@ -32,3 +32,5 @@ Imports:
   rgdal,
   devtools
 URL: https://github.com/tbrycekelly/TheSource
+Suggests: 
+    testthat

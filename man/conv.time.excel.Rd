@@ -16,6 +16,10 @@ conv.time.excel(x, tz = "GMT", rev = FALSE)
 \description{
 Helper function for converting the datetime stamps from Microsoft Excel.
 }
+\examples{
+conv.time.excel(42550)
+conv.time.excel(conv.time.excel(42550), rev = T)
+}
 \author{
 Thomas Bryce Kelly
 }

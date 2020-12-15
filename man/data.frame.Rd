@@ -7,7 +7,7 @@
 data.frame(...)
 }
 \description{
-Make dataframe
+A helpful wrapper to the base data.frame function which provides column indexes upon mismatched lengths.
 }
 \author{
 Thomas Bryce Kelly

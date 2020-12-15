@@ -4,7 +4,7 @@
 \alias{load.advection.roms}
 \title{Load in ROMS Advection}
 \usage{
-load.advection.roms(path, verbose = F)
+load.advection.roms(path, lats = NULL, lons = NULL, verbose = T)
 }
 \arguments{
 \item{path}{ROMS file (includign path) to read in}

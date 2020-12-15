@@ -391,10 +391,10 @@ add.log.axis = function(side = 1, at = NULL, labels = NULL, ticks = T, base = 10
   axis(side = side, at = at, labels = labels, col = col, ...)
 
   if (grid & (side == 1 | side == 3)) {
-    abline(v = ticks, col = color.minor, lty = 3)
+    abline(v = log(ticks, base), col = color.minor, lty = 3)
   }
   if (grid & (side == 2 | side == 4)) {
-    abline(h = ticks, col = color.minor, lty = 3)
+    abline(h = log(ticks, base), col = color.minor, lty = 3)
   }
   if (grid.major & (side == 1 | side == 3)) {
     abline(v = at, col = color.minor, lty = 3)

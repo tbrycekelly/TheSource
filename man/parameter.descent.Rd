@@ -2,7 +2,7 @@
 % Please edit documentation in R/source.optimization.R
 \name{parameter.descent}
 \alias{parameter.descent}
-\title{A Gradient Descent Algorithm}
+\title{Parameter Search}
 \usage{
 parameter.descent(
   cost,
@@ -12,7 +12,8 @@ parameter.descent(
   max.iter = 1e+06,
   progression = NULL,
   step = 1e-06,
-  tol = 1e-18
+  tol = 1e-18,
+  verbose = T
 )
 }
 \arguments{

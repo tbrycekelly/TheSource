@@ -22,13 +22,24 @@ t## Set of useful R functions for optimization problems
 #' @param splits The number of subdivisions to perform for each dimension (so grid size is n x splits ^ dimensionality)
 #' @param progression The size of the new search-space to interrogate. A value between 1 and splits/2. Default value (NULL) will yeield a progression of max(1, splits/4), good for most problems.
 #' @export
-parameter.search = function(n, cost, grid = NULL, ..., bounds, splits = 10, progression = NULL) {
+parameter.search = function(n, cost, grid = NULL, bounds, splits = 10, progression = NULL, verbose = T, ...) {
+
+  if (verbose){
+    message('Starting Parameter Search')
+    message('Parameter search is an iterative grid search algorithm that seeks the parameters that minimize\nan objective cost function given a set of parameter bounds.')
+  }
+
+  ## Init Timer
+  a = Sys.time()
 
   if (splits <= 2) { stop('splits argument must be an integer greater than or equal to 3!')}
-  if(is.null(progression)) { progression = max(1, ceiling(splits / 4))}
+  if(is.null(progression)) {
+    progression = max(1, ceiling(splits / 4))
+    if (verbose) { message(' No Progresssion given, default to:\t', progression) }
+  }
 
   splits = round(splits)
-
+  if (verbose) {message(' Number of splits set to:\t\t', splits)}
   ## How many dimensions
   dim = nrow(bounds)
 
@@ -50,7 +61,15 @@ parameter.search = function(n, cost, grid = NULL, ..., bounds, splits = 10, prog
   }
   grid$cost = NA
 
+  if (verbose) {
+    message(' Mimimum bounds provided for ', paste(colnames(grid)[-ncol(grid)], collapse = ', '), ' are: ',
+            paste(bounds[,1], collapse = ', '))
+    message(' Maximum bounds provided for ', paste(colnames(grid)[-ncol(grid)], collapse = ', '), ' are: ',
+            paste(bounds[,2], collapse = ', '))
+  }
+
   ## Calculate cost function at each grid location
+  best = Inf
   for (i in 1:nrow(grid)) {
     args = as.list(grid[i, 1:dim])
     names(args) = argnames[1:length(args)]
@@ -58,6 +77,9 @@ parameter.search = function(n, cost, grid = NULL, ..., bounds, splits = 10, prog
 
     #if (length(args) > length(formalArgs(cost))) { stop('Number of function arguments exceeds what function is expecting.') }
     grid$cost[i] = do.call(cost, args) # cost(grid[i, 1:dim])
+    if (verbose & grid$cost[i] < best) {
+      message(Sys.time(), ': New optimal parameter set found for n = ', n,': ', paste(grid[i,], collapse = ', '))
+    }
   }
 
   ## Best grid location
@@ -75,7 +97,7 @@ parameter.search = function(n, cost, grid = NULL, ..., bounds, splits = 10, prog
     }
 
     ## Call parameter.search recursively
-    res = parameter.search(n-1, cost, ..., bounds = bounds.new, splits = splits, progression = progression)
+    res = parameter.search(n-1, cost, ..., bounds = bounds.new, splits = splits, progression = progression, verbose = F)
     res$history = rbind(res$history, grid[l,])
     res$full.grid = rbind(res$full.grid, grid)
   }
@@ -306,7 +328,7 @@ parameter.anneal = function (n, cost, ..., bounds, progression = NULL, max.iter 
 #' @param splits The number of subdivisions to perform for each dimension (so grid size is n x splits ^ dimensionality)
 #' @param progression The size of the new search-space to interrogate. A value between 1 and splits/2. Default value (NULL) will yeield a progression of max(1, splits/4), good for most problems.
 #' @export
-parameter.descent = function(cost, guess = NULL, ..., bounds = NULL, max.iter = 1e6, progression = NULL, step = 1e-6, tol = 1e-18) {
+parameter.descent.old = function(cost, guess = NULL, ..., bounds = NULL, max.iter = 1e6, progression = NULL, step = 1e-6, tol = 1e-18) {
 
   ## Determine cost function arguemnts
   argnames = formalArgs(cost)
@@ -367,6 +389,108 @@ parameter.descent = function(cost, guess = NULL, ..., bounds = NULL, max.iter = 
 
   ## Return
   list(min = hist[nrow(hist),], bounds = bounds, guess = hist[1,], history = hist)
+}
+
+#' @title Parameter Search
+#' @author Thomas Bryce Kelly
+#' @description Implements a recursive grid search routine to solve optimization problems in arbitrary dimensions.
+#' @param n Number of recursions to perform
+#' @param cost The cost function which must return a numeric value and accept parameter values as the first arguments and in the order they are provided.
+#' @param ... Optional argument that is passed directly onto the cost function
+#' @param bounds A dataframe containing the minimum and maximum values permitted of each parameter
+#' @param splits The number of subdivisions to perform for each dimension (so grid size is n x splits ^ dimensionality)
+#' @param progression The size of the new search-space to interrogate. A value between 1 and splits/2. Default value (NULL) will yeield a progression of max(1, splits/4), good for most problems.
+#' @export
+parameter.descent = function(cost, guess = NULL, ..., bounds = NULL, max.iter = 1e6, progression = NULL, step = 1e-6, tol = 1e-18, verbose = T) {
+
+  if (verbose){
+    message('Starting Parameter Descent')
+    message('Parameter search is an iterative grid search algorithm that seeks the parameters that minimize\nan objective cost function given a set of parameter bounds.')
+  }
+
+  ## Init Timer
+  a = Sys.time()
+
+  ## How many dimensions
+  argnames = formalArgs(cost)
+  argnames = argnames[!argnames %in% names(list(...))] # don't include arguments passed through elipsis
+  dim = length(argnames)
+
+  ## Setup simplex
+  b = array(NA, dim = c(dim+1, dim))
+  if (!is.null(guess)) {
+    if (length(guess) == dim) {
+      b[1,] = guess
+    } else {
+      message('Improper guess provided, ignoring.')
+      b[1,] = 0 ## default is to start at origin.
+    }
+  } else {
+    b[1,] = 0 ## default is to start at origin.
+  }
+
+  for (i in 1:dim) {
+    b[i+1,] = b[1] + 0.0005
+    b[i+1,i] = b[1,i] + 0.05 ##
+  }
+
+  history = as.data.frame(b)
+  history$cost = NA
+
+  for (i in 1:max.iter) {
+    ## Calculate cost function at each grid location
+    for (i in which(is.na(history$cost))) {
+      args = as.list(b[i,])
+      names(args) = argnames[1:length(args)]
+      args = c(args, list(...))
+
+      #if (length(args) > length(formalArgs(cost))) { stop('Number of function arguments exceeds what function is expecting.') }
+      history$cost[i] = do.call(cost, args) # cost(grid[i, 1:dim])
+    }
+
+    ## Order points
+    l = order(history$cost, decreasing = T)
+    history = history[l,]
+    b = b[l,]
+
+    ## Add reflected point
+    centroid = colMeans(b[-1,])
+    test.point = centroid + 1 * (centroid - b[1,]) ## Refelcted point
+
+    ## Calcualte cost
+    args = as.list(b[nrow(b),])
+    names(args) = argnames[1:length(args)]
+    args = c(args, list(...))
+    test.score = do.call(cost, args) # cost(grid[i, 1:dim])
+
+
+    ## Expansion
+    if (max(history$cost) > test.score) {
+      b[1,] = centroid + 2 * (test.point - centroid) ## Replace worse case
+      args = as.list(b[1,])
+      names(args) = argnames[1:length(args)]
+      args = c(args, list(...))
+      test.score2 = do.call(cost, args) # cost(grid[i, 1:dim])
+      if (test.score2 < test.score) {
+        history[1,] = c(b[1,], test.score2)
+      } else {
+        b[1, ] = test.point
+        history[1,] = c(b[1,], test.score)
+      }
+
+    } else {
+      ## Contraction
+      b[1,] = centroid + 0.5 * (b[1,] - centroid) ## replace refelcted point
+      args = as.list(b[1,])
+      names(args) = argnames[1:length(args)]
+      args = c(args, list(...))
+      history[1,] = c(b[1,], do.call(cost, args))
+    }
+  }
+  res = list(min = history[which.min(history$cost),], history = history)
+
+  ## Return
+  res
 }
 
 

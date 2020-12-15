@@ -211,6 +211,44 @@ add.map.points = function(stn.lon, stn.lat, col = 'black', cex = 1, pch = 16){
   mapPoints(stn.lon, stn.lat, col = col, cex = cex, pch = pch)
 }
 
+
+#' @title Bilinear Interpolation of a Grid
+#' @author Thomas Bryce Kelly
+#' @export
+bilinearInterp = function(x, y, gx, gy, z) {
+  z.out = rep(0, length(x))
+
+  for (i in 1:length(x)) {
+    x1 = max(0, which(gx <= x[i]))
+    x2 = x1 + 1
+    y1 = max(0, which(gy <= y[i]))
+    y2 = y1 + 1
+
+    wx1 = (gx[x2] - x[i]) / (gx[2] - gx[1])
+    wy1 = (gy[y2] - y[i]) / (gy[2] - gy[1])
+
+
+    if (x1 == 0) {
+      x1 = 1
+      wx1 = 1
+    }
+    if (y1 == 0) {
+      y1 = 1
+      wy1 = 1
+    }
+    if(x1 == length(gx)) {
+      x2 = x1
+      wx1 = 1
+    }
+    if(y1 == length(gy)) {
+      y2 = y1
+      wy1 = 1
+    }
+    z.out[i] = wy1 * (wx1 * z[x1, y1] + (1 - wx1) * z[x2,y1]) + (1 - wy1) * (wx1 * z[x1, y2] + (1 - wx1) * z[x2,y2])
+  }
+  z.out
+}
+
 #' @title Add Map Layer
 #' @description  Add a image layer to the map!
 #' @author Thomas Bryce Kelly
@@ -226,6 +264,7 @@ add.map.points = function(stn.lon, stn.lat, col = 'black', cex = 1, pch = 16){
 add.map.layer = function(lon, lat, z, zlim = NULL, pal = 'ocean.algae', col.na = NA, n = 255, refinement = NA,
                          col.low = NA, col.high = NA, rev = FALSE, filled = FALSE, indicate = TRUE, verbose = FALSE) {
 
+  lon = lon %% 360
   if(is.null(ncol(lon)) & is.null(ncol(lat))) {
     nn = length(unique(lon))
     mm = length(unique(lat))
@@ -245,12 +284,16 @@ add.map.layer = function(lon, lat, z, zlim = NULL, pal = 'ocean.algae', col.na =
     for (i in 1:refinement) {
       lat.old = lat
       lon.old = lon
-      lat = seq(min(lat), max(lat), length.out = length(lat) * 2)
-      lon = seq(min(lon), max(lon), length.out = length(lon) * 2)
+      lat = seq(lat[1], lat[length(lat)], length.out = length(lat) * 2)
+      lon = seq(lon[1], lon[length(lon)], length.out = length(lon) * 2)
 
-      grid = expand.grid(lat = lat, lon = lon)
-      z = oce::bilinearInterp(grid$lat, grid$lon, lat.old, lon.old, t(z))
-      z = t(matrix(z, nrow = length(lat), ncol = length(lon)))
+      #grid = expand.grid(lat = lat, lon = lon)
+      #z = oce::bilinearInterp(grid$lat, grid$lon, lat.old, lon.old, t(z))
+      #z = t(matrix(z, nrow = length(lat), ncol = length(lon)))
+
+      grid = expand.grid(lon = lon, lat = lat)
+      z = bilinearInterp(grid$lon * sign(lon[2] - lon[1]), grid$lat * sign(lat[2] - lat[1]), lon.old * sign(lon[2] - lon[1]), lat.old * sign(lat[2] - lat[1]), z)
+      z = matrix(z, nrow = length(lon), ncol = length(lat))
     }
   }
 

@@ -35,7 +35,7 @@
 #' @param gridder A function to perform gridding, options gridIDW (default: inverse distance), gridNN (nearest neighbor), gridNNI (natural neighbor) or gridKrige (Krigging)
 #' @param nx The number of splits to make in the x direction (defaults to 50). Used only if x.scale is not set.
 #' @param ny The number of splits to make in the y direction (defaults to 50). Used only if y.scale is not set.
-build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL,
+build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = NULL,
                          xlim = NULL, ylim = NULL,
                          x.factor = 1, y.factor = 1,
                          x.scale = NULL, y.scale = NULL,
@@ -51,6 +51,7 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL,
   x = x[l]
   y = y[l]
   z = data.matrix(z[l,])
+  if (is.null(weight)) {weight = matrix(0, nrow = nrow(z), ncol = ncol(z))}
   if (!is.null(lat)) {lat = lat[l]}
   if (!is.null(lon)) {lon = lon[l]}
   if (is.null(gridder)) {
@@ -100,12 +101,14 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL,
     grid = expand.grid(x = x.new, y = y.new)
     nx = length(x.new)
     ny = length(y.new)
-    if (verbose) {message('BUILD.SECTION: Building grid with ', nrow(grid), ' positions.')}
+    if (verbose) {message('BUILD.SECTION: Building grid with ', nrow(grid), ' positions and ', length(z), ' observations.')}
   } else {
-    if (verbose) {message('BUILD.SECTION: Grid parameter provided, ignoring nx, ny, xlim, ylim since we are not building a new grid.')}
+    if (verbose) {message('BUILD.SECTION: Grid parameter provided, ignoring nx, ny, xlim, ylim since we are not building a new grid with ', nrow(grid), ' entries.')}
     colnames(grid) = c('x', 'y')
     nx = length(unique(grid$x))
     ny = length(unique(grid$y))
+    x.new = unique(grid$x)
+    y.new = unique(grid$y)
     xlim = range(grid$x)
     ylim = range(grid$y)
 
@@ -572,10 +575,6 @@ plot.section = function(section, field = NULL, xlim = NULL, ylim = NULL, xlab = 
       field = colnames(section$grid)[3]
       warning('No field name provided, using first gridded data: ', field)
     }
-    if (is.null(zlim)) { zlim = range(pretty(as.numeric(section$grid[,field]), na.rm = TRUE)) }
-    if (is.null(main)) { main = field }
-    if (is.null(xlim)) { xlim = range(section$x)}
-    if (is.null(ylim)) { ylim = range(section$y) }
 
     ## Handy variables
     x = section$x
@@ -584,8 +583,16 @@ plot.section = function(section, field = NULL, xlim = NULL, ylim = NULL, xlab = 
 
     if (log) {
         z = log(z, base)
-        zlim = log(zlim, base)
+        if (is.null(zlim)) {
+          zlim = range(pretty(z, na.rm = TRUE))
+        }
     }
+
+    if (is.null(zlim)) { zlim = range(pretty(z, na.rm = TRUE)) }
+
+    if (is.null(main)) { main = field }
+    if (is.null(xlim)) { xlim = range(x)}
+    if (is.null(ylim)) { ylim = range(y) }
 
     ## Out of Range
     # Set values to zlim if you want the out of range values plotted at the zlim values
@@ -602,7 +609,11 @@ plot.section = function(section, field = NULL, xlim = NULL, ylim = NULL, xlab = 
 
 
     ## Add Title text
-    st = paste0(main, '   zlim: (', round(zlim[1], 3), ', ', round(zlim[2],3), ')')
+    if (log) {
+      st = paste0(main, '   zlim: (', round(base^zlim[1], 3), ', ', round(base^zlim[2],3), ')')
+    } else {
+      st = paste0(main, '   zlim: (', round(zlim[1], 3), ', ', round(zlim[2],3), ')')
+    }
     mtext(st, line = 0.25, adj = 1, cex = 0.7)
 
     # Plot points that are out of range when a color is given
