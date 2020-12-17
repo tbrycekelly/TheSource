@@ -16,9 +16,13 @@
 #' @title Load FRRF Datafiles
 #' @author Thomas Bryce Kelly
 #' @param input.dir the input directory
-#' @param files.names the name of the file in the input directory
+#' @param files.names the name of the file in the input directory (default will load all files in that diectory)
 #' @export
-load.frrf = function(input.dir, file.names) {
+load.frrf = function(input.dir, file.names = NULL) {
+    if (is.null(file.names)) {
+        file.names = list.files(input.dir)
+    }
+
     result = list()
 
     for (file.name in file.names) {
