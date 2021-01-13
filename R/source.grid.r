@@ -1,15 +1,12 @@
 ## Functions for building gridded datasets from measurements.
 ##
-## Author: Thomas Bryce Kelly (tbk14 at fsu.edu)
+## Author: Thomas Bryce Kelly (tkelly@alaska.edu)
 ## http://about.tkelly.org/
 ##
-## Dept of Earth, Ocean & Atmospherical Sciences
-## Florida State University
+## College of Fisheries and Ocean Sciences
+## University of Alaska Fairbanks
 ##
-## Center for Ocean & Atmospheric Prediction Studies
-## Florida State University
-##
-## National High Magnetic Field Laboratory
+## Dept of Earth, Ocean & Atmospheric Sciences
 ## Florida State University
 
 

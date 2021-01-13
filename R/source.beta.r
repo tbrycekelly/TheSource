@@ -1,3 +1,13 @@
+## Author: Thomas Bryce Kelly (tkelly@alaska.edu)
+## http://about.tkelly.org/
+##
+## College of Fisheries and Ocean Sciences
+## University of Alaska Fairbanks
+##
+## Dept of Earth, Ocean & Atmospheric Sciences
+## Florida State University
+
+
 #' @title Load Beta Count Data
 #' @author Thomas Bryce Kelly
 #' @description A function to read in and parse a raw beta coutner file from a Riso multicollector.

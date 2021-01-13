@@ -309,15 +309,25 @@ load.nc = function(file) {
 #' @description rebuild
 #' @param verbose Flag to print diagnostics
 #' @export
-rebuild.satellite.index = function(dir = 'D:/Data/Data_Satellite/Raw', verbose = FALSE) {
-    files = list.files(pattern = '.nc', path = dir)
+rebuild.satellite.index = function(dir = 'D:/Data/Data_Satellite/Raw', files = NULL, verbose = FALSE) {
 
-    summary = data.frame(File = files, Sensor = NA, Datetime = NA, Year = NA,
+  #### Find files
+  if (is.null(files)) {
+    if (verbose) { message(Sys.time(), ': Looking for available satellite files...')}
+    a = Sys.time()
+    files = list.files(pattern = '.nc', path = dir)
+    b = Sys.time()
+    if (verbose) { message(Sys.time(), ': Found ', length(files), ' files! Search took ', round(as.numeric(b) - as.numeric(a)), ' seconds.')}
+  } else {
+    message('File list provided, skipping search.')
+  }
+  #### Populate data fields
+  summary = data.frame(File = files, Sensor = NA, Datetime = NA, Year = NA,
                          Julian.Day = NA, Month = NA, Day = NA, Level = NA,
                          Timeframe = NA, Param = NA, Resolution = NA, stringsAsFactors = FALSE)
 
     for (i in 1:length(files)) {
-        if (verbose) {cat(i)}
+        if (verbose) { message(Sys.time(), ': Attempting to scrub metadata from ', files[i], ' (', i, '/', length(files), ')... ', appendLF = F) }
 
           prime = strsplit(files[i], split = '\\.')[[1]]
           second = strsplit(prime[2], split = '_')[[1]]
@@ -341,17 +351,23 @@ rebuild.satellite.index = function(dir = 'D:/Data/Data_Satellite/Raw', verbose =
           } else {
             summary$Param[i] = second[3]
           }
-
+      if (verbose) {
+        message('Success.')
+      }
     }
-    summary$Datetime = as.POSIXct(summary$Datetime, tz = 'GMT')
+  c = Sys.time()
+
+  ####
+  summary$Datetime = as.POSIXct(summary$Datetime, tz = 'GMT')
 
     if (verbose) {
-        print(unique(summary$Year))
-        print(unique(summary$Sensor))
-        print(unique(summary$Level))
-        print(unique(summary$Timeframe))
-        print(unique(summary$Param))
-        print(unique(summary$Resolution))
+        message(unique(summary$Year))
+      message(unique(summary$Sensor))
+      message(unique(summary$Level))
+      message(unique(summary$Timeframe))
+      message(unique(summary$Param))
+      message(unique(summary$Resolution))
+      message(Sys.time(), ': Meta data took ', round(as.numeric(c) - as.numeric(c)), ' seconds.')
     }
 
     summary
