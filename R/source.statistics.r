@@ -325,6 +325,7 @@ get.boot.vals = function(model, x, conf = 0.5) {
 }
 
 
+
 #' @title lmodel boot
 #' @author Thomas Bryce Kelly
 #' @export
