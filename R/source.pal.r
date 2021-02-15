@@ -112,13 +112,44 @@ make.qual.pal = function(x, pal = 'greyscale', rev = FALSE) {
 #' @keywords Plotting
 #' @export
 add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'greyscale', rev = FALSE, units = '',
-                        col.high = '', col.low = '', log = FALSE, base = 10, x.pos = 0.875, width = 0.05,
-                        y.pos = 0.5, height = 0.8, cex = 1, cex.units = 1, n = 255, horizontal = FALSE, col.lab = 'black', col.tck = 'darkgrey') {
+                        col.high = '', col.low = '', log = FALSE, base = 10, x.pos = NULL, width = NULL,
+                        y.pos = NULL, height = NULL, cex = 1, cex.units = 1, n = 255, horizontal = FALSE, col.lab = 'black', col.tck = 'darkgrey') {
 
   ## Setup
-  par.original = par('mar')
-  bty.original = par('bty')
-  plt.original = par('plt')
+  par.original = par()
+
+  ## Default Spacing
+  # width
+  if (is.null(width) & !horizontal) {
+    width = (0.95 - par('plt')[2])
+  }
+  if (is.null(width) & horizontal) {
+    width = par('plt')[2] - par('plt')[1]
+  }
+
+  #height
+  if (is.null(height) & horizontal) {
+    height = (0.95 - par('plt')[4])
+  }
+  if (is.null(height) & !horizontal) {
+    height = par('plt')[4] - par('plt')[3]
+  }
+
+  # x.pos
+  if (is.null(x.pos) & horizontal) {
+    x.pos = 0.5
+  }
+  if (is.null(x.pos) & !horizontal) {
+    x.pos = par('plt')[2] + width/2
+  }
+
+  #y.pos
+  if (is.null(y.pos) & horizontal) {
+    y.pos = par('plt')[4] + height/2
+  }
+  if (is.null(y.pos) & !horizontal) {
+    y.pos = 0.5
+  }
 
   x = 1
   y = c(0:n)
@@ -151,17 +182,17 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'greyscale'
 
   ## Now we get to work actually doing stuff:
 
+  par(new = TRUE, bty = 'n', plt = c(x.pos - width/2, x.pos + width/2, y.pos - height/2, y.pos + height/2))
   if (horizontal) {
-    par(new = TRUE, bty = 'n', plt = c(y.pos - height/2, y.pos + height/2, x.pos - width/2, x.pos + width/2))
     image(y, x, t(z), col = get.pal(n = length(y), pal = pal, rev = rev), xlim = c(-0.1 * n, 1.1 * n), zlim = range(z),
           yaxt = 'n', xaxt = 'n', ylab = NA, xlab = NA, ylim = c(0,1))
   }
   else {
-    par(new = TRUE, bty = 'n', plt = c(x.pos - width/2, x.pos + width/2, y.pos - height/2, y.pos + height/2))
     image(x, y, z, col = get.pal(n = length(y), pal = pal, rev = rev), ylim = c(-0.1 * n, 1.1 * n), zlim = range(z),
           yaxt = 'n', xaxt = 'n', ylab = NA, xlab = NA, xlim = c(0,1))
   }
 
+  ## Add triangles
   if (!is.na(col.high)) {
     if (col.high == '') {
       col.high = get.pal(100, pal, rev = rev)[100]
@@ -191,7 +222,7 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'greyscale'
   }
 
   ## Return margins to default
-  par(bty = bty.original, plt = plt.original)
+  par(par.original)
 }
 
 
