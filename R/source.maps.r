@@ -1,4 +1,5 @@
-## Functions for building gridded datasets from measurements.
+## Functions for plotting maps
+## Please check out the wonderful OCE package! It does most of the work here, we just add wrapper functions to make the code easier for us to modify and customize.
 ##
 ## Author: Thomas Bryce Kelly1,2,3 (tbk14 at fsu.edu)
 ## http://about.tkelly.org/
@@ -15,7 +16,7 @@
 ## Florida State University
 ##
 ## 4Division of Marine Sciences
-## University of Soutern Mississippi
+## University of Southern Mississippi
 
 #' @title Make Map
 #' @description Default settings are for Arctic, lowest resolution coastline.
@@ -56,17 +57,19 @@ make.map = function (coast = NULL,
   get.coast(coast = coast)
 
   ## make the base plot (oce)
-  mapPlot(coastlineCut(eval(parse(text = coast)), lon_0 = lon0), projection = p, col = land.col,
+  oce::mapPlot(coastlineCut(eval(parse(text = coast)), lon_0 = lon0), projection = p, col = land.col,
           longitudelim = c(lon.min, lon.max), latitudelim = c(lat.min, lat.max),
           grid = FALSE, axes = FALSE)
 
   ## add a grid at the lat and lon interval you set (oce)
   lons = seq(-180, 180, by = dlon)
   lats = seq(-90, 90, by = dlat)
-  if (grid) { mapGrid(longitude = lons, latitude = lats) }
+  if (grid) {
+    oce::mapGrid(longitude = lons, latitude = lats)
+  }
   box()
-  mapAxis(1, longitude = lons)
-  mapAxis(2, latitude = lats)
+  oce::mapAxis(1, longitude = lons)
+  oce::mapAxis(2, latitude = lats)
 
   list(coast = coast, lon.min = lon.min, lon.max = lon.max,
        lat.min = lat.min, lat.max = lat.max, p = p, land.col = land.col,
@@ -186,7 +189,7 @@ add.map.bathy = function(map, bathy,
   }
 
   ## add bathy contours (oce)
-  mapContour(longitude = bathy$Lon,
+  oce::mapContour(longitude = bathy$Lon,
                latitude = bathy$Lat,
                z = bathy$Z,
                levels = levels,
@@ -200,15 +203,29 @@ add.map.bathy = function(map, bathy,
 #' @title Add Map Points
 #' @author Laura Whitmore
 #' @description Add station points to a map
-#' @param stn.lon the longitudes of the points to be drawn
-#' @param stn.lat the latitude of the points to be drawn
+#' @param lon the longitudes of the points to be drawn
+#' @param lat the latitude of the points to be drawn
+#' @param stn.lon (depreciated) the longitudes of the points to be drawn
+#' @param stn.lat (depreciated) the latitude of the points to be drawn
 #' @param col the color of the points
 #' @param cex the size of point to be drawn
 #' @param pch the point character to be used
+#' @param ... optional arguments passed to points().
 #' @import oce
 #' @export
-add.map.points = function(stn.lon, stn.lat, col = 'black', cex = 1, pch = 16){
-  mapPoints(stn.lon, stn.lat, col = col, cex = cex, pch = pch)
+add.map.points = function(lon = NULL, lat = NULL, col = 'black', cex = 1, pch = 16,
+                          stn.lon = NULL, stn.lat = NUL, ...){
+
+  if (!is.null(stn.lon)) { warning('stn.lon option depreciated. Recommend using lon instead.')}
+  if (!is.null(stn.lat)) { warning('stn.lat option depreciated. Recommend using lat instead.')}
+
+  if (interactive() & length(lon) > 1e5) {
+    input = readline(prompt = 'Large number of points, contnue? (y/n)')
+    if (input != 'y' & input != 'Y') {
+      return()
+    }
+  }
+  oce::mapPoints(c(lon, stn.lon), c(lat, stn.lat), col = col, cex = cex, pch = pch, ...)
 }
 
 
@@ -261,7 +278,7 @@ bilinearInterp = function(x, y, gx, gy, z) {
 #' @param n the number of distinct colors to request from the palette function.
 #' @param refinement the level of bilinear refinement to apply to the image grid
 #' @export
-add.map.layer = function(lon, lat, z, zlim = NULL, pal = 'ocean.algae', col.na = NA, n = 255, refinement = NA,
+add.map.layer = function(lon, lat, z, zlim = NULL, pal = 'greyscale', col.na = NA, n = 255, refinement = NA,
                          col.low = NA, col.high = NA, rev = FALSE, filled = FALSE, indicate = TRUE, verbose = FALSE) {
 
   lon = lon %% 360
@@ -286,10 +303,6 @@ add.map.layer = function(lon, lat, z, zlim = NULL, pal = 'ocean.algae', col.na =
       lon.old = lon
       lat = seq(lat[1], lat[length(lat)], length.out = length(lat) * 2)
       lon = seq(lon[1], lon[length(lon)], length.out = length(lon) * 2)
-
-      #grid = expand.grid(lat = lat, lon = lon)
-      #z = oce::bilinearInterp(grid$lat, grid$lon, lat.old, lon.old, t(z))
-      #z = t(matrix(z, nrow = length(lat), ncol = length(lon)))
 
       grid = expand.grid(lon = lon, lat = lat)
       z = bilinearInterp(grid$lon * sign(lon[2] - lon[1]), grid$lat * sign(lat[2] - lat[1]), lon.old * sign(lon[2] - lon[1]), lat.old * sign(lat[2] - lat[1]), z)
@@ -319,7 +332,7 @@ add.map.layer = function(lon, lat, z, zlim = NULL, pal = 'ocean.algae', col.na =
   if (verbose) { print(paste('n.low:', n.low)); print(paste('n.high:', n.high)); print(paste('cols:', (n.low + 1), ':', (n - n.high))); }
 
   if (length(!is.na(z.good)) > 0) {
-      mapImage(lon, lat, z.good, zlim = range(z.good, z.good + 1e-12, na.rm = TRUE), missingColor = col.na,
+    oce::mapImage(lon, lat, z.good, zlim = range(z.good, z.good + 1e-12, na.rm = TRUE), missingColor = col.na,
                col = col, filledContour = filled)
   }
 
@@ -329,9 +342,9 @@ add.map.layer = function(lon, lat, z, zlim = NULL, pal = 'ocean.algae', col.na =
     z.low.lim = range(z.low, na.rm = TRUE)
 
     if (col.low != '') {
-        mapImage(lon, lat, z.low, zlim = z.low.lim, breaks = 1, col = rep(col.low, 2))
+      oce::mapImage(lon, lat, z.low, zlim = z.low.lim, breaks = 1, col = rep(col.low, 2))
     } else {
-        mapImage(lon, lat, z.low, zlim = z.low.lim, breaks = 1, col = get.pal(n, pal = pal, rev = rev)[1:2])
+      oce::mapImage(lon, lat, z.low, zlim = z.low.lim, breaks = 1, col = get.pal(n, pal = pal, rev = rev)[1:2])
     }
   }
 
@@ -340,9 +353,9 @@ add.map.layer = function(lon, lat, z, zlim = NULL, pal = 'ocean.algae', col.na =
     z.high[z <= zlim[2]] = NA
 
     if (col.high != '') {
-        mapImage(lon, lat, z.high, zlim = range(z.high, na.rm = TRUE), breaks = 1, col = rep(col.high, 2))
+      oce::mapImage(lon, lat, z.high, zlim = range(z.high, na.rm = TRUE), breaks = 1, col = rep(col.high, 2))
     } else {
-        mapImage(lon, lat, z.high, zlim = range(z.high, na.rm = TRUE), breaks = 1, col = get.pal(n, pal = pal, rev = rev)[(n-1):n])
+      oce::mapImage(lon, lat, z.high, zlim = range(z.high, na.rm = TRUE), breaks = 1, col = get.pal(n, pal = pal, rev = rev)[(n-1):n])
     }
   }
 
@@ -354,6 +367,7 @@ add.map.layer = function(lon, lat, z, zlim = NULL, pal = 'ocean.algae', col.na =
     mtext(st, line = 0.25, adj = 1, cex = 0.7)
   }
 }
+
 
 #' @title Add Map Bathymetry (shaded)
 #' @author Thomas Bryce Kelly
@@ -368,7 +382,7 @@ add.map.layer = function(lon, lat, z, zlim = NULL, pal = 'ocean.algae', col.na =
 #' @param col.high same as \emph{col.low} but for data that is out of range above the zlim.
 #' @param refinement the level of bilinear refinement to apply to the image grid
 #' @export
-add.map.bathy.shade = function(map, bathy, pal = 'ocean.ice', n = 255, zlim = NULL, rev = FALSE, filled = TRUE, col.low = NA, col.high = NA, refinement = 1) {
+add.map.bathy.shade = function(map, bathy, pal = 'greyscale', n = 255, zlim = NULL, rev = FALSE, filled = TRUE, col.low = NA, col.high = NA, refinement = 1) {
   bathy$Z[bathy$Z > 0] = 0
   add.map.layer(lon = bathy$Lon, lat = bathy$Lat, z = bathy$Z, pal = pal, rev = rev, filled = filled, refinement = refinement,
                 zlim = zlim, col.low = col.low, col.high = col.high, indicate = FALSE, n = n)
@@ -397,8 +411,9 @@ add.map.bathy.shade = function(map, bathy, pal = 'ocean.ice', n = 255, zlim = NU
 #' @param pos a position specifier for the text. If specified this overrides any adj value given. Values of 1, 2, 3 and 4, respectively indicate positions below, to the left of, above and to the right of the specified coordinates.
 #' @export
 add.map.text = function(lon, lat, text, col = 'black', cex = 1, adj = NULL, pos = NULL){
-  mapText(longitude = lon, latitude = lat, labels = text, col = col, cex = cex, adj = adj, pos = pos)
+  oce::mapText(longitude = lon, latitude = lat, labels = text, col = col, cex = cex, adj = adj, pos = pos)
 }
+
 
 #' @title Add Map Line
 #' @author Thomas Bryce Kelly
@@ -410,8 +425,9 @@ add.map.text = function(lon, lat, text, col = 'black', cex = 1, adj = NULL, pos 
 #' @param lwd the width of the line to be drawn
 #' @export
 add.map.line = function(lon, lat, col = 'black', lty = 1, lwd = 1) {
-  mapLines(longitude = lon, latitude = lat, col = col, lty = lty, lwd = lwd)
+  oce::mapLines(longitude = lon, latitude = lat, col = col, lty = lty, lwd = lwd)
 }
+
 
 #' @title Add Quiver Lines
 #' @export
@@ -423,6 +439,10 @@ add.map.quiver = function(lon, lat, u, v, zscale = 1, col = 'black', lwd = 1) {
   }
 }
 
+
+#' @title Add Map Contours
+#' @export
+#' @author Thomas Bryce Kelly
 add.map.contour = function(x, y, z, col = 'black', levels = NULL, n = 3, labels = TRUE, lty = 1, lwd = 1) {
 
   if (is.null(levels)) {
@@ -430,7 +450,7 @@ add.map.contour = function(x, y, z, col = 'black', levels = NULL, n = 3, labels 
   }
   z = matrix(z, nrow = length(unique(x)))
 
-  mapContour(unique(x), unique(y), z, levels = levels, drawlabels = labels,
+  oce::mapContour(unique(x), unique(y), z, levels = levels, drawlabels = labels,
              underlay = 'interrupt', lwd = lwd, lty = lty,
              col = col)
 }
@@ -447,9 +467,10 @@ redraw.map = function(map) {
   lats = seq(-90, 90, by = map$grid.dlat)
   if (map$grid) { mapGrid(longitude = lons, latitude = lats) }
   box()
-  mapAxis(1, longitude = lons)
-  mapAxis(2, latitude = lats)
+  oce::mapAxis(1, longitude = lons)
+  oce::mapAxis(2, latitude = lats)
 }
+
 
 #' @title Make an Arctic Map
 #' @author Laura Whitmore
@@ -459,11 +480,8 @@ redraw.map = function(map) {
 make.map.arctic = function(coast = 'coastlineWorld', lon.min = -180, lon.max = 180, lat.min = 60, lat.max = 90,
                            p = make.proj('stere', lat = 90), dlat = 15, dlon = 60, land.col = 'lightgray', grid = TRUE) {
 
-  map = make.map(coast = coast, lon.min = lon.min, lon.max = lon.max, lat.min = lat.min, lat.max = lat.max,
+  make.map(coast = coast, lon.min = lon.min, lon.max = lon.max, lat.min = lat.min, lat.max = lat.max,
                  p = p, land.col = land.col, grid = grid, dlon = dlon, dlat = dlat)
-
-  ## Return
-  map
 }
 
 
@@ -479,11 +497,11 @@ make.map.cce = function (coast = "coastlineWorldFine",
                          lon.max = -119,
                          lat.min = 31,
                          lat.max = 36,
-                         p = '+proj=merc',
-                         land.col = 'lightgray',
+                         p = make.proj(projection = 'merc', lat = 35, lon = -122, dlat = 3),
+                         land.col = '#252525',
                          grid = TRUE,
-                         dlon = 5,
-                         dlat = 5) {
+                         dlon = 3,
+                         dlat = 3) {
 
   make.map(coast = coast, p = p,
            lat.min = lat.min, lat.max = lat.max, lon.min = lon.min, lon.max = lon.max,
@@ -499,8 +517,7 @@ make.map.cce = function (coast = "coastlineWorldFine",
 #' @export
 test.map.arctic = function() {
     ##run as is - default settings for Arctic, coastlineWorld
-    map = make.map(coast = 'coastlineWorld', lon.min = -180, lon.max = 180, lat.min = 60, lat.max = 90,
-                   p = make.proj('stere', lat = 90), dlon = 60)
+    map = make.map.arctic()
 
     ## Add bathy
     add.map.bathy.shade(map, bathy.arctic, zlim = c(-6e3, -20), filled = FALSE)

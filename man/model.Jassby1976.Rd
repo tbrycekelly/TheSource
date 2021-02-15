@@ -9,7 +9,7 @@ model.Jassby1976(alpha, Ek, E)
 \arguments{
 \item{alpha}{the initial slope of the P vs E curve}
 
-\item{Ek}{a light staturation parameter}
+\item{Ek}{a light saturation parameter}
 
 \item{E}{the photosynthetically active radiation}
 }

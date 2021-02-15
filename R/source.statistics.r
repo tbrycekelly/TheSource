@@ -245,18 +245,32 @@ add.boot.trendline = function(model, col = 'black', lty = 2, lwd = 1, ...) {
 #' @description A helper function to plot the confidence intervals determined from a base::lm model.
 #' @keywords Statistics
 #' @export
-add.lm.conf = function(x, name, model, col = '#50505030', level = 0.95, log = FALSE) {
-    if(!log) {
-        dat = data.frame(a = c(1:length(x)))
-        dat[[name]] = x
-        pred = predict(model, interval='confidence', newdata = dat, level = level)
-        polygon(c(x,rev(x)), c(pred[,"lwr"], rev(pred[,"upr"])), border = NA, col = col)
-    } else {
-        dat = data.frame(a = c(1:length(x)))
-        dat[[name]] = x
-        pred = predict(model, interval='confidence', newdata = dat, level = level)
-        polygon(c(exp(x),rev(exp(x))), c(pred[,"lwr"], rev(pred[,"upr"])), border = NA, col = col)
+add.lm.conf = function(model, x = NULL, name = NULL, col = '#50505030',
+                       level = 0.95, ...) {
+
+    ## Apply defaults if not provided
+    if (is.null(x)) {
+        x = model$model[[2]]
     }
+    if (is.null(name)) {
+        name = names(model$model)[2]
+    }
+
+    ## Plot
+    dat = data.frame(a = c(1:length(x)))
+    dat[[name]] = x
+    pred = predict(model, interval='confidence', newdata = dat, level = level)
+    polygon(x = c(x, rev(x)), y = c(pred[,"lwr"], rev(pred[,"upr"])), border = NA, col = col, ...)
+}
+
+
+#' @title Add Linear Model Trendline
+#' @author Thomas Bryce Kelly
+#' @description A helper function to plot the trendline determined from a base::lm model.
+#' @keywords Statistics
+#' @export
+add.lm.trendline = function(model, col = 'black', lwd = 1, lty = 1, ...) {
+    adline(model, col = col, lwd = lwd, lty = lty, ...)
 }
 
 
@@ -309,7 +323,6 @@ get.boot.vals = function(model, x, conf = 0.5) {
 
     y
 }
-
 
 
 #' @title lmodel boot

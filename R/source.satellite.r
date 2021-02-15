@@ -144,10 +144,10 @@ read.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, 
 ## Read nc file and do preliminary parsing/conversion
 load.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, entry = 1) {
 
-  nc.file = nc_open(paste0(input.dir, file))
+  nc.file = ncdf4::nc_open(paste0(input.dir, file))
 
-  x = ncvar_get(nc.file, varid = names(nc.file$var)[entry])
-  attr = ncatt_get(nc = nc.file, varid = names(nc.file$var)[entry])
+  x = ncdf4::ncvar_get(nc.file, varid = names(nc.file$var)[entry])
+  attr = ncdf4::ncatt_get(nc = nc.file, varid = names(nc.file$var)[entry])
 
   ## Lat and Lon
   l.lat = which(names(nc.file$dim) == 'lat')
@@ -181,7 +181,7 @@ load.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, 
       lon = NULL
     }
   }
-  nc_close(nc.file)
+  ncdf4::nc_close(nc.file)
 
   x = conv(x)
   list(field = x, file = file, dir = input.dir, grid = function() {expand.grid(lon = lon, lat = lat)}, lon = lon, lat = lat,
@@ -272,9 +272,9 @@ get.satellite.times = function(x) {
 #' @import ncdf4
 #' @export
 print.nc = function(file) {
-  file = nc_open(file)
+  file = ncdf4::nc_open(file)
   print(file)
-  nc_close(file)
+  ncdf4::nc_close(file)
 }
 
 

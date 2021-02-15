@@ -21,7 +21,7 @@
 #' @param t.start time between internal model steps (sec)
 #' @param delta.t time between particle saves
 #' @export
-init.lagrangian = function(t.start, t.end, t.step, save.freq, nparticles, verbose = T) {
+init.lagrangian.model = function(t.start, t.end, t.step, save.freq, nparticles, verbose = T) {
   if (verbose) {message(Sys.time(), ': Setting up Lagrangian model meta parameters (e.g. timestepping values, number of save points, etc)')}
 
   meta = list(t.start = t.start,
@@ -131,7 +131,7 @@ load.advection.mitgcm = function(u.file, v.file, w.file = NULL) {
 #' @param verbose A verbose flag
 #' @description A function used to load an OSCAR circulation netcdf file and structure in a manner suitable for Lagrangian particle release.
 #' @export
-load.advection.oscar = function(file, lats = NULL, lons = NULL, verbose = F) {
+load.advection.oscar = function(file, lats = NULL, lons = NULL, get.vel = get.vel.oscar, verbose = F) {
 
   if (verbose) {
     message('Loading OSCAR Advection Product\n Loading OSCAR input file ', file, ' (', format(file.size(file)/2^20, digits = 3), ' MB)... ', appendLF = F)
@@ -174,6 +174,7 @@ load.advection.oscar = function(file, lats = NULL, lons = NULL, verbose = F) {
   if (verbose){message(' OSCAR succesfully loaded (', format(Sys.time() - a, digits = 3), ' sec).')}
 
   oscar$w = matrix(0, nrow = nrow(oscar$u), ncol = ncol(oscar$u))
+  oscar$get.vel = get.vel
   ## Return
   oscar
 }
@@ -186,7 +187,7 @@ load.advection.oscar = function(file, lats = NULL, lons = NULL, verbose = F) {
 #' @export
 #' @author Thomas Bryce Kelly
 #' @import ncdf4
-load.advection.roms = function(path, lats = NULL, lons = NULL, verbose = T) {
+load.advection.roms = function(path, lats = NULL, lons = NULL, get.vel = get.vel.roms, verbose = T) {
 
   if (verbose) {
     message('Loading ROMS Advection Product\n Loading ROMS input file ', path, ' (', format(file.size(path)/2^20, digits = 3), ' MB)... ', appendLF = F)
@@ -256,7 +257,7 @@ load.advection.roms = function(path, lats = NULL, lons = NULL, verbose = T) {
   if (verbose){message(' ROMS succesfully loaded (', format(Sys.time() - a, digits = 3), ' sec).')}
 
   #### Return object
-  list(lat = lat, lon = lon, grid = grid, h = h, z = z, u = u, v = v, w = w, time = time)
+  list(lat = lat, lon = lon, grid = grid, h = h, z = z, u = u, v = v, w = w, time = time, get.vel = get.vel)
 }
 
 
@@ -266,7 +267,7 @@ load.advection.roms = function(path, lats = NULL, lons = NULL, verbose = T) {
 #' @export
 #' @author Thomas Bryce Kelly
 #' @import ncdf4
-load.advection.cmems = function(path, lats = NULL, lons = NULL, verbose = T) {
+load.advection.cmems = function(path, lats = NULL, lons = NULL, get.vel = get.vel.cmems, verbose = T) {
   if (verbose) {message('Loading CMEMS Advection Product.', appendLF = F)}
   a = Sys.time()
   for (i in 1:length(path)) {
@@ -335,6 +336,7 @@ load.advection.cmems = function(path, lats = NULL, lons = NULL, verbose = T) {
   }
   if (verbose){message('\nCMEMS succesfully loaded (', format(Sys.time() - a, digits = 3), ', ', format(object.size(cmems) / 2^20, digits = 3), ' MB).')}
   #### Return object
+  cmems$get.vel = get.vel
   cmems
 }
 
@@ -354,7 +356,10 @@ get.vel.oscar = function(lon, lat, depth, time, advection) {
   grid$v = 0
 
   if (time < min(advection$time) | time > max(advection$time)) {
-    stop(paste0('Improper advection product loaded for time = ', time))
+    message('Improper advection product loaded for time = ', time)
+    nil = rep(0, length(lon))
+
+    return(list(u = nil, v = nil, w = nil))
   }
 
   t2 = min(which(advection$time > time))
@@ -388,59 +393,6 @@ get.vel.oscar = function(lon, lat, depth, time, advection) {
 }
 
 
-#' @title Get Velocity (OSCAR)
-#' @author Thomas Bryce Kelly
-#' @export
-get.vel.oscar.old = function(lon, lat, depth, time, advection) {
-
-  grid = data.frame(lon = lon, lat = lat)
-  grid$u = NA
-  grid$v = NA
-
-  if (time < min(advection$time) | time > max(advection$time)) {
-    stop(paste0('Improper advection product loaded for time = ', time))
-  }
-  t2 = min(which(advection$time > time))
-  t1 = t2-1
-  t1w = as.numeric(advection$time[t2] - time) / as.numeric(advection$time[t2] - advection$time[t1])
-
-  for (i in 1:nrow(grid)) {
-    ## Find Indicies
-    x2 = min(which(advection$lon > grid$lon[i]))
-    x1 = x2 - 1                         ## Makes assumptions about no boundaries
-    y1 = max(which(advection$lat > grid$lat[i]))
-    y2 = y1 + 1
-
-
-    if (x1 == 0 | y2 == 0 | t1 == 0 | x2 > length(advection$lon) | y1 > length(advection$lat) | t2 > length(advection$time)){
-      grid$u[i] = 0
-      grid$v[i] = 0
-    } else {
-
-      ## Calculate weights
-      x1w = (advection$lon[x2] - grid$lon[i]) / abs(advection$lon[x2] - advection$lon[x1])
-      y1w = (advection$lat[y2] - grid$lat[i]) / abs(advection$lat[y2] - advection$lat[y1])
-
-      ## calculate u
-      u1 = (advection$u[x1,y1,t1] * x1w + advection$u[x2,y1,t1] * (1 - x1w)) * y1w + (advection$u[x1,y2,t1] * x1w + advection$u[x2,y2,t1] * (1 - x1w)) * (1 - y1w)
-      u2 = (advection$u[x1,y1,t2] * x1w + advection$u[x2,y1,t2] * (1 - x1w)) * y1w + (advection$u[x1,y2,t2] * x1w + advection$u[x2,y2,t2] * (1 - x1w)) * (1 - y1w)
-      grid$u[i] = u1 * t1w + u2 * (1 - t1w)
-
-      ## calculate v
-      v1 = (advection$v[x1,y1,t1] * x1w + advection$v[x2,y1,t1] * (1 - x1w)) * y1w + (advection$v[x1,y2,t1] * x1w + advection$v[x2,y2,t1] * (1 - x1w)) * (1 - y1w)
-      v2 = (advection$v[x1,y1,t2] * x1w + advection$v[x2,y1,t2] * (1 - x1w)) * y1w + (advection$v[x1,y2,t2] * x1w + advection$v[x2,y2,t2] * (1 - x1w)) * (1 - y1w)
-      grid$v[i] = v1 * t1w + v2 * (1 - t1w)
-    }
-  }
-  grid[is.na(grid)] = 0
-
-  ## Return
-  list(u = grid$u,
-       v = grid$v,
-       w = rep(0, length(lon)))
-}
-
-
 #' @title Get Velocity (CMEMS)
 #' @author Thomas Bryce Kelly
 #' @export
@@ -452,9 +404,14 @@ get.vel.cmems = function(lon, lat, depth, time, advection) {
   grid$v = NA
   grid$w = NA
 
+  ## check for timing conflict
   if (time < min(advection$time) | time > max(advection$time)) {
-    warning(paste0('Improper advection product loaded for time = ', time))
+    message('Improper advection product loaded for time = ', time)
+    nil = rep(0, length(lon))
+
+    return(list(u = nil, v = nil, w = nil))
   }
+
   t2 = min(which(advection$time > time))
   t1 = t2-1
   t1w = as.numeric(advection$time[t2] - time) / as.numeric(advection$time[t2] - advection$time[t1])
@@ -602,37 +559,35 @@ get.vel.roms = function(lon, lat, depth, time, advection) {
 
 #' @title Advect Lagrangian Particle
 #' @author Thomas Bryce Kelly
-#' @param lat Initial latitude of particle
-#' @param lon Initial longitude of particle
-#' @param depth Intial depth of particle
-#' @param time Start time of particle
+#' @param particles a particle release dataframe such as that generated by `init.lagrangian.particles()`
+#' @param model a model list such as that generated by `init.lagrangian.model()`
 #' @param advection An advection list, such as one generated by `load.oscar.advection()`, that contains U V and W
 #' @param dt Time step for RK4 advection scheme
 #' @export
-run.advection = function(particles, meta, hist, advection, get.vel, zlim = c(-6e3, 0), verbose = T) {
+run.advection = function(particles, model, advection, zlim = c(-6e3, 0), verbose = T) {
 
   if (verbose) { message('Starting Lagrangian model run:')}
   a = Sys.time()
   b = 0
-  for (timestep in 1:meta$nstep) {
+  for (timestep in 1:model$meta$nstep) {
 
-    if (verbose) { message('\nTimestep = ', timestep, ' (', round(timestep / meta$nstep * 100), '%)', appendLF = F) }
+    if (verbose) { message('\nTimestep = ', timestep, ' (', round(timestep / model$meta$nstep * 100), '%)', appendLF = F) }
 
     ## Save if it is a saving timestep!
-    if (timestep %% meta$save.freq == 0) {
+    if (timestep %% model$meta$save.freq == 0) {
 
       c = Sys.time()
 
-      savestep = timestep / meta$save.freq
+      savestep = timestep / model$meta$save.freq
 
       ## 1) lon, 2) lat, 3) depth, 4) u, 5) v, 6) w, 7) T, 8) S, 9) alive
-      hist[,savestep,1] = particles$current.lon
-      hist[,savestep,2] = particles$current.lat
-      hist[,savestep,3] = particles$current.depth
-      hist[,savestep,4] = particles$current.u
-      hist[,savestep,5] = particles$current.v
-      hist[,savestep,6] = particles$current.w
-      hist[,savestep,9] = particles$alive
+      model$model$hist[,savestep,1] = particles$current.lon
+      model$hist[,savestep,2] = particles$current.lat
+      model$hist[,savestep,3] = particles$current.depth
+      model$hist[,savestep,4] = particles$current.u
+      model$hist[,savestep,5] = particles$current.v
+      model$hist[,savestep,6] = particles$current.w
+      model$hist[,savestep,9] = particles$alive
 
       ## TODO Add u, v, w, T, and S info!
       if (verbose) { message(' Saved savestep = ', savestep, appendLF = F)}
@@ -640,16 +595,16 @@ run.advection = function(particles, meta, hist, advection, get.vel, zlim = c(-6e
     }
 
 
-    if (meta$t.step > 0) {
-      timet = meta$t.start + timestep * meta$t.step
-      time2 = meta$t.start + (timestep + 0.5) * meta$t.step
-      time3 = meta$t.start + (timestep + 0.5) * meta$t.step
-      time4 = meta$t.start + (timestep + 1) * meta$t.step
+    if (model$meta$t.step > 0) {
+      timet = model$meta$t.start + timestep * model$meta$t.step
+      time2 = model$meta$t.start + (timestep + 0.5) * model$meta$t.step
+      time3 = model$meta$t.start + (timestep + 0.5) * model$meta$t.step
+      time4 = model$meta$t.start + (timestep + 1) * model$meta$t.step
     } else {
-      timet = meta$t.end + timestep * meta$t.step
-      time2 = meta$t.end + (timestep + 0.5) * meta$t.step
-      time3 = meta$t.end + (timestep + 0.5) * meta$t.step
-      time4 = meta$t.end + (timestep + 1) * meta$t.step
+      timet = model$meta$t.end + timestep * model$meta$t.step
+      time2 = model$meta$t.end + (timestep + 0.5) * model$meta$t.step
+      time3 = model$meta$t.end + (timestep + 0.5) * model$meta$t.step
+      time4 = model$meta$t.end + (timestep + 1) * model$meta$t.step
     }
 
     ## make any new particles alive
@@ -670,52 +625,52 @@ run.advection = function(particles, meta, hist, advection, get.vel, zlim = c(-6e
       latt = particles$current.lat[l]
       lont = particles$current.lon[l]
       deptht = particles$current.depth[l]
-      vel = get.vel(lont, latt, deptht, timet, advection)
+      vel = advection$get.vel(lont, latt, deptht, timet, advection)
 
       ## p2 based on velocity at final pos at meta$t.step/2
-      dlat = vel$v * 1e-3 * meta$t.step/2 / 6378.14 # distance / earth radius
+      dlat = vel$v * 1e-3 * model$meta$t.step/2 / 6378.14 # distance / earth radius
       lat2 = 180 / pi * asin(sin(latt / 180 * pi) * cos(dlat) + cos(latt / 180 * pi) * sin(dlat))
-      dlon = vel$u * 1e-3 * meta$t.step/2 / 6378.14 # distance / earth radius
+      dlon = vel$u * 1e-3 * model$meta$t.step/2 / 6378.14 # distance / earth radius
       lon2 = lont + 180 / pi * atan2(sin(dlon) * cos(latt / 180 * pi), cos(dlon) - sin(latt / 180 * pi) * sin(lat2 / 180 * pi))
-      ddepth = vel$w * meta$t.step/2
+      ddepth = vel$w * model$meta$t.step/2
       depth2 = deptht + ddepth
 
-      vel2 = get.vel(lon2, lat2, depth2, time2, advection)
+      vel2 = advection$get.vel(lon2, lat2, depth2, time2, advection)
 
       ## p3 based on velocity at p2 at meta$t.step/2
-      dlat = vel2$v * 1e-3 * meta$t.step/2 / 6378.14 # distance / earth radius
+      dlat = vel2$v * 1e-3 * model$meta$t.step/2 / 6378.14 # distance / earth radius
       lat3 = 180 / pi * asin(sin(latt / 180 * pi) * cos(dlat) + cos(latt / 180 * pi) * sin(dlat))
-      dlon = vel2$u * 1e-3 * meta$t.step/2 / 6378.14 # distance / earth radius
+      dlon = vel2$u * 1e-3 * model$meta$t.step/2 / 6378.14 # distance / earth radius
       lon3 = lont + 180 / pi * atan2(sin(dlon) * cos(latt / 180 * pi), cos(dlon) - sin(latt / 180 * pi) * sin(lat3 / 180 * pi))
-      ddepth = vel2$w * meta$t.step/2
+      ddepth = vel2$w * model$meta$t.step/2
       depth3 = deptht + ddepth
 
-      vel3 = get.vel(lon3, lat3, depth3, time3, advection)
+      vel3 = advection$get.vel(lon3, lat3, depth3, time3, advection)
 
       ## p4 based on velocity at p2 at meta$t.step/2
-      dlat = vel$v *  meta$t.step * 1e-3 / 6378.14 # distance / earth radius
+      dlat = vel$v *  model$meta$t.step * 1e-3 / 6378.14 # distance / earth radius
       lat4 = 180 / pi * asin(sin(latt / 180 * pi) * cos(dlat) + cos(latt / 180 * pi) * sin(dlat))
-      dlon = vel$u * 1e-3 * meta$t.step / 6378.14 # distance / earth radius
+      dlon = vel$u * 1e-3 * model$meta$t.step / 6378.14 # distance / earth radius
       lon4 = lont + 180 / pi * atan2(sin(dlon) * cos(latt / 180 * pi), cos(dlon) - sin(latt / 180 * pi) * sin(lat4 / 180 * pi))
-      ddepth = vel$w * meta$t.step
+      ddepth = vel$w * model$meta$t.step
       depth4 = deptht + ddepth
 
-      vel4 = get.vel(lon4, lat4, depth4, time4, advection)
+      vel4 = advection$get.vel(lon4, lat4, depth4, time4, advection)
 
       ## RK4 velocity
       vel$u = (vel$u + 2 * vel2$u + 2 * vel3$u + vel4$u)/ 6
       vel$v = (vel$v + 2 * vel2$v + 2 * vel3$v + vel4$v)/ 6
       vel$w = (vel$w + 2 * vel2$w + 2 * vel3$w + vel4$w)/ 6
 
-      dlat = vel$v * 1e-3 * meta$t.step / 6378.14 # distance / earth radius
+      dlat = vel$v * 1e-3 * model$meta$t.step / 6378.14 # distance / earth radius
       lat.final = 180 / pi * asin(sin(latt / 180 * pi) * cos(dlat) + cos(latt / 180 * pi) * sin(dlat))
-      dlon = vel$u * 1e-3 * meta$t.step / 6378.14 # distance / earth radius
+      dlon = vel$u * 1e-3 * model$meta$t.step / 6378.14 # distance / earth radius
       lon.final = lont + 180 / pi * atan2(sin(dlon) * cos(latt / 180 * pi), cos(dlon) - sin(latt / 180 * pi) * sin(lat.final / 180 * pi))
-      ddepth = vel$w * meta$t.step
+      ddepth = vel$w * model$meta$t.step
 
       for (p in l){
         #### Sinking
-        if(!is.na(particles$sink[p])) { ddepth[p] = ddepth[p] + particles$sink[p] * meta$t.step }
+        if(!is.na(particles$sink[p])) { ddepth[p] = ddepth[p] + particles$sink[p] * model$meta$t.step }
         if (!is.na(particles$const.depth[p])) {ddepth[p] = 0}
       }
       depth.final = deptht + ddepth
@@ -740,7 +695,7 @@ run.advection = function(particles, meta, hist, advection, get.vel, zlim = c(-6e
   }
 
   ## Return
-  list(particles = particles, hist = hist, meta = meta)
+  list(particles = particles, hist = model$hist, meta = model$meta)
 }
 
 

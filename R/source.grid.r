@@ -63,6 +63,16 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = 
     warning('BUILD.SECTION: No field.names provided, gridded data will be called ', paste0('z', 1:ncol(z), collapse = ','))
   }
 
+  if (class(x[1])[1] == 'POSIXct'){
+    if (verbose) {
+      message('X axis is time.')
+    }
+    x = as.numeric(x)
+    t.axis = T
+  } else {
+    t.axis = F
+  }
+
   ## Set default limits (+10% buffer)
   if (is.null(xlim)) {
     xlim = range(x)
@@ -124,6 +134,11 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = 
 
   grid$x = grid$x / x.factor
   grid$y = grid$y / y.factor
+
+  if (t.axis) {
+    x = conv.time.unix(x)
+    grid$x = conv.time.unix(grid$x)
+  }
 
   ## Construct return object
   grid = list(grid = grid,

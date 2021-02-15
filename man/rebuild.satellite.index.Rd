@@ -4,7 +4,11 @@
 \alias{rebuild.satellite.index}
 \title{Rebuild Satellite Index}
 \usage{
-rebuild.satellite.index(dir = "D:/Data/Data_Satellite/Raw", verbose = FALSE)
+rebuild.satellite.index(
+  dir = "D:/Data/Data_Satellite/Raw",
+  files = NULL,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{verbose}{Flag to print diagnostics}
