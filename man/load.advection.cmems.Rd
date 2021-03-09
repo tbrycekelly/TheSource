@@ -4,7 +4,13 @@
 \alias{load.advection.cmems}
 \title{Load in CMEMS Advection}
 \usage{
-load.advection.cmems(path, lats = NULL, lons = NULL, verbose = T)
+load.advection.cmems(
+  path,
+  lats = NULL,
+  lons = NULL,
+  get.vel = get.vel.cmems,
+  verbose = T
+)
 }
 \arguments{
 \item{path}{CMEMS NC file (includign path) to read in}

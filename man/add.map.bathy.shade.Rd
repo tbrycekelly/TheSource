@@ -7,7 +7,7 @@
 add.map.bathy.shade(
   map,
   bathy,
-  pal = "ocean.ice",
+  pal = "greyscale",
   n = 255,
   zlim = NULL,
   rev = FALSE,

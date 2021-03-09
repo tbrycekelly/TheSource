@@ -9,7 +9,7 @@ add.map.layer(
   lat,
   z,
   zlim = NULL,
-  pal = "ocean.algae",
+  pal = "greyscale",
   col.na = NA,
   n = 255,
   refinement = NA,

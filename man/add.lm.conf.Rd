@@ -4,7 +4,7 @@
 \alias{add.lm.conf}
 \title{Add Linear Model Confidence Intervals}
 \usage{
-add.lm.conf(x, name, model, col = "#50505030", level = 0.95, log = FALSE)
+add.lm.conf(model, x = NULL, name = NULL, col = "#50505030", level = 0.95, ...)
 }
 \description{
 A helper function to plot the confidence intervals determined from a base::lm model.

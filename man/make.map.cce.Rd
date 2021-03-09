@@ -10,11 +10,11 @@ make.map.cce(
   lon.max = -119,
   lat.min = 31,
   lat.max = 36,
-  p = "+proj=merc",
-  land.col = "lightgray",
+  p = make.proj(projection = "merc", lat = 35, lon = -122, dlat = 3),
+  land.col = "#252525",
   grid = TRUE,
-  dlon = 5,
-  dlat = 5
+  dlon = 3,
+  dlat = 3
 )
 }
 \arguments{

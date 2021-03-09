@@ -4,7 +4,13 @@
 \alias{load.advection.oscar}
 \title{Load Advection (OSCAR)}
 \usage{
-load.advection.oscar(file, lats = NULL, lons = NULL, verbose = F)
+load.advection.oscar(
+  file,
+  lats = NULL,
+  lons = NULL,
+  get.vel = get.vel.oscar,
+  verbose = F
+)
 }
 \arguments{
 \item{file}{OSCAR file (includign path) to read in}

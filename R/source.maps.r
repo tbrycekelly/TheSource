@@ -214,7 +214,7 @@ add.map.bathy = function(map, bathy,
 #' @import oce
 #' @export
 add.map.points = function(lon = NULL, lat = NULL, col = 'black', cex = 1, pch = 16,
-                          stn.lon = NULL, stn.lat = NUL, ...){
+                          stn.lon = NULL, stn.lat = NULL, ...){
 
   if (!is.null(stn.lon)) { warning('stn.lon option depreciated. Recommend using lon instead.')}
   if (!is.null(stn.lat)) { warning('stn.lat option depreciated. Recommend using lat instead.')}

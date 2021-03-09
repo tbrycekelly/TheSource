@@ -4,18 +4,33 @@
 \alias{add.map.points}
 \title{Add Map Points}
 \usage{
-add.map.points(stn.lon, stn.lat, col = "black", cex = 1, pch = 16)
+add.map.points(
+  lon = NULL,
+  lat = NULL,
+  col = "black",
+  cex = 1,
+  pch = 16,
+  stn.lon = NULL,
+  stn.lat = NUL,
+  ...
+)
 }
 \arguments{
-\item{stn.lon}{the longitudes of the points to be drawn}
+\item{lon}{the longitudes of the points to be drawn}
 
-\item{stn.lat}{the latitude of the points to be drawn}
+\item{lat}{the latitude of the points to be drawn}
 
 \item{col}{the color of the points}
 
 \item{cex}{the size of point to be drawn}
 
 \item{pch}{the point character to be used}
+
+\item{stn.lon}{(depreciated) the longitudes of the points to be drawn}
+
+\item{stn.lat}{(depreciated) the latitude of the points to be drawn}
+
+\item{...}{optional arguments passed to points().}
 }
 \description{
 Add station points to a map
