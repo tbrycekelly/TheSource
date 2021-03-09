@@ -28,7 +28,6 @@ Imports:
   devtools
 URL: https://github.com/tbrycekelly/TheSource
 Suggests: 
-    testthat,
     pals,
     ncdf4,
     marmap,
