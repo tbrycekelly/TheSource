@@ -53,8 +53,8 @@ load.beta = function(filepath, tz = 'US/Eastern', lookup = NULL) {
   ## Detector line to pull sample names from:
   temp = strsplit(strsplit(raw[3], ':')[[1]], '\\s+')
 
-  if (length(temp) == 6) { names = c(temp[[2]][2], temp[[3]][2], temp[[4]][2], temp[[5]][2], temp[[6]][2])
-  } else { names = c('D1', 'D2', 'D3', 'D4', 'D5') }
+  if (length(temp) == 6) { names = c(temp[[2]][2], temp[[3]][2], temp[[4]][2], temp[[5]][2], temp[[6]][2], 'Guard')
+  } else { names = c('D1', 'D2', 'D3', 'D4', 'D5', 'Guard') }
 
   ## Fix names
   if (!is.null(lookup)) {
@@ -80,7 +80,8 @@ load.beta = function(filepath, tz = 'US/Eastern', lookup = NULL) {
       time = as.POSIXct(strptime(paste(line[1], line[2]), format = '%d/%m/%y %H:%M'), tz = tz)
       cycle = line[3]
 
-      temp = data.frame(Time = time, Cycle = as.numeric(cycle),
+      temp = data.frame(Time = time,
+                        Cycle = as.numeric(cycle),
                         D1 = as.numeric(line[4]),
                         D2 = as.numeric(line[5]),
                         D3 = as.numeric(line[6]),
@@ -139,7 +140,6 @@ load.beta = function(filepath, tz = 'US/Eastern', lookup = NULL) {
              DPM = data$proc$DPM,
              sDPM = data$proc$s.DPM,
              stringsAsFactors = FALSE)
-
 }
 
 

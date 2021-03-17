@@ -11,7 +11,7 @@ add.map.points(
   cex = 1,
   pch = 16,
   stn.lon = NULL,
-  stn.lat = NUL,
+  stn.lat = NULL,
   ...
 )
 }

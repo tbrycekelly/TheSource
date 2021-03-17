@@ -65,7 +65,7 @@ ma = function(x, n = 5){
 #' plot(cars$dist, cars$speed)
 #' add.boot.conf(model, new.x = c(0:130))
 #' @export
-regress.jackknife = function(x, y, sx = NA, sy = NA, n = 1000) {
+regress.jackknife = function(x, y, sx = NA, sy = NA) {
     if (any(!is.na(sx)) | any(!is.na(sy))) {
         warning('Jackknife regressions do not include datapoint uncertainty, ignoring sx and sy values.')
     }
@@ -78,21 +78,71 @@ regress.jackknife = function(x, y, sx = NA, sy = NA, n = 1000) {
     }
 
     ## Build set of regressions
-    res = data.frame(m = rep(NA, n), b = NA, ssr = NA)
+    n = length(x)
+    res = data.frame(m = rep(NA, n), b = NA, ssr = NA, CV = NA)
 
     for (i in 1:n) {
-        l = sample(1:length(x), replace = TRUE)
-        temp.model = lm(y[l] ~ x[l])
+        temp.model = lm(y[-i] ~ x[-i])
         res$m[i] = coef(temp.model)[2]
         res$b[i] = coef(temp.model)[1]
         res$ssr[i] = sum((res$m[i] * x + res$b[i] - y)^2)
+        res$CV[i] = (res$m[i] * x[i] + res$b[i] - y[i])^2 ## SSR
     }
 
     ## Calculate residuals and z-score
     residuals = median(res$m) * x + median(res$b) - y
     zscore = sapply(c(1:length(x)), function(i) { (y[i] - mean(res$m * x[i] + res$b)) / sd(res$m * x[i] + res$b) })
 
-    list(models = res, data = data.frame(x = x, y = y, y.pred = y + residuals, sx = sx, sy = sy, residuals = residuals, zscore = zscore), meta = list(model = regress.jackknife, n = n))
+    list(models = res,
+         data = data.frame(x = x, y = y, y.pred = y + residuals, sx = sx, sy = sy, residuals = residuals, zscore = zscore),
+         meta = list(model = regress.jackknife, n = n))
+}
+
+
+#' @title Resample
+#' @author Thomas Bryce Kelly
+#' @description Generate a bootstrapped model from observations with unknown uncertainty.
+#' @keywords Statistics
+#' @param x The observed x values
+#' @param y The observed y values
+#' @param n The number of jackknife models to generate.
+#' @example
+#' data(cars)
+#' model = regress.resample(cars$dist, cars$speed)
+#' plot(cars$dist, cars$speed)
+#' add.boot.conf(model)
+#' @export
+regress.resample = function(x, y, sx = NA, sy = NA, n = 1e3) {
+    if (any(!is.na(sx)) | any(!is.na(sy))) {
+        warning('Resample regressions do not include datapoint uncertainty, ignoring sx and sy values.')
+    }
+
+    ## Filter out NAs
+    k = which(x = is.na(x) | is.na(y))
+    if (length(k) > 0) {
+        x = x[-k]
+        y = y[-k]
+    }
+
+    ## Build set of regressions
+    res = data.frame(m = rep(NA, n), b = NA, ssr = NA, CV = NA)
+
+    for (i in 1:n) {
+        l = sample(1:length(x), replace = T)
+        temp.model = lm(y[l] ~ x[l])
+        res$m[i] = coef(temp.model)[2]
+        res$b[i] = coef(temp.model)[1]
+        res$ssr[i] = sum((res$m[i] * x + res$b[i] - y)^2)
+        res$CV[i] = sum((res$m[i] * x[-l] + res$b[i] - y[-l])^2)
+    }
+
+    ## Calculate residuals and z-score
+    residuals = median(res$m) * x + median(res$b) - y
+    zscore = sapply(c(1:length(x)), function(i) { (y[i] - mean(res$m * x[i] + res$b)) / sd(res$m * x[i] + res$b) })
+
+    list(models = res,
+         data = data.frame(x = x, y = y, y.pred = y + residuals, sx = sx, sy = sy, residuals = residuals, zscore = zscore),
+         meta = list(model = regress.resample, n = n))
 }
 
 

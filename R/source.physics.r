@@ -238,10 +238,10 @@ calc.seawater.compressibility = function(S = 8, T = 10, P = 10, verbose = T) {
 
   if (verbose) {
     message('Module of compressibility for Seawater calcualted from UNESCO 1981. Check value for 8PSU, 10C, 0bar = 21351.408.')
-    message('\tKw = ', Kw)
-    message('\tA1 = ', A1)
-    message('\tB2 = ', B2)
-    message('\tK = ', K)
+    #message('\tKw = ', Kw[1])
+    #message('\tA1 = ', A1[1])
+    #message('\tB2 = ', B2[1])
+    #message('\tK = ', K[1])
   }
 
   K
