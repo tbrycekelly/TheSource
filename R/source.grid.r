@@ -53,20 +53,18 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = 
   if (!is.null(lon)) {lon = lon[l]}
   if (is.null(gridder)) {
     gridder = gridIDW
-    message('BUILD.SECTION: No gridder specified, defaulting to gridIDW. Other options: gridNN, gridNNI and gridKrige.')
+    if (verbose) { message('BUILD.SECTION: No gridder specified, defaulting to gridIDW. Other options: gridNN, gridNNI and gridKrige.') }
   }
 
 
   if (uncertainty == 0) { warning('BUILD.SECTION: Uncertainty of zero may produce NAs!') }
   if (is.null(field.names)) {
     field.names = paste0('z', 1:ncol(z))
-    warning('BUILD.SECTION: No field.names provided, gridded data will be called ', paste0('z', 1:ncol(z), collapse = ','))
+    if (verbose) { warning('BUILD.SECTION: No field.names provided, gridded data will be called ', paste0('z', 1:ncol(z), collapse = ',')) }
   }
 
   if (class(x[1])[1] == 'POSIXct'){
-    if (verbose) {
-      message('X axis is time.')
-    }
+    if (verbose) { message('X axis is time.') }
     x = as.numeric(x)
     t.axis = T
   } else {
@@ -97,11 +95,36 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = 
   ylim = ylim * y.factor
 
 
-  y.new = seq(ylim[1], ylim[2], by = y.scale)
-  x.new = seq(xlim[1], xlim[2], by = x.scale)
+  if (y.scale == 0) {
+    y.new = ylim[1]
+  } else {
+    y.new = seq(ylim[1], ylim[2], by = y.scale)
+  }
 
-  if (!is.null(lat)) { section.lat = approx(x, lat, xout = x.new, rule = 2)$y } else { section.lat = rep(NA, length(x)); lat = NA }
-  if (!is.null(lon)) { section.lon = approx(x, lon, xout = x.new, rule = 2)$y } else { section.lon = rep(NA, length(y)); lon = NA }
+  if (x.scale == 0) {
+    x.new = xlim[1]
+  } else {
+    x.new = seq(xlim[1], xlim[2], by = x.scale)
+  }
+
+  if (!is.null(lat)) {
+    if (length(unique(x)) > 1) {
+      section.lat = approx(x, lat, xout = x.new, rule = 2)$y
+    } else {
+      section.lat = rep(lat, length(x.new))
+    }
+  } else {
+      section.lat = rep(NA, length(x)); lat = NA
+  }
+  if (!is.null(lon)) {
+    if (length(unique(x)) > 1) { ## interpolate
+      section.lon = approx(x, lon, xout = x.new, rule = 2)$y
+    } else {
+      section.lon = rep(lon, length(x.new))
+    }
+  } else {
+    section.lon = rep(NA, length(x)); lon = NA
+  }
 
   ## Make grid and fill in
   if (is.null(grid)) {
@@ -140,6 +163,10 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = 
     grid$x = conv.time.unix(grid$x)
   }
 
+  ## Reconstruct z
+  z = data.frame(z)
+  colnames(z) = field.names
+
   ## Construct return object
   grid = list(grid = grid,
               grid.meta = list(
@@ -156,7 +183,7 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = 
               y = y.new / y.factor,
               section.lat = section.lat,
               section.lon = section.lon,
-              data = data.frame(x = x / x.factor, y = y / y.factor, z = z, lat = lat, lon = lon)
+              data = cbind(x = x / x.factor, y = y / y.factor, z = z, lat = lat, lon = lon)
   )
 
   if (verbose) {message('BUILD.SECTION Timings\n Total function time: \t ', time.c - time.a, '\n Preprocessing Time:\t', time.b - time.a, '\n Gridding Time:\t', time.c - time.b)}
@@ -188,7 +215,7 @@ build.section.parallel = function(x, y, z, lat = NULL, lon = NULL,
                          x.factor = 1, y.factor = 1,
                          x.scale = NULL, y.scale = NULL,
                          uncertainty = 1e-12, p = 3, gridder = NULL,
-                         field.names = NULL, nx = 50, ny = 50) {
+                         field.names = NULL, nx = 50, ny = 50, verbose = T) {
 
   z = data.matrix(z)
   ## Remove NAs
@@ -290,14 +317,28 @@ build.section.parallel = function(x, y, z, lat = NULL, lon = NULL,
 
 #### Alternative Gridding Engines
 
-#' @title Grid via Nearest Neighbor
+
+#' @title Grid via Binning
+#' @description Bins data into reguarly spaced grid
+#' @param gx Grid x values to interpolate onto
+#' @param gy Grid y values to interpolate onto
+#' @param x Observations, x values
+#' @param y Observations, y values
+#' @param z Observations, z values
+#' @param p Unused
+#' @param xscale The spacing of the x grid
+#' @param yscale The spacing of the y grid
+#' @param uncertainty Unused
 #' @author Thomas Bryce Kelly
 #' @export
-gridNN.old = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
+gridBin = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
   gz = rep(NA, length(gx))
 
+  if (xscale == 0) { xscale = Inf }
+  if (yscale == 0) { yscale = Inf }
+
   for (i in 1:length(gz)) {
-    gz[i] = z[which.min(abs(gx[i] - x)^p + abs(gy[i] - y)^p)]
+    gz[i] = mean(z[which(abs(gx[i] - x) < xscale/2 & abs(gy[i] - y) < yscale/2)])
   }
   gz ## Return
 }
@@ -305,6 +346,12 @@ gridNN.old = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
 
 #' @title Grid via Natural Neighbor Interpolation
 #' @author Thomas Bryce Kelly
+#' @param gx Grid x values to interpolate onto
+#' @param gy Grid y values to interpolate onto
+#' @param x Observations, x values
+#' @param y Observations, y values
+#' @param z Observations, z values
+#' @param p Exponent on the distance function
 #' @inheritParams gridIDW
 #' @export
 gridNNI = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
@@ -346,6 +393,12 @@ gridNNI = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
 #' @title Grid via Krigging
 #' @author Thomas Bryce Kelly
 #' @inheritParams gridIDW
+#' @param gx Grid x values to interpolate onto
+#' @param gy Grid y values to interpolate onto
+#' @param x Observations, x values
+#' @param y Observations, y values
+#' @param z Observations, z values
+#' @param p Unused
 #' @export
 #' @import automap
 #' @importFrom sp coordinates
@@ -731,14 +784,6 @@ add.section.inlay = function(section) {
   par(plt = par.old$plt)
 }
 
-#' @title Greyscale Palette
-#' @export
-#' @author Thomas Bryce Kelly
-#' @param n the number of greyscale colors desired
-#' @param rev a boolean flag to reverse the color palette
-greyscale = function(n, rev = FALSE) {
-  grey.colors(n, 0, 1, rev = rev)
-}
 
 
 #' @useDynLib TheSource

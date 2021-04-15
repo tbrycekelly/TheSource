@@ -4,7 +4,7 @@
 \alias{regress.york}
 \title{York Regression}
 \usage{
-regress.york(x, y, sx, sy, alpha = 0.05)
+regress.york(x, sx, y, sy, alpha = 0.05)
 }
 \description{
 York Regression

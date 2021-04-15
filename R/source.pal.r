@@ -121,7 +121,7 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'greyscale'
   ## Default Spacing
   # width
   if (is.null(width) & !horizontal) {
-    width = (0.95 - par('plt')[2])
+    width = min(c(0.95 - par('plt')[2], 0.05))
   }
   if (is.null(width) & horizontal) {
     width = par('plt')[2] - par('plt')[1]
@@ -129,7 +129,7 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'greyscale'
 
   #height
   if (is.null(height) & horizontal) {
-    height = (0.95 - par('plt')[4])
+    height = min(c(0.95 - par('plt')[4], 0.05))
   }
   if (is.null(height) & !horizontal) {
     height = par('plt')[4] - par('plt')[3]
@@ -225,4 +225,13 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'greyscale'
   par(par.original)
 }
 
+
+#' @title Greyscale Palette
+#' @export
+#' @author Thomas Bryce Kelly
+#' @param n the number of greyscale colors desired
+#' @param rev a boolean flag to reverse the color palette
+greyscale = function(n, rev = FALSE) {
+  grey.colors(n, 0, 1, rev = rev)
+}
 

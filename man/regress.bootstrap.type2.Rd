@@ -4,7 +4,7 @@
 \alias{regress.bootstrap.type2}
 \title{Bootstrap 2}
 \usage{
-regress.bootstrap.type2(x, s.x, y, s.y, n = 1000)
+regress.bootstrap.type2(x, sx, y, sy, n = 1000)
 }
 \description{
 Bootstrap 2

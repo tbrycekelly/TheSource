@@ -48,7 +48,7 @@ is.prime = function(n) {
 #' @param n The number of samples to include in the moving average.
 #' @export
 ma = function(x, n = 5){
-    as.numeric(filter(x, rep(1/n, n), sides = 2))
+    as.numeric(filter(as.numeric(x), rep(1/n, n), sides = 2))
 }
 
 
@@ -92,10 +92,21 @@ regress.jackknife = function(x, y, sx = NA, sy = NA) {
     ## Calculate residuals and z-score
     residuals = median(res$m) * x + median(res$b) - y
     zscore = sapply(c(1:length(x)), function(i) { (y[i] - mean(res$m * x[i] + res$b)) / sd(res$m * x[i] + res$b) })
+    aic = length(x) * log(sum(residuals^2) / length(x)) + 6 # Akaike Information Criterion
 
     list(models = res,
-         data = data.frame(x = x, y = y, y.pred = y + residuals, sx = sx, sy = sy, residuals = residuals, zscore = zscore),
-         meta = list(model = regress.jackknife, n = n))
+         data = data.frame(x = x,
+                           y = y,
+                           y.pred = y + residuals,
+                           sx = sx,
+                           sy = sy,
+                           residuals = residuals,
+                           zscore = zscore),
+         meta = list(model = regress.jackknife,
+                     m = median(res$m),
+                     b = median(res$b),
+                     n = n, AIC = aic,
+                     R2 = 1 - sum(residuals^2) / sum((y - mean(y))^2)))
 }
 
 
@@ -139,10 +150,15 @@ regress.resample = function(x, y, sx = NA, sy = NA, n = 1e3) {
     ## Calculate residuals and z-score
     residuals = median(res$m) * x + median(res$b) - y
     zscore = sapply(c(1:length(x)), function(i) { (y[i] - mean(res$m * x[i] + res$b)) / sd(res$m * x[i] + res$b) })
+    aic = length(x) * log(sum(residuals^2) / length(x)) + 6 # Akaike Information Criterion
 
     list(models = res,
          data = data.frame(x = x, y = y, y.pred = y + residuals, sx = sx, sy = sy, residuals = residuals, zscore = zscore),
-         meta = list(model = regress.resample, n = n))
+         meta = list(model = regress.resample,
+                     m = median(res$m),
+                     b = median(res$b),
+                     n = n, AIC = aic,
+                     R2 = 1 - sum(residuals^2) / sum((y - mean(y))^2)))
 }
 
 
@@ -187,8 +203,15 @@ regress.jackknife.2 = function(x, y, sx = NA, sy = NA, n = 1000) {
     ## Calculate residuals and z-score
     residuals = median(res$m) * x + median(res$b) - y
     zscore = sapply(c(1:length(x)), function(i) { (y[i] - mean(res$m * x[i] + res$b)) / sd(res$m * x[i] + res$b) })
+    aic = length(x) * log(sum(residuals^2) / length(x)) + 6 # Akaike Information Criterion
 
-    list(models = res, data = data.frame(x = x, y = y, y.pred = y + residuals, sx = sx, sy = sy, residuals = residuals, zscore = zscore), meta = list(model = regress.jackknife, n = n))
+    list(models = res,
+         data = data.frame(x = x, y = y, y.pred = y + residuals, sx = sx, sy = sy, residuals = residuals, zscore = zscore),
+         meta = list(model = regress.jackknife,
+                     m = median(res$m),
+                     b = median(res$b),
+                     n = n, AIC = aic,
+                     R2 = 1 - sum(residuals^2) / sum((y - mean(y))^2)))
 }
 
 
@@ -231,8 +254,15 @@ regress.bootstrap = function(x, y, sx, sy, n = 1000) {
     ## Calculate residuals and z-score
     residuals = median(res$m) * x + median(res$b) - y
     zscore = sapply(c(1:length(x)), function(i) { (y[i] - mean(res$m * x[i] + res$b)) / sd(res$m * x[i] + res$b) })
+    aic = length(x) * log(sum(residuals^2) / length(x)) + 6 # Akaike Information Criterion
 
-    list(models = res, data = data.frame(x = x, y = y, y.pred = y + residuals, sx = sx, sy = sy, residuals = residuals, zscore = zscore), meta = list(model = regress.bootstrap, n = n))
+    list(models = res,
+         data = data.frame(x = x, y = y, y.pred = y + residuals, sx = sx, sy = sy, residuals = residuals, zscore = zscore),
+         meta = list(model = regress.bootstrap,
+                     m = median(res$m),
+                     b = median(res$b),
+                     n = n, AIC = aic,
+                     R2 = 1 - sum(residuals^2) / sum((y - mean(y))^2)))
 }
 
 
@@ -241,15 +271,15 @@ regress.bootstrap = function(x, y, sx, sy, n = 1000) {
 #' @keywords Statistics
 #' @import lmodel2
 #' @export
-regress.bootstrap.type2 = function(x, s.x, y, s.y, n = 1000) {
+regress.bootstrap.type2 = function(x, sx, y, sy, n = 1000) {
 
     ## Filter
     k = which(is.na(x) | is.na(sx) | is.na(y) | is.na(sy))
     if (length(k) > 0) {
         x = x[-k]
-        s.x = s.x[-k]
+        sx = sx[-k]
         y = y[-k]
-        s.y = s.y[-k]
+        sy = sy[-k]
     }
 
     res = data.frame(m = rep(NA, n), b = NA, ssr = NA)
@@ -258,8 +288,8 @@ regress.bootstrap.type2 = function(x, s.x, y, s.y, n = 1000) {
     for (i in 1:n) {
 
         ## Generate random sampling
-        temp.x = rnorm(num.x, x, s.x)
-        temp.y = rnorm(num.x, y, s.y)
+        temp.x = rnorm(num.x, x, sx)
+        temp.y = rnorm(num.x, y, sy)
 
         model = lmodel2::lmodel2(temp.y ~ temp.x, nperm = 0)
 
@@ -272,8 +302,89 @@ regress.bootstrap.type2 = function(x, s.x, y, s.y, n = 1000) {
     ## Calculate residuals and z-score
     residuals = median(res$m) * x + median(res$b) - y
     zscore = sapply(c(1:length(x)), function(i) { (y[i] - mean(res$m * x[i] + res$b)) / sd(res$m * x[i] + res$b) })
+    aic = length(x) * log(sum(residuals^2) / length(x)) + 6 # Akaike Information Criterion
 
-    list(models = res, data = data.frame(x = x, y = y, y.pred = y + residuals, sx = sx, sy = sy, residuals = residuals, zscore = zscore), meta = list(model = regress.bootstrap.type2, n = n))
+    list(models = res,
+         data = data.frame(x = x, y = y, y.pred = y + residuals, sx = sx, sy = sy, residuals = residuals, zscore = zscore),
+         meta = list(model = regress.bootstrap.type2,
+                     m = median(res$m),
+                     b = median(res$b),
+                     n = n, AIC = aic,
+                     R2 = 1 - sum(residuals^2) / sum((y - mean(y))^2)))
+}
+
+
+#' @title York Regression
+#' @author Thomas Bryce Kelly
+#' @export
+regress.york = function(x, sx, y, sy, alpha = 0.05){
+    X = cbind(x, sx, y, sy, 0)
+    X = as.data.frame(X)
+    colnames(X) = c('X','sX','Y','sY','rXY')
+
+    ab = lm(X$Y ~ X$X)$coefficients # initial guess
+    a = ab[1]
+    b = ab[2]
+
+    if (any(is.na(ab))) {
+        stop('Cannot fit a straight line through these data')
+    }
+
+    ## Set weigths based on variance
+    wX = 1 / X$sX^2
+    wY = 1 / X$sY^2
+
+    ## Iteratively find the solution
+    for (i in 1:50){ # 50 = maximum number of iterations
+
+        bold = b
+        A = sqrt(wX * wY)
+        W = wX * wY / (wX + b^2 * wY - 2 * b * X$rXY * A)
+
+        Xbar = sum(W * X$X, na.rm = TRUE) / sum(W, na.rm=TRUE)
+        Ybar = sum(W * X$Y, na.rm = TRUE) / sum(W, na.rm=TRUE)
+
+        U = X$X - Xbar
+        V = X$Y - Ybar
+        B = W * (U / wY + b * V / wX - (b * U + V) * X$rXY / A)
+        b = sum(W * B * V, na.rm = TRUE) / sum(W * B * U, na.rm = TRUE)
+        if ((bold / b - 1)^2 < 1e-15) {
+            break # convergence reached
+        }
+    }
+
+    ## Transform back
+    a = Ybar - b * Xbar
+    X = Xbar + B
+
+    ## Calculate uncertainty
+    xbar = sum(W * X, na.rm=TRUE) / sum(W, na.rm=TRUE)
+    u = X - xbar
+    sb = sqrt(1 / sum(W * u^2, na.rm = TRUE))
+    sa = sqrt(1 / sum(W, na.rm=TRUE) + (xbar * sb)^2)
+
+    out = get.york.mswd(x, a, b)
+    out$fact = 1
+    out$a = c(a,sa)
+    out$b = c(b,sb)
+    out$cov.ab = -xbar * sb^2
+    names(out$a) = c('a','s[a]')
+    names(out$b) = c('b','s[b]')
+    out$type = 'york'
+
+    ## Calculate residuals and z-score
+    residuals = out$b * x + out$a - y
+    zscore = 0
+    aic = length(x) * log(sum(residuals^2) / length(x)) + 6 # Akaike Information Criterion
+
+    list(models = data.frame(m = out$b, b = out$a, ssr = ),
+         data = data.frame(x = x, y = y, y.pred = y + residuals, sx = sx, sy = sy, residuals = residuals, zscore = zscore),
+         meta = list(model = regress.york,
+                     m = out$b,
+                     b = out$a,
+                     n = length(x),
+                     AIC = aic,
+                     R2 = 1 - sum(residuals^2) / sum((y - mean(y))^2)))
 }
 
 
@@ -285,6 +396,16 @@ regress.bootstrap.type2 = function(x, s.x, y, s.y, n = 1000) {
 #' @keywords Statistics
 #' @export
 add.boot.trendline = function(model, col = 'black', lty = 2, lwd = 1, ...) {
+    warning('Depreciated function, please use add.regess.trendline instead.')
+    abline(a = median(model$models$b), b = median(model$models$m), col = col, lty = lty, lwd = lwd, ...)
+}
+
+#' @title Add Bootstrapped Trendline
+#' @author Thomas Bryce Kelly
+#' @description Add the maximum likelihood trendline to a figured based on a bootstrap estimation.
+#' @keywords Statistics
+#' @export
+add.regress.trendline = function(model, col = 'black', lty = 2, lwd = 1, ...) {
     abline(a = median(model$models$b), b = median(model$models$m), col = col, lty = lty, lwd = lwd, ...)
 }
 
@@ -337,7 +458,36 @@ add.lm.trendline = function(model, col = 'black', lwd = 1, lty = 1, ...) {
 #' @export
 add.boot.conf = function(model, x = NULL, col = '#55555540', conf = c(0.025, 0.975),
                          border = FALSE, trendline = FALSE, n = 1e3, ...) {
+    warning('Depreciated function, please use add.regess.conf instead.')
+    if (is.null(x)) {
+        x.new = seq(min(pretty(model$data$x)), max(pretty(model$data$x)), length.out = n)
+    } else {
+        x.new = x
+    }
+    y.upper = sapply(c(1:n), function(i) {quantile(model$models$m * x.new[i] + model$models$b, probs = conf[2])})
+    y.lower = sapply(c(1:n), function(i) {quantile(model$models$m * x.new[i] + model$models$b, probs = conf[1])})
+    y.mid = sapply(c(1:n), function(i) {quantile(model$models$m * x.new[i] + model$models$b, probs = 0.5)})
 
+    polygon(x = c(x.new, rev(x.new)), y = c(y.upper, rev(y.lower)), col = col, border = border, ...)
+
+    if (trendline) {
+        add.boot.trendline(model, ...)
+    }
+}
+
+#' @title Add Bootstrapped Confidence Intervals
+#' @author Thomas Bryce Kelly
+#' @description Add confidence bands to a figure based on results of a bootstrap.
+#' @keywords Statistics Uncertainty
+#' @param model A bootstrap object (i.e. a dataframe) containing bootstrapped estimates of m and b.
+#' @param new.x The x values for which predictions are required.
+#' @param col The desired color of the confidence band. We recomend colors with transparency for plotting.
+#' @param conf The quantile ranges for the plotting (default is 95% two-tail).
+#' @param border Do you want a border on the shaded confidence interval?
+#' @param trendline Should the maximum liklihood values be plotted as a trendline?
+#' @export
+add.regress.conf = function(model, x = NULL, col = '#55555540', conf = c(0.025, 0.975),
+                         border = FALSE, trendline = FALSE, n = 1e3, ...) {
     if (is.null(x)) {
         x.new = seq(min(pretty(model$data$x)), max(pretty(model$data$x)), length.out = n)
     } else {
@@ -363,7 +513,7 @@ add.boot.conf = function(model, x = NULL, col = '#55555540', conf = c(0.025, 0.9
 #' @param x The x values for which predictions are required.
 #' @param conf The confidence interval of the predicted values saught. A value of 0.5 is the maximum likelihood value.
 #' @export
-get.boot.vals = function(model, x, conf = 0.5) {
+get.regress.vals = function(model, x, conf = 0.5) {
     y = rep(0, length(x))
 
     for (i in 1:length(y)) {
@@ -372,61 +522,6 @@ get.boot.vals = function(model, x, conf = 0.5) {
     }
 
     y
-}
-
-
-
-#' @title lmodel boot
-#' @author Thomas Bryce Kelly
-#' @export
-build.lmodel2.boot = function(lmodel2, n = 1000, model = 3) {
-    slope = lmodel2$regression.results$Slope[model]
-    slope.sd = (as.numeric(mod$confidence.intervals[model,5]) - as.numeric(mod$confidence.intervals[model,4])) / (1.96*2)
-
-    intercept = lmodel2$regression.results$Intercept[3]
-    intercept.sd = (as.numeric(mod$confidence.intervals[model,3]) - as.numeric(mod$confidence.intervals[model,2])) / (1.96*2)
-
-    print(paste0('m = ', slope, ' +/- ', slope.sd))
-    print(paste0('b = ', intercept, ' +/- ', intercept.sd))
-
-    ## Return
-    data.frame(m = rnorm(n, slope, abs(slope.sd)),
-               b = rnorm(n, intercept, abs(intercept.sd)))
-}
-
-
-#' @title Calcualte Bootstrapped R Squared
-#' @author Thomas Bryce Kelly
-#' @keywords Statistics
-#' @export
-calc.boot.r.squared = function(model) {
-
-    ## R2 = 1 - SSR / SS
-    1 - calc.boot.ssr(model = model) / calc.boot.ss(model = model)
-}
-
-#' @title Calculate Bootstrapped Sum of Squared Residuals
-#' @author Thomas Bryce Kelly
-#' @description A function to calculate the SSR for a series of bootstrapped regressions.
-#' @keywords Statistics
-#' @export
-#### Sum of Squared Residuals
-calc.boot.ssr = function(model) {
-
-    sum((test$data$y.pred - model$data$y)^2)
-}
-
-
-#' @title Calculate Bootstrapped Sum of Squares
-#' @author Thomas Bryce Kelly
-#' @description A helper function for calculating SSR from a series of bootstraps.
-#' @keywords Statistics
-#' @export
-#### Sum of Squares
-calc.boot.ss = function(model) {
-
-    ## Calc Total Sum of Squares
-    sum((mean(model$data$y) - model$data$y)^2)
 }
 
 
@@ -442,65 +537,7 @@ calc.r.squared = function(x, y){
 }
 
 
-#' @title York Regression
-#' @author Thomas Bryce Kelly
-#' @export
-regress.york = function(x, y, sx, sy, alpha = 0.05){
-    x = cbind(x, sx, y, sy, 0)
-    x = as.data.frame(x)
-    colnames(x) = c('X','sX','Y','sY','rXY')
 
-    ab = lm(x$Y ~ x$X)$coefficients # initial guess
-    a = ab[1]
-    b = ab[2]
-
-    if (any(is.na(ab))) {
-        stop('Cannot fit a straight line through these data')
-    }
-
-    ## Set weigths based on variance
-    wX = 1 / x$sX^2
-    wY = 1 / x$sY^2
-
-    ## Iteratively find the solution
-    for (i in 1:100){ # 50 = maximum number of iterations
-
-        bold = b
-        A = sqrt(wX * wY)
-        W = wX * wY / (wX + b^2 * wY - 2 * b * x$rXY * A)
-
-        Xbar = sum(W * x$X, na.rm = TRUE) / sum(W, na.rm=TRUE)
-        Ybar = sum(W * x$Y, na.rm = TRUE) / sum(W, na.rm=TRUE)
-
-        U = x$X - Xbar
-        V = x$Y - Ybar
-        B = W * (U / wY + b * V / wX - (b * U + V) * x$rXY / A)
-        b = sum(W * B * V, na.rm = TRUE) / sum(W * B * U, na.rm = TRUE)
-        if ((bold / b - 1)^2 < 1e-15) {
-            break # convergence reached
-        }
-    }
-
-    ## Transform back
-    a = Ybar - b * Xbar
-    X = Xbar + B
-
-    ## Calculate uncertainty
-    xbar = sum(W * X, na.rm=TRUE) / sum(W, na.rm=TRUE)
-    u = X - xbar
-    sb = sqrt(1 / sum(W * u^2, na.rm = TRUE))
-    sa = sqrt(1 / sum(W, na.rm=TRUE) + (xbar * sb)^2)
-
-    out = get.york.mswd(x, a, b)
-    out$fact = 1
-    out$a = c(a,sa)
-    out$b = c(b,sb)
-    out$cov.ab = -xbar * sb^2
-    names(out$a) = c('a','s[a]')
-    names(out$b) = c('b','s[b]')
-    out$type = 'york'
-    out
-}
 
 
 #' @title Get York MSWD

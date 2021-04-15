@@ -21,7 +21,8 @@ build.section.parallel(
   gridder = NULL,
   field.names = NULL,
   nx = 50,
-  ny = 50
+  ny = 50,
+  verbose = T
 )
 }
 \arguments{

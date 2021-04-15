@@ -79,6 +79,7 @@ make.time = function (year = NULL, month = 1, day = 1, hour = 0, minute = 0, sec
   as.POSIXct(paste0(year, '-', month, '-', day, ' ', hour, ':', minute, ':', second), tz = tz)
 }
 
+
 #' @title Get Year
 #' @description A helper function used to pull the our information from a POSIX object.
 #' @param x An object of class POSIX or a vector containing POSIX.
@@ -87,6 +88,7 @@ get.year = function (x) {
   if (!is.POSIXct(x)) {warning('Object passed to get.year is not a POSIX.')}
   as.POSIXlt(x)$year + 1900
 }
+
 
 #' @title Get Month
 #' @description A helper function used to pull the our information from a POSIX object.
@@ -97,6 +99,7 @@ get.month = function (x) {
   as.numeric(format(x, '%m'))
 }
 
+
 #' @title Get Day
 #' @description A helper function used to pull the our information from a POSIX object.
 #' @param x An object of class POSIX or a vector containing POSIX.
@@ -105,6 +108,7 @@ get.day = function (x) {
   if (!is.POSIXct(x)) {warning('Object passed to get.day is not a POSIX.')}
   as.numeric(format(x, '%d'))
 }
+
 
 #' @title Get Julian Day
 #' @description A helper function used to pull the our information from a POSIX object.
@@ -182,6 +186,7 @@ is.POSIXct = function(x) {inherits(x, "POSIXct")}
 which.unique = function(x) {
     which(!duplicated(x))
 }
+
 
 #' @title Is Within
 #' @author Thomas Bryce Kelly
@@ -311,6 +316,7 @@ is.inside = function(pos, box, verbose = FALSE) {
 TheSource.update = function() {
   user = readline(prompt = 'Update installation of TheSource? [Y|y] ')
   if (user == 'Y' | user == 'y') {
+    unloadNamespace('package:TheSource')
     detach("package:TheSource", unload=TRUE)
     devtools::install_github('tbrycekelly/TheSource')
     library(TheSource)
@@ -324,7 +330,7 @@ TheSource.update = function() {
 #' @author Thomas Bryce Kelly
 #' @export
 TheSource.version = function() {
-  '0.2.8'
+  '0.3.3'
 }
 
 

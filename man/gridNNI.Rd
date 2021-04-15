@@ -6,6 +6,19 @@
 \usage{
 gridNNI(gx, gy, x, y, z, p, xscale, yscale, uncertainty)
 }
+\arguments{
+\item{gx}{Grid x values to interpolate onto}
+
+\item{gy}{Grid y values to interpolate onto}
+
+\item{x}{Observations, x values}
+
+\item{y}{Observations, y values}
+
+\item{z}{Observations, z values}
+
+\item{p}{Exponent on the distance function}
+}
 \description{
 Grid via Natural Neighbor Interpolation
 }
