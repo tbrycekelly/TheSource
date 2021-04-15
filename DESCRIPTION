@@ -1,7 +1,7 @@
 Package: TheSource
 Type: Package
 Title: TheSource: It Will Hold Your Beer
-Version: 0.3.2
+Version: 0.3.3
 Author:
   Thomas Bryce Kelly <tbkelly@alaska.edu> <http://tkelly.org>
   Laura Whitmore <laura.whitmore@usm.edu> <http://whitmorescience.com/>
@@ -11,7 +11,7 @@ License: The "be nice to you and me" license (also known as MIT non-commercial l
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1
-Depends: R
+Depends: 
 LinkingTo: Rcpp
 Imports:
   Rcpp,
