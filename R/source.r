@@ -85,7 +85,7 @@ make.time = function (year = NULL, month = 1, day = 1, hour = 0, minute = 0, sec
 #' @param x An object of class POSIX or a vector containing POSIX.
 #' @export
 get.year = function (x) {
-  if (!is.POSIXct(x)) {warning('Object passed to get.year is not a POSIX.')}
+  if (any(!is.POSIXct(x))) {warning('Object(s) passed to get.year is not a POSIX.')}
   as.POSIXlt(x)$year + 1900
 }
 
@@ -95,7 +95,7 @@ get.year = function (x) {
 #' @param x An object of class POSIX or a vector containing POSIX.
 #' @export
 get.month = function (x) {
-  if (!is.POSIXct(x)) {warning('Object passed to get.month is not a POSIX.')}
+  if (any(!is.POSIXct(x))) {warning('Object(s) passed to get.month is not a POSIX.')}
   as.numeric(format(x, '%m'))
 }
 
@@ -105,7 +105,7 @@ get.month = function (x) {
 #' @param x An object of class POSIX or a vector containing POSIX.
 #' @export
 get.day = function (x) {
-  if (!is.POSIXct(x)) {warning('Object passed to get.day is not a POSIX.')}
+  if (any(!is.POSIXct(x))) {warning('Object(s) passed to get.day is not a POSIX.')}
   as.numeric(format(x, '%d'))
 }
 
@@ -115,7 +115,7 @@ get.day = function (x) {
 #' @param x An object of class POSIX or a vector containing POSIX.
 #' @export
 get.julian = function (x) {
-  if (!is.POSIXct(x)) {warning('Object passed to get.day is not a POSIX.')}
+  if (any(!is.POSIXct(x))) {warning('Object(s) passed to get.day is not a POSIX.')}
   as.numeric(difftime(x, make.time(year = get.year(x)), units = 'days'))
 }
 
@@ -125,15 +125,16 @@ get.julian = function (x) {
 #' @param x An object of class POSIX or a vector containing POSIX.
 #' @export
 get.hour = function (x) {
-  if (!is.POSIXct(x)) {warning('Object passed to get.hour is not a POSIX.')}
-    as.POSIXlt(x)$hour
+  if (any(!is.POSIXct(x))) {warning('Object(s) passed to get.hour is not a POSIX.')}
+  as.POSIXlt(x)$hour
 }
 
 
 #' @title Get Minutes
 #' @export
 get.minutes = function (x) {
-    as.POSIXlt(x)$min
+  if (any(!is.POSIXct(x))) {warning('Object(s) passed to get.minutes is not a POSIX.')}
+  as.POSIXlt(x)$min
 }
 
 
@@ -141,7 +142,8 @@ get.minutes = function (x) {
 #' @keywords Convert Time
 #' @export
 get.seconds = function (x) {
-    as.POSIXlt(x)$sec
+  if (any(!is.POSIXct(x))) {warning('Object(s) passed to get.seconds is not a POSIX.')}
+  as.POSIXlt(x)$sec
 }
 
 

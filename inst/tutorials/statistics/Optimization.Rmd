@@ -1,0 +1,74 @@
+---
+title: "Optimization Routines in TheSource"
+author: "Thomas Bryce Kelly"
+output:
+  learnr::tutorial:
+    progressive: F
+runtime: shiny_prerendered
+---
+
+```{r setup, include = FALSE}
+library(learnr)
+library(TheSource)
+
+tutorial_options(exercise.timelimit = 60)
+
+knitr::opts_chunk$set(
+  echo = F,
+  #collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+```{R}
+cost = function(x) {
+  x^2
+}
+
+b = data.frame(min = -10, max = 10)
+
+m = parameter.search(n = 1, cost = cost, bounds = b)
+str(m)
+
+```
+
+
+
+
+```{R}
+plot(m$grid$x, m$grid$cost)
+abline(v = m$min$x)
+
+```
+
+
+
+```{R}
+cost = function(x) {
+  x^2
+}
+
+b = data.frame(min = -10, max = 10)
+
+m = parameter.search(n = 10, cost = cost, bounds = b, progression = 1)
+
+
+par(mfrow=c(1,2))
+plot(m$history$x, m$history$cost, xlim = c(-10,10), main = m$min$x)
+plot(m$history$x, m$history$cost)
+abline(v = m$min$x)
+
+```
+
+
+
+
+```{R}
+
+cost = test.function(1)
+m = parameter.search(n = 10, cost = cost, bounds = b, progression = 1)
+
+
+
+```

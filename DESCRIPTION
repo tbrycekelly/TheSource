@@ -31,5 +31,6 @@ Imports:
   marmap,
   polynom,
   missForest,
+  learnr
 URL: https://github.com/tbrycekelly/TheSource
 Suggests: 

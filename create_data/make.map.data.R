@@ -13,6 +13,23 @@ add.map.bathy(map, bathy.global, bathy.levels = -1000)
 save(bathy.global, file = 'data/bathy.global.rdata')
 
 
+## Save to netcdf
+library(ncdf4)
+lon1 <- ncdim_def("longitude", "degrees_east", bathy.global$Lon)
+lat2 <- ncdim_def("latitude", "degrees_north", bathy.global$Lat)
+mv <- -999999 #missing value to use
+var_temp <- ncvar_def("depth", "meters", list(lon1, lat2), longname="NOAA bathymetry data pulled from gis.ngdc.noaa.gov", mv)
+
+ncnew <- nc_create('./inst/extdata/bathy.global.nc', list(var_temp))
+print(paste("The file has", ncnew$nvars,"variables"))
+print(paste("The file has", ncnew$ndim,"dimensions"))
+
+ncvar_put(ncnew, var_temp, bathy.global$Z, start = c(1,1),
+          count = c(length(bathy.global$Lon), length(bathy.global$Lat)))
+nc_close(ncnew)
+
+
+
 ## Arctic
 bathy = getNOAA.bathy(-180, 180, 60, 90, resolution = 10)
 bathy.arctic = list(Lon = as.numeric(rownames(bathy)),

@@ -503,10 +503,6 @@ cv.section = function(section) {
 }
 
 
-####################################
-########## 3D Section ##############
-####################################
-
 #' @title Build Section (3D)
 #' @author Thomas Bryce Kelly
 #' @description A function to build a 3d section using IDW interpolations. WARNING: Not currently maintained.
@@ -721,7 +717,6 @@ plot.section = function(section, field = NULL, xlim = NULL, ylim = NULL, xlab = 
 #' @param lon longitudes
 #' @param lat latitudes
 #' @param res the resolution of the bathymetry (arc minutes, e.g. 10)
-## !TODO: integrate lat lon into sections more naturally. Add a dedicated mapping function too?
 get.section.bathy = function(lon, lat, res = 10) {
 
   ## Construct dummy map object
@@ -763,13 +758,17 @@ add.section.bathy = function(section, bathy = bathy.global, binning = 1, bathy.c
 #' @param labels a boolean for whether the label(s) should be drawn
 #' @param cex.lab the cex (i.e. size) of the labels
 #' @export
-add.section.contour = function(section, field = 'z1', levels = NULL, col = 'black', lty = 1, lwd = 1, labels = NULL, cex.lab = 1) {
+add.section.contour = function(section, field = NULL, levels = NULL, col = 'black', lty = 1, lwd = 1, labels = NULL, cex.lab = 1) {
+  if (is.null(field)) {
+    field = colnames(section$grid)[3] # first interpolated field
+  }
   z = matrix(section$grid[[field]], nrow = length(section$x))
   if (is.null(levels)) { levels = pretty(range(as.numeric(z)), n = 5) }
 
   contour(section$x, section$y, z, add = TRUE, levels = levels, col = col, lty = lty, lwd = lwd,
           labels = labels, labcex = cex.lab, drawlabels = !isFALSE(labels))
 }
+
 
 #' @title Add Map Inlay
 #' @export

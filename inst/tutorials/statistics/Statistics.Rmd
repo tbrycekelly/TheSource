@@ -1,0 +1,123 @@
+---
+title: "An Introduction to Statistical Tools in TheSource"
+author: "Thomas Bryce Kelly"
+output:
+  learnr::tutorial:
+    progressive: F
+runtime: shiny_prerendered
+---
+
+```{r setup, include = FALSE}
+library(learnr)
+library(TheSource)
+
+tutorial_options(exercise.timelimit = 60, exercise.eval = FALSE)
+
+knitr::opts_chunk$set(
+  echo = T,
+  #collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## A Not So Simple Problem
+
+Analyzing data is an important and nearly daily task for many scientists, including Oceanographers. While many software tools can run (and even plot) simple linear regressions, these tools each carry with them a particular trade off between accessibility and functionality. For example, Microsoft Excel can perform a linear regression and even provide some options regarding how the line is displayed, but this is an insufficient tool for science due to clear limitations in rigor, dataset complexity (including data filtering) and QA/QC capabilities. Instead programming languages provide a suitable level of sophistication to perform data analysis at a level appropriate for scientific peer-review.
+
+Here I will illustrate a number of functions embeded within TheSource, and discuss a couple of the statistical hurdles we face along the way.
+
+First we will begin by loading up a classic, example dataset known as *cars* which gives average travel speed and travel distance for a small number of trips 
+
+```{r cars}
+summary(cars)
+```
+
+### Plotting the Data
+
+First thing to do in data analysis and exploration: plot the data!
+
+```{r simple_plot, exercise = T}
+plot(cars$dist, cars$speed)
+```
+
+Okay, let's clean up the figure first (remember, our goal is to generate a publication quality figure).
+
+```{r better_plot, exercise = TRUE}
+par(plt = c(0.3, 0.7, 0.2, 0.8))
+plot(cars$dist, cars$speed, xlab = 'Distanced Traveled', ylab = 'Average Speeed', xlim = c(0, 125), ylim = c(0, 30), xaxs = 'i', yaxs = 'i', pch = 20)
+grid(); box()
+```
+
+Great, now we can get started. Let's first fit a linear regression to it. This is the standard way that other sites would show you to do it:
+
+```{r plot_with_regression, exercise = TRUE}
+par(plt = c(0.3, 0.7, 0.2, 0.8))
+plot(cars$dist, cars$speed, xlab = 'Distanced Traveled', ylab = 'Average Speeed', xlim = c(0, 125), ylim = c(0, 30), xaxs = 'i', yaxs = 'i', pch = 20)
+grid(); box()
+
+model = lm(cars$speed ~ cars$dist)
+abline(coef(model)[1], coef(model)[2], lty = 2)
+summary(model)
+```
+
+Fantastic, it looks like we are starting to get somewhere now. Next up we'll use TheSource to plot some confidence intervals around that regression (uncertainty is very important!).
+
+```{r plot_with_uncertainty, exercise = TRUE}
+par(plt = c(0.3, 0.7, 0.2, 0.8))
+plot(cars$dist, cars$speed, xlab = 'Distanced Traveled', ylab = 'Average Speeed', xlim = c(0, 125), ylim = c(0, 30), xaxs = 'i', yaxs = 'i', pch = 20)
+grid(); box()
+
+model = lm(speed ~ dist, data = cars)
+abline(coef(model)[1], coef(model)[2], lty = 2)
+add.lm.conf(x = c(0:150), model)
+```
+
+Another way that we can do this without relying on the magic of _base:lm_ is to use functions available in TheSource to bootstrap this result. First we will generate a bootstrap model:
+
+```{r, echo = T}
+model = regress.jackknife(x = cars$dist, y = cars$speed)
+```
+
+By default, this will perform 1,000 simulations and regressions based on a non-parametric resampling of the dataset and return the model as a simple list object. Let's plot this up:
+
+```{r jackknife, exercise = T}
+par(plt = c(0.3, 0.7, 0.2, 0.8))
+plot(cars$dist, cars$speed, xlab = 'Distanced Traveled', ylab = 'Average Speeed', xlim = c(0, 125), ylim = c(0, 30), xaxs = 'i', yaxs = 'i', pch = 20)
+grid(); box()
+
+model = regress.jackknife(x = cars$dist, y = cars$speed)
+add.regress.conf(model = model, trendline = T)
+```
+
+To see the jackknifed models (slope and intercept), just run:
+
+```{r jackknife_details}
+model = regress.jackknife(x = cars$dist, y = cars$speed)
+summary(model$models)
+model$meta
+```
+
+You'll see that the model automatically returns several layers of data: model$models, model$data, and model$meta. Explore each to see what they contain:
+
+```{r explore_model, exercise = T}
+model = regress.jackknife(x = cars$dist, y = cars$speed)
+str(model)
+```
+
+So far, we have been running Type 1 (or model I) linear regressions or Ordinary Least Squares regressions. This is appropriate for parametric (e.g. normally distributed, homoscidastic, normally distributed errors, independent errors...), which is seldom what we actually have. This is also the regression that excel runs. For real data we need to run a Type 2 (or model II) regression.
+
+```{r adv_jackknife, exercise = T}
+par(plt = c(0.3, 0.7, 0.2, 0.8))
+plot(cars$dist, cars$speed, xlab = 'Distanced Traveled', ylab = 'Average Speeed', xlim = c(0, 125), ylim = c(0, 30), xaxs = 'i', yaxs = 'i', pch = 20)
+grid(); box()
+
+model.type2 = regress.jackknife.2(x = cars$dist, y = cars$speed)
+add.regress.conf(model = model.type2, trendline = T)
+```
+
+Wonderful, doesn't look too different. So what's all this about Type 2 linear regressions?
+
+Notice that this regression is steeper than the previous one. While the technical disction between the semi-major axis regression performed here and OLS is beyond the scope of this converstation, the main distinction is that this result is invarient to which axis you put distance and speed whereas the OLS regression above DOES matter. This regression is symetric to x vs y and y vs x AND is suitable for non-parametric datasets. If your dataset is non-parametric (i.e. field data) then the "usual" linear regression is not suitable.
+
+The one exception to this rule come from whether you are trying to use the relationship predictively. If you want to predict the car's speed based on distance traveled during a trip then an ordinary least squares regression will do this, but it is still not a _Type 1 linear regression_. This would be called a _Type 2 linear regression for prediction_. Please be specific when writting manuscripts and show the reviewer (and the world) that you actually know what you are doing!
+

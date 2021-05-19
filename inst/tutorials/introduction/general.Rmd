@@ -1,0 +1,50 @@
+---
+title: "Using TheSource (in general)"
+author: "Thomas Bryce Kelly"
+output:
+  learnr::tutorial:
+    progressive: F
+runtime: shiny_prerendered
+---
+
+```{r setup, include = FALSE}
+library(learnr)
+library(TheSource)
+
+tutorial_options(exercise.timelimit = 60)
+
+knitr::opts_chunk$set(
+  echo = F,
+  #collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+__TheSource__ is meant to be use as a general use schaffholding for your projects and to reduce the "oh I've done this a hundred times" feeling as much as possible. Take, for example, adding error bars to a scatter plot. You could do this any number of ways, but if you use the base graphics then it takes a couple lines of code. So instead I offer to you `add.error.bars()`. This function cuts down the boilerplate code required and makes your code easier to read and quicker to type. I'd call that a win-win.
+
+This document will show basic (and sometimes not-so-basic) examples of the types and uses of many of the helper functions contained in __TheSource__. I expect some of these will be very helpful, and some less so; but all of them can be tools to help you do more of what you want to do and less of what you don't want to. Except for the dishes, you are on your own there.
+
+###
+
+### Getting Started
+
+### Some basic examples
+
+1. Adding error bars to plots:
+``` {r error_bars, exercise = T}
+x = c(1:10)
+y = x + rnorm(10)
+
+plot(x, y)
+add.error.bars(x, 1, y, rnorm(10))
+```
+
+
+2. Getting more helpful error messages:
+``` {r data_frame, exercise = T, error = T}
+data.frame(a = c(1:5), b = c(1:5), c = c(1:4))
+```
+
+3. 

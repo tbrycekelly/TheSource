@@ -149,7 +149,6 @@ regress.resample = function(x, y, sx = NA, sy = NA, n = 1e3) {
 
     ## Calculate residuals and z-score
     residuals = median(res$m) * x + median(res$b) - y
-    zscore = sapply(c(1:length(x)), function(i) { (y[i] - mean(res$m * x[i] + res$b)) / sd(res$m * x[i] + res$b) })
     aic = length(x) * log(sum(residuals^2) / length(x)) + 6 # Akaike Information Criterion
 
     list(models = res,
@@ -500,7 +499,7 @@ add.regress.conf = function(model, x = NULL, col = '#55555540', conf = c(0.025, 
     polygon(x = c(x.new, rev(x.new)), y = c(y.upper, rev(y.lower)), col = col, border = border, ...)
 
     if (trendline) {
-        add.boot.trendline(model, ...)
+        add.regress.trendline(model, ...)
     }
 }
 

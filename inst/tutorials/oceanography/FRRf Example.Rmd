@@ -1,0 +1,180 @@
+---
+title: "Working with Oceanographic Data: FRRf Data"
+author: "Thomas Bryce Kelly"
+output:
+  learnr::tutorial:
+    progressive: F
+runtime: shiny_prerendered
+---
+
+```{r setup, include = FALSE}
+library(learnr)
+library(TheSource)
+
+tutorial_options(exercise.timelimit = 60)
+
+knitr::opts_chunk$set(
+  echo = F,
+  #collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Once we have TheSource loaded, then we can load one or more FRRf datafiles with the _load.frrf()_ function. By default, the function will load all files within the target directory (and will throw an error if there are other files in that directory!), but to ensure proper functioning it is a good idea to explicitly state the file names you want, e.g. here we load all the files:
+
+```{r}
+## Explicitly get a list of file names:
+frrf.files = list.files('../../../CCE/CCEP1706/Data/FRRF/')
+
+## Load the frrf files from that directory:
+frrf = load.frrf(input.dir = '../../../CCE/CCEP1706/Data/FRRF/', file.names = frrf.files)
+```
+
+The _load.frrf_ function returns a *list* object with each FRRf dataset sequentially placed inside. For example, _frrf[[1]]_ is the first entry, which can also be accessed by it's name which is _frrf$Y20170531135236_. We can see the first 10 names printed out below.
+
+```{r}
+names(frrf)[1:10]
+```
+
+This dual syntax is useful since there are times when we will want to manually select (or be able to read at least) which dataset we are referencing, but also times when we want to loop over all available datasets (e.g. when fitting curves to specific data).
+
+Each FRRf dataset is itself a list object with 8 fields (4 of which are LED light modes). The structure of a dataset may look intimidating at first, but it is simply a reflection of the raw FRRf data itself and simple to navigate once familiar with it.
+
+```{r}
+str(frrf[[1]])
+```
+
+Let's plot an example and do a curve fit:
+
+```{r}
+plot(frrf[[1]]$A$E, frrf[[1]]$A$JVPII, pch = 16, xlab = 'Light Intensity', ylab = 'JVPII')
+```
+
+To fit a curve we need to define an objective function and a functional form. We will use a Platt et al fit, which comes pre-loaded in _TheSource_, so all we need to do is make a cost function so the grid search algorithm can find us a "best fit".
+
+```{r}
+ssr = function(alpha, beta, Ps, E, JVPII) {
+  predicted = model.Platt1980(alpha = alpha, beta = beta, Ps = Ps, E = E)
+  cost = sum((predicted - JVPII)^2, na.rm = T) ## and remove any NA values!
+  
+  ## Return
+  cost
+}
+```
+With this function, we provide a value for _alpha_, _beta_, _Ps_, and a set of light intensities and JVPII and it returns sum of squared residuals _or cost_. 
+
+```{r}
+fit = parameter.search(n = 10, cost = ssr, bounds = data.frame(min = c(0, 0, 0.1), max = c(0.1, 0.002, 10)), splits = 10, E = frrf[[1]]$A$E, JVPII = frrf[[1]]$A$JVPII, verbose = F)
+fit$min
+```
+
+Let's see how our fit did:
+
+```{r}
+plot(frrf[[1]]$A$E, frrf[[1]]$A$JVPII, pch = 16, xlab = 'Light Intensity', ylab = 'JVPII')
+
+## Add the fit
+E = c(1:3e3)
+jvpii = model.Platt1980(alpha = fit$min$alpha, beta = fit$min$beta, Ps = fit$min$Ps, E = E)
+lines(E, jvpii)
+
+```
+
+This fit did pretty well, but note that as always a multidimensional optimization procedure is generally unstable and may vary significantly based on initial conditions! 
+
+For example, the same routine but with a "poor" choice in beta values (set the max too high):
+
+```{r}
+bad.fit = parameter.search(n = 10, cost = ssr, bounds = data.frame(min = c(0, 0.1, 0.1), max = c(0.1, 1, 10)), splits = 5, E = frrf[[1]]$A$E, JVPII = frrf[[1]]$A$JVPII, verbose = F)
+
+plot(frrf[[1]]$A$E, frrf[[1]]$A$JVPII, pch = 16, xlab = 'Light Intensity', ylab = 'JVPII')
+
+## Add the fit
+E = c(1:3e3)
+jvpii = model.Platt1980(alpha = bad.fit$min$alpha, beta = bad.fit$min$beta, Ps = bad.fit$min$Ps, E = E)
+lines(E, jvpii)
+
+```
+
+A good check to do, especially once you know that you have a good and representative fit for one datafile, is to look at the relative costs for each fit:
+
+```{r}
+bad.fit$min$cost / fit$min$cost
+```
+
+So the bad.fit cost (again, SSR score) was `bad.fit$min$cost / fit$min$cost`x higher than the good fit. it clearly shows visually, so taken together we know that we would need to rerun the fitting function with different constraints for bad.fit.
+
+With this, we can now generate a list of alpha values for each of the FRRf datasets we have loaded:
+
+```{r}
+
+## Let's store the fit values we get in a table or _data.frame_:
+results = data.frame(FRRf = names(frrf), alpha = NA, beta = NA, Ps = NA, cost = NA)
+
+## loop over each dataset (this is where the number syntax comes in handy!)
+for (i in 1:length(frrf)) {
+  
+  ## Generate a fit
+  fit = parameter.search(n = 10, cost = ssr, bounds = data.frame(min = c(0, 0, 0.1), max = c(0.1, 0.002, 10)), splits = 5,
+                         E = frrf[[i]]$A$E,
+                         JVPII = frrf[[i]]$A$JVPII, verbose = F)
+  
+  ## Save the values
+  results$alpha[i] = fit$min$alpha
+  results$beta[i] = fit$min$beta
+  results$Ps[i] = fit$min$Ps
+  results$cost[i] = fit$min$cost
+}
+```
+
+Let's take a look at our results graphically:
+
+```{r}
+plot(results$alpha)
+plot(results$beta)
+plot(results$Ps)
+plot(results$cost)
+```
+
+
+There are a few fits with a high cost (for reference, the cost on bad.fit was ~ 4), so let's take a look at a couple of them:
+
+```{r}
+## Get the four highest cost scores
+l = order(results$cost, decreasing = T)[1:4]
+
+## Loop over 4 highest scores and plot data and fit
+for (i in l) {
+  plot(frrf[[i]]$A$E, frrf[[i]]$A$JVPII, pch = 16, xlab = 'Light Intensity', ylab = 'JVPII', main = paste(results$FRRf[i], ' - ', results$cost[i]))
+  
+  ## Add the fit
+  E = c(1:3e3)
+  jvpii = model.Platt1980(alpha = results$alpha[i], beta = results$beta[i], Ps = results$Ps[i], E = E)
+  lines(E, jvpii)
+}
+
+```
+
+As we can see, much of the cost is coming from high-light outliers suggesting that a filter may be applied to the residuals and the fitting redone. Such an implementation is beyond the scope of this introduction.
+
+Of course, it's a good idea to take a look at the 4 lowest scores (i.e. best fits) for comparison.
+
+```{r}
+## Get the four highest cost scores
+l = order(results$cost, decreasing = F)[1:4]
+
+## Loop over 4 highest scores and plot data and fit
+for (i in l) {
+  plot(frrf[[i]]$A$E, frrf[[i]]$A$JVPII, pch = 16, xlab = 'Light Intensity', ylab = 'JVPII', main = paste(results$FRRf[i], ' - ', results$cost[i]))
+  
+  ## Add the fit
+  E = c(1:3e3)
+  jvpii = model.Platt1980(alpha = results$alpha[i], beta = results$beta[i], Ps = results$Ps[i], E = E)
+  lines(E, jvpii)
+}
+
+```
+
+
+
+

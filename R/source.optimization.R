@@ -249,7 +249,7 @@ parameter.walk = function (n, cost, ..., bounds, progression = NULL, max.iter = 
     }
   }
 
-  list(min = history[i-1,], bounds = bounds, history = history, meta = list(j = j, max.iter = max.iter, progression = progression))
+  list(min = history[i-1,], bounds = bounds, history = history[!is.na(history$cost)], meta = list(j = j, max.iter = max.iter, progression = progression))
 }
 
 
@@ -314,7 +314,7 @@ parameter.anneal = function (n, cost, ..., bounds, progression = NULL, max.iter 
     }
   }
 
-  list(min = history[i-1,], bounds = bounds, history = history, meta = list(j = j, max.iter = max.iter, progression = progression))
+  list(min = history[i-1,], bounds = bounds, history = history[!is.na(history$cost),], meta = list(j = j, max.iter = max.iter, progression = progression))
 }
 
 
@@ -431,63 +431,69 @@ parameter.descent = function(cost, guess = NULL, ..., bounds = NULL, max.iter = 
 
   for (i in 1:dim) {
     b[i+1,] = b[1] + 0.0005
-    b[i+1,i] = b[1,i] + 0.05 ##
+    b[i+1,i] = b[1,i] + 0.005 ##
   }
 
-  history = as.data.frame(b)
-  history$cost = NA
+  ## Setup simplex and history object
+  simplex = as.data.frame(b)
+  history = data.frame(cost = rep(NA, max.iter))
+  for (n in argnames) {
+    history[[n]] = NA
+  }
+  simplex = data.frame(cost = NA, simplex)
 
-  for (i in 1:max.iter) {
-    ## Calculate cost function at each grid location
-    for (i in which(is.na(history$cost))) {
-      args = as.list(b[i,])
-      names(args) = argnames[1:length(args)]
-      args = c(args, list(...))
-
-      #if (length(args) > length(formalArgs(cost))) { stop('Number of function arguments exceeds what function is expecting.') }
-      history$cost[i] = do.call(cost, args) # cost(grid[i, 1:dim])
-    }
-
-    ## Order points
-    l = order(history$cost, decreasing = T)
-    history = history[l,]
-    b = b[l,]
-
-    ## Add reflected point
-    centroid = colMeans(b[-1,])
-    test.point = centroid + 1 * (centroid - b[1,]) ## Refelcted point
-
-    ## Calcualte cost
-    args = as.list(b[nrow(b),])
+  ## Calculate cost function at each node
+  for (j in which(is.na(simplex$cost))) {
+    args = as.list(simplex[j,-1])
     names(args) = argnames[1:length(args)]
     args = c(args, list(...))
-    test.score = do.call(cost, args) # cost(grid[i, 1:dim])
 
+    simplex$cost[j] = do.call(cost, args) # cost(grid[i, 1:dim])
+  }
+
+  for (i in 1:max.iter) {
+
+    ## Order points
+    simplex = simplex[order(simplex$cost, decreasing = T),]
+    history[i,] = simplex[nrow(simplex),]
+
+    ## Add reflected point
+    centroid = colMeans(simplex[-1,])
+    test.point = centroid + 1 * (centroid - simplex[1,]) ## Reflected point
+
+    ## Calculate cost
+    args = as.list(test.point[-1])
+    names(args) = argnames[1:length(args)]
+    args = c(args, list(...))
+    test.point[1] = do.call(cost, args) # cost(grid[i, 1:dim])
 
     ## Expansion
-    if (max(history$cost) > test.score) {
-      b[1,] = centroid + 2 * (test.point - centroid) ## Replace worse case
-      args = as.list(b[1,])
+    if (max(simplex$cost) > test.point[1]) {
+      simplex[1,] = centroid + 2 * (centroid - simplex[1,]) ## Replace worse case
+
+      args = as.list(simplex[1,-1])
       names(args) = argnames[1:length(args)]
       args = c(args, list(...))
-      test.score2 = do.call(cost, args) # cost(grid[i, 1:dim])
-      if (test.score2 < test.score) {
-        history[1,] = c(b[1,], test.score2)
+      simplex[1,1] = do.call(cost, args) # cost(grid[i, 1:dim])
+
+      if (simplex[1,1] > test.point[1]) {
+        simplex[1, ] = test.point # revert to test point if expansion fails (optional step)
+        if (verbose) { message(' Simplex reflextion.') }
       } else {
-        b[1, ] = test.point
-        history[1,] = c(b[1,], test.score)
+        if (verbose) { message(' Simplex expansion.') }
       }
 
     } else {
       ## Contraction
-      b[1,] = centroid + 0.5 * (b[1,] - centroid) ## replace refelcted point
-      args = as.list(b[1,])
+      simplex[1,] = centroid - 0.5 * (centroid - simplex[1,]) ## replace reflected point
+      args = as.list(simplex[1,-1])
       names(args) = argnames[1:length(args)]
       args = c(args, list(...))
-      history[1,] = c(b[1,], do.call(cost, args))
+      simplex[1,1] = do.call(cost, args)
+      if (verbose) { message(' Simplex contraction') }
     }
   }
-  res = list(min = history[which.min(history$cost),], history = history)
+  res = list(min = simplex[which.min(simplex$cost),], simplex = simplex, history = history)
 
   ## Return
   res
