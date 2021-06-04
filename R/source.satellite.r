@@ -133,6 +133,15 @@ read.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, 
     sate[[1]]$times$end = conv.time.unix(times$end / length(sate))
   }
 
+  ## Update metadata
+  meta = list(min = min(as.numeric(sate[[1]]$field), na.rm = T),
+              max = max(as.numeric(sate[[1]]$field), na.rm = T),
+              mean = mean(as.numeric(sate[[1]]$field), na.rm = T),
+              median = median(as.numeric(sate[[1]]$field), na.rm = T),
+              n.na = sum(is.na(as.numeric(sate[[1]]$field))),
+              n.fields = length(sate))
+  sate[[1]]$meta = meta
+
   ## Return
   sate[[1]]
 }
@@ -184,8 +193,14 @@ load.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, 
   ncdf4::nc_close(nc.file)
 
   x = conv(x)
+  meta = list(min = min(as.numeric(x), na.rm = T),
+              max = max(as.numeric(x), na.rm = T),
+              mean = mean(as.numeric(x), na.rm = T),
+              median = median(as.numeric(x), na.rm = T),
+              n.na = sum(is.na(as.numeric(x))),
+              n.fields = 1)
   list(field = x, file = file, dir = input.dir, grid = function() {expand.grid(lon = lon, lat = lat)}, lon = lon, lat = lat,
-       times = get.satellite.times(file), conv = conv, attr = function() {attr})
+       times = get.satellite.times(file), conv = conv, meta = meta, attr = function() {attr})
 }
 
 
@@ -309,66 +324,80 @@ load.nc = function(file) {
 #' @description rebuild
 #' @param verbose Flag to print diagnostics
 #' @export
-rebuild.satellite.index = function(dir = 'D:/Data/Data_Satellite/Raw', files = NULL, verbose = FALSE) {
+rebuild.satellite.index = function(dir = 'Z:/Data/Data_Satellite/Raw', verbose = FALSE) {
 
   #### Find files
-  if (is.null(files)) {
-    if (verbose) { message(Sys.time(), ': Looking for available satellite files...')}
-    a = Sys.time()
-    files = list.files(pattern = '.nc', path = dir)
-    b = Sys.time()
-    if (verbose) { message(Sys.time(), ': Found ', length(files), ' files! Search took ', round(as.numeric(b) - as.numeric(a)), ' seconds.')}
-  } else {
-    message('File list provided, skipping search.')
-  }
+  if (verbose) { message(Sys.time(), ': Looking for available satellite files...')}
+
+  # List files
+  a = Sys.time()
+  files = list.files(pattern = '.nc', path = dir, recursive = F)
+  b = Sys.time()
+
+  if (verbose) { message(Sys.time(), ': Found ', length(files), ' files! Search took ', round(as.numeric(b) - as.numeric(a)), ' seconds.')}
+
+
   #### Populate data fields
   summary = data.frame(File = files, Sensor = NA, Datetime = NA, Year = NA,
                          Julian.Day = NA, Month = NA, Day = NA, Level = NA,
                          Timeframe = NA, Param = NA, Resolution = NA, stringsAsFactors = FALSE)
 
-    for (i in 1:length(files)) {
-        if (verbose) { message(Sys.time(), ': Attempting to scrub metadata from ', files[i], ' (', i, '/', length(files), ')... ', appendLF = F) }
+  for (i in 1:length(files)) {
+    if (file.size(paste0(dir, files[i])) > 0) {
+      if (verbose) { message(Sys.time(), ': Attempting to scrub metadata from ', files[i], ' (', i, '/', length(files), ')... ', appendLF = F) }
 
-          prime = strsplit(files[i], split = '\\.')[[1]]
-          second = strsplit(prime[2], split = '_')[[1]]
-          datetime = substr(prime[1], 2, 8)
+      prime = strsplit(files[i], split = '\\.')[[1]]
+      second = strsplit(prime[2], split = '_')[[1]]
+      datetime = substr(prime[1], 2, 8)
 
-          summary$Sensor[i] = substr(prime[1], 1, 1)
+      summary$Sensor[i] = substr(prime[1], 1, 1)
 
-          summary$Year[i] = as.numeric(substr(datetime, 1, 4))
-          summary$Julian.Day[i] = as.numeric(substr(datetime, 5, 7))
+      summary$Year[i] = as.numeric(substr(datetime, 1, 4))
+      summary$Julian.Day[i] = as.numeric(substr(datetime, 5, 7))
 
-          summary$Datetime[i] = paste0(as.POSIXct(summary$Julian.Day[i]*86400,
+      summary$Datetime[i] = paste0(as.POSIXct(summary$Julian.Day[i]*86400,
                                                     origin = paste0(summary$Year[i], '-01-01'), tz = 'GMT'))
-          summary$Month[i] = as.numeric(substr(summary$Datetime[i], 6, 7))
-          summary$Day[i] = as.numeric(substr(summary$Datetime[i], 9, 10))
+      summary$Month[i] = as.numeric(substr(summary$Datetime[i], 6, 7))
+      summary$Day[i] = as.numeric(substr(summary$Datetime[i], 9, 10))
 
-          summary$Level[i] = second[1]
-          summary$Timeframe[i] = second[2]
-          summary$Resolution[i] = second[length(second)]
-          if (length(second) > 4) {
-            summary$Param[i] = paste(second[-c(1:2)], collapse = '.')
-          } else {
-            summary$Param[i] = second[3]
-          }
-      if (verbose) {
-        message('Success.')
+      summary$Level[i] = second[1]
+      summary$Timeframe[i] = second[2]
+      summary$Resolution[i] = second[length(second)]
+      if (length(second) > 4) {
+        summary$Param[i] = paste(second[-c(1:2)], collapse = '.')
+      } else {
+        summary$Param[i] = second[3]
       }
+
+      if (verbose) { message('Success.') }
     }
+  }
+
+  ## Remove bad files or folders
+  summary = summary[!is.na(summary$Param),]
+
   c = Sys.time()
 
-  ####
+  #### Finish up
   summary$Datetime = as.POSIXct(summary$Datetime, tz = 'GMT')
 
-    if (verbose) {
-        message(unique(summary$Year))
-      message(unique(summary$Sensor))
-      message(unique(summary$Level))
-      message(unique(summary$Timeframe))
-      message(unique(summary$Param))
-      message(unique(summary$Resolution))
-      message(Sys.time(), ': Meta data took ', round(as.numeric(c) - as.numeric(c)), ' seconds.')
-    }
+  if (verbose) {
+    message(unique(summary$Year))
+    message(unique(summary$Sensor))
+    message(unique(summary$Level))
+    message(unique(summary$Timeframe))
+    message(unique(summary$Param))
+    message(unique(summary$Resolution))
+    message(Sys.time(), ': Meta data took ', round(as.numeric(c) - as.numeric(c)), ' seconds.')
+  }
 
-    summary
+  ## Recursively delve into subfolders:
+  list.dirs(path = dir, recursive = F, full.names = T)
+  if (length(dirs) > 0) {
+    for (i in 1:length(dirs)) {
+      summary = rbind(summary, rebuild.satellite.index(dir = dirs[i], verbose = verbose))
+    }
+  }
+  ## Return
+  summary
 }

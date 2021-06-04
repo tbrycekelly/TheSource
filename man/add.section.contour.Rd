@@ -6,7 +6,7 @@
 \usage{
 add.section.contour(
   section,
-  field = "z1",
+  field = NULL,
   levels = NULL,
   col = "black",
   lty = 1,

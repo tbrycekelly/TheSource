@@ -161,7 +161,7 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'greyscale'
   if(!is.null(labels)) {
     labels = labels[labels >= min & labels <= max]
   } else {
-    labels = pretty(c(min, max))
+    labels = pretty(c(min, max), n = 6)
     labels[labels < min] = min
     labels[labels > max] = max
   }
