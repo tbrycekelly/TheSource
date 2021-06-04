@@ -12,6 +12,7 @@ add.map.points(
   pch = 16,
   stn.lon = NULL,
   stn.lat = NULL,
+  override = F,
   ...
 )
 }

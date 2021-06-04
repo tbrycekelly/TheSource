@@ -53,23 +53,18 @@ make.map = function (coast = NULL,
                                   lon = mean(c(lon.min, lon.max)))}
 
   lon0 = as.numeric(strsplit(strsplit(paste(p, ''), 'lon_0=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
+
   ## get coastlines
   get.coast(coast = coast)
+  lons = seq(-180, 180, by = dlon)
+  lats = seq(-90, 90, by = dlat)
 
   ## make the base plot (oce)
   oce::mapPlot(coastlineCut(eval(parse(text = coast)), lon_0 = lon0), projection = p, col = land.col,
           longitudelim = c(lon.min, lon.max), latitudelim = c(lat.min, lat.max),
-          grid = FALSE, axes = FALSE)
+          grid = c(dlon, dlat), axes = T, lonlabels = lons, latlabels = lats)
 
-  ## add a grid at the lat and lon interval you set (oce)
-  lons = seq(-180, 180, by = dlon)
-  lats = seq(-90, 90, by = dlat)
-  if (grid) {
-    oce::mapGrid(longitude = lons, latitude = lats)
-  }
   box()
-  oce::mapAxis(1, longitude = lons)
-  oce::mapAxis(2, latitude = lats)
 
   list(coast = coast, lon.min = lon.min, lon.max = lon.max,
        lat.min = lat.min, lat.max = lat.max, p = p, land.col = land.col,
@@ -214,12 +209,12 @@ add.map.bathy = function(map, bathy,
 #' @import oce
 #' @export
 add.map.points = function(lon = NULL, lat = NULL, col = 'black', cex = 1, pch = 16,
-                          stn.lon = NULL, stn.lat = NULL, ...){
+                          stn.lon = NULL, stn.lat = NULL, override = F, ...){
 
   if (!is.null(stn.lon)) { warning('stn.lon option depreciated. Recommend using lon instead.')}
   if (!is.null(stn.lat)) { warning('stn.lat option depreciated. Recommend using lat instead.')}
 
-  if (interactive() & length(lon) > 1e5) {
+  if (interactive() & length(lon) > 1e5 & !override) {
     input = readline(prompt = 'Large number of points, contnue? (y/n)')
     if (input != 'y' & input != 'Y') {
       return()
@@ -469,6 +464,24 @@ redraw.map = function(map) {
   box()
   oce::mapAxis(1, longitude = lons)
   oce::mapAxis(2, latitude = lats)
+}
+
+#' @title Replot Map
+#' @author Thomas Bryce Kelly
+#' @param map a map object as returned by make.map()
+#' @export
+replot.map = function(map = map) {
+  make.map(coast = map$coast,
+           lon.min = map$lon.min,
+           lon.max = map$lon.max,
+           lat.min = map$lat.min,
+           lat.max = map$lat.max,
+           p = map$p,
+           land.col = map$land.col,
+           grid = map$grid,
+           dlon = map$grid.dlon,
+           dlat = map$grid.dlat)
+  NULL
 }
 
 
