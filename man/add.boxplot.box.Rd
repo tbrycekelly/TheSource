@@ -7,15 +7,16 @@
 add.boxplot.box(
   x,
   y,
-  col = "grey",
-  border = "black",
+  side = 1,
+  col = "#33333330",
+  border.col = "black",
+  line.col = "black",
+  point.col = "black",
   width = 0.7,
   lty = 1,
-  lcol = "black",
   lwd = 1,
   xlwd = NULL,
   outliers = T,
-  pcol = "black",
   pch = 1,
   cex = 1
 )

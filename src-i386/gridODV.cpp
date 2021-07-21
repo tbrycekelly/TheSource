@@ -15,7 +15,7 @@ NumericVector gridODV(NumericVector gx, NumericVector gy, NumericVector x, Numer
   double wsum;
   double w;
 
-  double deltamin = (pow(abs(xscale/2), p) + pow(abs(yscale/2), p)) * uncertainty;
+  double deltamin = (powf(fabs(xscale/2.0)/xscale, p) + powf(fabs(yscale/2.0)/yscale, p)) * uncertainty;
 
   for(int i = 0; i < n; ++i) {
     temp = 0;
@@ -23,7 +23,7 @@ NumericVector gridODV(NumericVector gx, NumericVector gy, NumericVector x, Numer
     wsum = 0;
 
     for(int j = 0; j < nn; j++) {
-      w = 1 / exp(-1*pow(abs(x[j] - gx[i]), 2) - pow(abs(y[j] - gy[i]), 2) - deltamin);
+      w = expf(-1*(powf(abs(x[j] - gx[i])/xscale, 2) + powf(abs(y[j] - gy[i])/yscale, 2) + deltamin));
       temp += w * z[j];
       wsum += w;
     }

@@ -4,7 +4,7 @@
 \alias{model.henson}
 \title{Henson et al Model}
 \usage{
-model.henson(NPP, SST, chl)
+model.henson(NPP, SST, chl = NULL)
 }
 \description{
 Henson et al Model

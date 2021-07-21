@@ -401,7 +401,7 @@ parameter.descent.old = function(cost, guess = NULL, ..., bounds = NULL, max.ite
 #' @param splits The number of subdivisions to perform for each dimension (so grid size is n x splits ^ dimensionality)
 #' @param progression The size of the new search-space to interrogate. A value between 1 and splits/2. Default value (NULL) will yeield a progression of max(1, splits/4), good for most problems.
 #' @export
-parameter.descent = function(cost, guess = NULL, ..., bounds = NULL, max.iter = 1e6, progression = NULL, step = 1e-6, tol = 1e-18, verbose = T) {
+parameter.descent = function(cost, guess = NULL, ..., bounds = NULL, max.iter = 100, progression = NULL, step = 1, tol = 1e-8, verbose = T) {
 
   if (verbose){
     message('Starting Parameter Descent')
@@ -430,8 +430,8 @@ parameter.descent = function(cost, guess = NULL, ..., bounds = NULL, max.iter = 
   }
 
   for (i in 1:dim) {
-    b[i+1,] = b[1] + 0.0005
-    b[i+1,i] = b[1,i] + 0.005 ##
+    b[i+1,] = b[1] + step / dim
+    b[i+1,i] = b[1,i] + step ##
   }
 
   ## Setup simplex and history object
@@ -452,7 +452,6 @@ parameter.descent = function(cost, guess = NULL, ..., bounds = NULL, max.iter = 
   }
 
   for (i in 1:max.iter) {
-
     ## Order points
     simplex = simplex[order(simplex$cost, decreasing = T),]
     history[i,] = simplex[nrow(simplex),]
@@ -492,12 +491,21 @@ parameter.descent = function(cost, guess = NULL, ..., bounds = NULL, max.iter = 
       simplex[1,1] = do.call(cost, args)
       if (verbose) { message(' Simplex contraction') }
     }
+
+    if (i > 2 * dim + 1) {
+      if (abs(history$cost[i] - history$cost[i-2*dim-1]) < tol) {
+        if (verbose) { message('Cost tolerance met, ending.')}
+        break
+      }
+    }
   }
-  res = list(min = simplex[which.min(simplex$cost),], simplex = simplex, history = history)
+  res = list(min = simplex[which.min(simplex$cost),], simplex = simplex, history = history[!is.na(history$cost),])
 
   ## Return
   res
 }
+
+
 
 
 #' @title Get Optimization Test Function

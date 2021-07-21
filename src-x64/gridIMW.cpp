@@ -15,7 +15,7 @@ NumericVector gridIMW(NumericVector gx, NumericVector gy, NumericVector x, Numer
   double wsum;
   double w;
 
-  double deltamin = (powf(fabs(xscale/2.0), p) + powf(fabs(yscale/2.0), p)) * uncertainty;
+  double deltamin = (powf(fabs(xscale/2.0)/xscale, p) + powf(fabs(yscale/2.0)/yscale, p)) * uncertainty;
 
   for(int i = 0; i < n; ++i) {
     temp = 0;
@@ -23,7 +23,7 @@ NumericVector gridIMW(NumericVector gx, NumericVector gy, NumericVector x, Numer
     wsum = 0;
 
     for(int j = 0; j < nn; j++) {
-      w = 1.0 / (fabs(x[j] - gx[i]) + fabs(y[j] - gy[i]) + deltamin);
+      w = 1.0 / (fabs(x[j] - gx[i]) / xscale + fabs(y[j] - gy[i])/yscale + deltamin);
       temp += w * z[j];
       wsum += w;
     }

@@ -32,12 +32,14 @@
 #' @param gridder A function to perform gridding, options gridIDW (default: inverse distance), gridNN (nearest neighbor), gridNNI (natural neighbor) or gridKrige (Krigging)
 #' @param nx The number of splits to make in the x direction (defaults to 50). Used only if x.scale is not set.
 #' @param ny The number of splits to make in the y direction (defaults to 50). Used only if y.scale is not set.
+#' @param proj A gdal projection string such as from make.proj() function. Used to redistribute grid over non-euclidean surfaces like maps.
 build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = NULL,
                          xlim = NULL, ylim = NULL,
-                         x.factor = 1, y.factor = 1,
+                         x.factor = NULL, y.factor = NULL,
                          x.scale = NULL, y.scale = NULL,
-                         uncertainty = 1e-12, p = 3, gridder = NULL,
-                         field.names = NULL, nx = 50, ny = 50, verbose = T) {
+                         uncertainty = 1e-12, p = 2, gridder = NULL,
+                         field.names = NULL, nx = 50, ny = 50,
+                         proj = NULL, verbose = T) {
 
   if (verbose) {message('BUILD.SECTION: Starting section building process (verbose = T).')}
   time.a = Sys.time()
@@ -48,7 +50,7 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = 
   x = x[l]
   y = y[l]
   z = data.matrix(z[l,])
-  if (is.null(weight)) {weight = matrix(0, nrow = nrow(z), ncol = ncol(z))}
+  if (is.null(weight)) {weight = matrix(1, nrow = nrow(z), ncol = ncol(z))}
   if (!is.null(lat)) {lat = lat[l]}
   if (!is.null(lon)) {lon = lon[l]}
   if (is.null(gridder)) {
@@ -56,11 +58,10 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = 
     if (verbose) { message('BUILD.SECTION: No gridder specified, defaulting to gridIDW. Other options: gridNN, gridNNI and gridKrige.') }
   }
 
-
-  if (uncertainty == 0) { warning('BUILD.SECTION: Uncertainty of zero may produce NAs!') }
+  if (uncertainty == 0) { message('BUILD.SECTION: Uncertainty of zero may produce NAs!') }
   if (is.null(field.names)) {
     field.names = paste0('z', 1:ncol(z))
-    if (verbose) { warning('BUILD.SECTION: No field.names provided, gridded data will be called ', paste0('z', 1:ncol(z), collapse = ',')) }
+    if (verbose) { message('BUILD.SECTION: No field.names provided, gridded data will be called ', paste0('z', 1:ncol(z), collapse = ',')) }
   }
 
   if (class(x[1])[1] == 'POSIXct'){
@@ -87,6 +88,8 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = 
   if (is.null(y.scale)) { y.scale = (ylim[2] - ylim[1]) / ny}
 
   ## Rescale x and y based on x.factor and y.factor
+  if (is.null(x.factor)) { x.factor = (x.scale/y.scale + 1) / 2}
+  if (is.null(y.factor)) { y.factor = (y.scale/x.scale + 1) / 2}
   x = x * x.factor
   x.scale = x.scale * x.factor
   xlim = xlim * x.factor
@@ -114,7 +117,7 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = 
       section.lat = rep(lat, length(x.new))
     }
   } else {
-      section.lat = rep(NA, length(x)); lat = NA
+    section.lat = rep(NA, length(x)); lat = NA
   }
   if (!is.null(lon)) {
     if (length(unique(x)) > 1) { ## interpolate
@@ -147,10 +150,22 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = 
 
   }
 
+  if (!is.null(proj)) { ## Apply projection
+    ## Project x and y
+    projected = project(cbind(x, y), proj = proj)
+    x = as.numeric(projected[,1])
+    y = as.numeric(projected[,2])
+
+    ## proejct grid x and y
+    projected = project(cbind(grid$x, grid$y), proj = proj)
+    grid$x = as.numeric(projected[,1])
+    grid$y = as.numeric(projected[,2])
+  }
+
   time.b = Sys.time()
   for (kk in 1:length(field.names)) {
     if (verbose) {message('BUILD.SECTION: Building grid for field ', field.names[kk], '  ', Sys.time(), '.')}
-    grid[[field.names[kk]]] = gridder(grid$x, grid$y, x, y, z[,kk], p, x.scale, y.scale, uncertainty)
+    grid[[field.names[kk]]] = gridder(grid$x, grid$y, x, y, z[,kk], p, x.scale/x.factor, y.scale/y.factor, uncertainty)
   }
 
   time.c = Sys.time()
@@ -166,6 +181,24 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = 
   ## Reconstruct z
   z = data.frame(z)
   colnames(z) = field.names
+
+  if (!is.null(proj)) { ## Apply projection
+    ## Fix data x and y
+    projected = project(cbind(x, y), proj = proj, inv = T)
+    x = as.numeric(projected[,1])
+    y = as.numeric(projected[,2])
+
+    ## Fix new x and y
+    projected = project(cbind(x.new, y.new), proj = proj, inv = T)
+    x.new = as.numeric(projected[,1])
+    y.new = as.numeric(projected[,2])
+
+    ##Fix grid
+    projected = project(cbind(grid$x, grid$y), proj = proj, inv = T)
+    grid$x = as.numeric(projected[,1])
+    grid$y = as.numeric(projected[,2])
+
+  }
 
   ## Construct return object
   grid = list(grid = grid,
@@ -211,11 +244,11 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = 
 #' @param nx The number of splits to make in the x direction (defaults to 50). Used only if x.scale is not set.
 #' @param ny The number of splits to make in the y direction (defaults to 50). Used only if y.scale is not set.
 build.section.parallel = function(x, y, z, lat = NULL, lon = NULL,
-                         xlim = NULL, ylim = NULL,
-                         x.factor = 1, y.factor = 1,
-                         x.scale = NULL, y.scale = NULL,
-                         uncertainty = 1e-12, p = 3, gridder = NULL,
-                         field.names = NULL, nx = 50, ny = 50, verbose = T) {
+                                  xlim = NULL, ylim = NULL,
+                                  x.factor = 1, y.factor = 1,
+                                  x.scale = NULL, y.scale = NULL,
+                                  uncertainty = 1e-12, p = 3, gridder = NULL,
+                                  field.names = NULL, nx = 50, ny = 50, verbose = T) {
 
   z = data.matrix(z)
   ## Remove NAs
@@ -433,9 +466,9 @@ add.section.param = function(x, y, z, section, field.name) {
   x = x[l]; y = y[l]; z = z[l]
 
   section$grid[[field.name]] = section$grid.meta$gridder(grid, x, y, z, p,
-                                        section$grid.meta$x.scale,
-                                        section$grid.meta$y.scale,
-                                        section$grid.meta$uncertainty)
+                                                         section$grid.meta$x.scale,
+                                                         section$grid.meta$y.scale,
+                                                         section$grid.meta$uncertainty)
   section
 }
 
@@ -485,20 +518,21 @@ jackknife.section = function(section, n) {
 #' @export
 cv.section = function(section) {
 
-  var = 0
-  delta.min = delta(section$grid.meta$x.factor, section$grid.meta$y.factor,
-                    section$grid.meta$x.scale/2, 0, section$grid.meta$y.scale/2, 0,
-                    p = section$grid.meta$p) * section$grid.meta$uncertainty
 
-  for (i in 1:nrow(section$data)) {
-    del = delta(section$grid.meta$x.factor, section$grid.meta$y.factor, section$data$x[-i], section$data$x[i],
-                section$data$y[-i], section$data$y[i], p = section$grid.meta$p)
+  for (j in 3:ncol(section$grid)) {
 
-    w = W(del, delta.min)
-    w = w / sum(w)
-    var = var + (sum(w * section$data$z[-i]) - section$data$z[i])^2
+    ## initialize
+    section$grid[[paste0(colnames(section$grid)[j], '.var')]] = 0
+
+    ## Cross validate
+    for (i in 1:nrow(section$data)) {
+      temp = build.section(x = section$data$x[-i], y = section$data$y[-i], z = section$data[-i,j],
+                           grid = section$grid[,c(1,2)], uncertainty = section$grid.meta$uncertainty,
+                           p = section$grid.meta$p, gridder =  section$grid.meta$gridder, verbose = F)
+      ## Calc SSR
+      section$grid[[paste0(colnames(section$grid)[j], '.var')]] = section$grid[[paste0(colnames(section$grid)[j], '.var')]] + (temp$grid$z1 - section$grid[,j])^2 / nrow(section$data)
+    }
   }
-  section$rmse = sqrt(var / nrow(section$data))
   section
 }
 
@@ -628,85 +662,85 @@ build.section.3d = function(x, y, z, zz, xlim = NULL, ylim = NULL, zlim = NULL, 
 #' @param  col.high [unimplemented] Same as col.low but for out-of-range high values.
 plot.section = function(section, field = NULL, xlim = NULL, ylim = NULL, xlab = 'x', ylab = 'y', log = FALSE, base = 10,
                         zlim = NULL, pal = 'greyscale', rev = FALSE, include.data = FALSE, mark.points = FALSE, include.pch = 21,
-                       include.cex = 1, main = NULL, col.low = '', col.high = '', N = 255) {
+                        include.cex = 1, main = NULL, col.low = '', col.high = '', N = 255) {
 
-    ## Set Defaults
-    # Check if values need to set and set them.
-    if (is.null(field)) {
-      field = colnames(section$grid)[3]
-      warning('No field name provided, using first gridded data: ', field)
+  ## Set Defaults
+  # Check if values need to set and set them.
+  if (is.null(field)) {
+    field = colnames(section$grid)[3]
+    warning('No field name provided, using first gridded data: ', field)
+  }
+
+  ## Handy variables
+  x = section$x
+  y = section$y
+  z = matrix(section$grid[,field], nrow = length(x))
+
+  if (log) {
+    z = log(z, base)
+    if (is.null(zlim)) {
+      zlim = range(pretty(z, na.rm = TRUE))
     }
+  }
 
-    ## Handy variables
-    x = section$x
-    y = section$y
-    z = matrix(section$grid[,field], nrow = length(x))
+  if (is.null(zlim)) { zlim = range(pretty(z, na.rm = TRUE)) }
 
-    if (log) {
-        z = log(z, base)
-        if (is.null(zlim)) {
-          zlim = range(pretty(z, na.rm = TRUE))
-        }
-    }
+  if (is.null(main)) { main = field }
+  if (is.null(xlim)) { xlim = range(x)}
+  if (is.null(ylim)) { ylim = range(y) }
 
-    if (is.null(zlim)) { zlim = range(pretty(z, na.rm = TRUE)) }
+  ## Out of Range
+  # Set values to zlim if you want the out of range values plotted at the zlim values
+  if (!is.na(col.low) & col.low == '') {
+    z[z < zlim[1]] = zlim[1]
+  }
+  if (!is.na(col.high) & col.high == '') {
+    z[z > zlim[2]] = zlim[2]
+  }
 
-    if (is.null(main)) { main = field }
-    if (is.null(xlim)) { xlim = range(x)}
-    if (is.null(ylim)) { ylim = range(y) }
-
-    ## Out of Range
-    # Set values to zlim if you want the out of range values plotted at the zlim values
-    if (!is.na(col.low) & col.low == '') {
-        z[z < zlim[1]] = zlim[1]
-    }
-    if (!is.na(col.high) & col.high == '') {
-        z[z > zlim[2]] = zlim[2]
-    }
-
-    ## Plot iamge
-    image(x = x, y = y, z = z, col = get.pal(N, pal = pal, rev = rev), ylab = ylab, xlab = xlab,
-          xlim = xlim, ylim = ylim, zlim = zlim)
+  ## Plot iamge
+  image(x = x, y = y, z = z, col = get.pal(N, pal = pal, rev = rev), ylab = ylab, xlab = xlab,
+        xlim = xlim, ylim = ylim, zlim = zlim)
 
 
-    ## Add Title text
-    if (log) {
-      st = paste0(main, '   zlim: (', round(base^zlim[1], 3), ', ', round(base^zlim[2],3), ')')
+  ## Add Title text
+  if (log) {
+    st = paste0(main, '   zlim: (', round(base^zlim[1], 3), ', ', round(base^zlim[2],3), ')')
+  } else {
+    st = paste0(main, '   zlim: (', round(zlim[1], 3), ', ', round(zlim[2],3), ')')
+  }
+  mtext(st, line = 0.25, adj = 1, cex = 0.7)
+
+  # Plot points that are out of range when a color is given
+  if (!is.na(col.low) & col.low != '') {
+    zz = z
+    zz[zz >= zlim[1]] = NA
+    image(x = x, y = y, z = zz, col = col.low, add = TRUE)#, pch = include.pch, cex = include.cex)
+  }
+
+  if (!is.na(col.high) & col.high != '') {
+    zz = z
+    zz[zz <= zlim[2]] = NA
+    image(x = x, y = y, z = zz, col = col.high, add = TRUE)#, pch = include.pch, cex = include.cex)
+  }
+
+  if (mark.points) {
+    if (include.data) {
+      points(x = section$data$x, y = section$data$y, pch = include.pch, cex = include.cex, col = 'black',
+             bg = make.pal(x = section$data$z, pal = pal, n = N, min = zlim[1], max = zlim[2], rev = rev))
     } else {
-      st = paste0(main, '   zlim: (', round(zlim[1], 3), ', ', round(zlim[2],3), ')')
+      points(x = section$data$x, y = section$data$y, pch = 20, cex = include.cex) ## Add black points
     }
-    mtext(st, line = 0.25, adj = 1, cex = 0.7)
+  }
 
-    # Plot points that are out of range when a color is given
-    if (!is.na(col.low) & col.low != '') {
-        zz = z
-        zz[zz >= zlim[1]] = NA
-        image(x = x, y = y, z = zz, col = col.low, add = TRUE)#, pch = include.pch, cex = include.cex)
-    }
-
-    if (!is.na(col.high) & col.high != '') {
-      zz = z
-      zz[zz <= zlim[2]] = NA
-      image(x = x, y = y, z = zz, col = col.high, add = TRUE)#, pch = include.pch, cex = include.cex)
-    }
-
-    if (mark.points) {
-        if (include.data) {
-            points(x = section$data$x, y = section$data$y, pch = include.pch, cex = include.cex, col = 'black',
-                   bg = make.pal(x = section$data$z, pal = pal, n = N, min = zlim[1], max = zlim[2], rev = rev))
-        } else {
-            points(x = section$data$x, y = section$data$y, pch = 20, cex = include.cex) ## Add black points
-        }
-    }
-
-    ## Include Data
-    # plot data points using the same color palette as the gridded data fields.
-    if (include.data & !mark.points) {
-        points(x = section$data$x, y = section$data$y, pch = include.pch, cex = include.cex,
-               col = make.pal(x = section$data$z, pal = pal, n = n, min = zlim[1], max = zlim[2], rev = rev),
-              bg = make.pal(x = section$data$z, pal = pal, n = n, min = zlim[1], max = zlim[2], rev = rev))
-    }
-    box() ## make sure plotting didn't cover bounding box
+  ## Include Data
+  # plot data points using the same color palette as the gridded data fields.
+  if (include.data & !mark.points) {
+    points(x = section$data$x, y = section$data$y, pch = include.pch, cex = include.cex,
+           col = make.pal(x = section$data$z, pal = pal, n = n, min = zlim[1], max = zlim[2], rev = rev),
+           bg = make.pal(x = section$data$z, pal = pal, n = n, min = zlim[1], max = zlim[2], rev = rev))
+  }
+  box() ## make sure plotting didn't cover bounding box
 }
 
 #' @title Get Section Bathymetry
@@ -738,6 +772,9 @@ get.section.bathy = function(lon, lat, res = 10) {
 add.section.bathy = function(section, bathy = bathy.global, binning = 1, bathy.col = 'darkgrey') {
   x = section$x
   depth = rep(NA, length(x))
+
+  bathy$lon = bathy$lon %% 360
+  section$section.lon = section$section.lon %% 360
 
   for (i in 1:length(x)) {
     depth[i] = -bathy$Z[which.min((bathy$Lon - section$section.lon[i])^2), which.min((bathy$Lat - section$section.lat[i])^2)]

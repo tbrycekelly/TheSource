@@ -23,7 +23,7 @@ NumericVector gridIDW(NumericVector gx, NumericVector gy, NumericVector x, Numer
     wsum = 0;
 
     for(int j = 0; j < nn; j++) {
-      w = 1.0 / (powf(fabs(x[j] - gx[i]), p) + powf(fabs(y[j] - gy[i]), p) + deltamin);
+      w = 1.0 / (powf(fabs(x[j] - gx[i])/xscale, p) + powf(fabs(y[j] - gy[i])/yscale, p) + deltamin);
       temp += w * z[j];
       wsum += w;
     }

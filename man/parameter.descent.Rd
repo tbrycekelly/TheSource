@@ -9,10 +9,10 @@ parameter.descent(
   guess = NULL,
   ...,
   bounds = NULL,
-  max.iter = 1e+06,
+  max.iter = 100,
   progression = NULL,
-  step = 1e-06,
-  tol = 1e-18,
+  step = 1,
+  tol = 1e-08,
   verbose = T
 )
 }

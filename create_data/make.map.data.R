@@ -43,7 +43,7 @@ add.map.bathy.shade(map, bathy.arctic, refinement = 0)
 
 
 ## Antarctic
-bathy = getNOAA.bathy(-180, 180, -90, -45, resolution = 20)
+bathy = getNOAA.bathy(-180, 180, -90, -45, resolution = 30)
 bathy.antarctic = list(Lon = as.numeric(rownames(bathy)),
                        Lat = as.numeric(colnames(bathy)),
                        Z = bathy, res = 15)

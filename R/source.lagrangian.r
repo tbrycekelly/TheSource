@@ -15,11 +15,14 @@
 ## College of Fisheries and Oceanographic Science
 ## University of Alaska Fairbanks
 
-
+#' @title Initialize Lagrangian Model
 #' @param t.start start time for the Lagrangian model (POSIX)
 #' @param t.end end time for the Lagrangian model (POSIX)
-#' @param t.start time between internal model steps (sec)
-#' @param delta.t time between particle saves
+#' @param t.step time between internal model steps (sec)
+#' @param save.freq number of time steps between particle saves
+#' @param nparticles maximum number of particles considered
+#' @param verbose output flag for setup data
+#' @author Thomas Bryce Kelly
 #' @export
 init.lagrangian.model = function(t.start, t.end, t.step, save.freq, nparticles, verbose = T) {
   if (verbose) {message(Sys.time(), ': Setting up Lagrangian model meta parameters (e.g. timestepping values, number of save points, etc)')}
@@ -40,12 +43,23 @@ init.lagrangian.model = function(t.start, t.end, t.step, save.freq, nparticles, 
 
 
 #' @title Initialize Lagrangian History
-init.lagrangian.history = function(meta, verbose = T) {
+#' @param meta list object containing lagrangian model setup (see init.lagrangian.model())
+#' @author Thomas Bryce Kelly
+init.lagrangian.history = function(meta, extra.tracers = NULL, verbose = T) {
   ## 1) lon, 2) lat, 3) depth, 4) u, 5) v, 6) w, 7) T, 8) S, 9) Alive
   hist = array(NA, dim = c(meta$nparticles, meta$nsave, 9), dimnames = list(x = c(1:meta$nparticles),
                                                                             y = c(1:meta$nsave),
                                                                             z = c('lon', 'lat', 'depth', 'u', 'v', 'w', 'T', 'S', 'Alive')))
 
+  if (!is.null(extra.tracers)) {
+    if (class(extra.tracers)) {
+
+    } else {
+      for (i in extra.tracers) {
+        hist[[i]] = NA
+      }
+    }
+  }
   if (verbose) {
     message(Sys.time(), ': Initializing Lagrangian history file with z array indexes:\n 1) lon,\n 2) lat,\n 3) depth,\n 4) u,\n 5) v,\n 6) w,\n 7) T,\n 8) S,\n 9) Alive')
     message('Current history file has x = ', meta$nparticles, ' particles and y = ', meta$nsave, ' snapshots.')

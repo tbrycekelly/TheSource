@@ -45,7 +45,8 @@ make.map = function (coast = NULL,
                     land.col = 'lightgray',
                     grid = TRUE,
                     dlon = 15,
-                    dlat = 15) {
+                    dlat = 15,
+                    draw.axis = T) {
 
   if (is.null(coast)) { coast = 'coastlineWorld' }
 
@@ -60,9 +61,15 @@ make.map = function (coast = NULL,
   lats = seq(-90, 90, by = dlat)
 
   ## make the base plot (oce)
-  oce::mapPlot(coastlineCut(eval(parse(text = coast)), lon_0 = lon0), projection = p, col = land.col,
-          longitudelim = c(lon.min, lon.max), latitudelim = c(lat.min, lat.max),
-          grid = c(dlon, dlat), axes = T, lonlabels = lons, latlabels = lats)
+  oce::mapPlot(coastlineCut(eval(parse(text = coast)), lon_0 = lon0),
+               projection = p,
+               col = land.col,
+               longitudelim = c(lon.min, lon.max),
+               latitudelim = c(lat.min, lat.max),
+               grid = c(dlon, dlat),
+               axes = draw.axis,
+               lonlabels = lons,
+               latlabels = lats)
 
   box()
 

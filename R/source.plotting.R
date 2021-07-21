@@ -74,10 +74,11 @@ plot.boxplot = function(n = 10, ylim = c(0,1), at = NULL, main = NULL,
 #' @param x The x locations for the boxs
 #' @param y The y values that will be plotted.
 #' @export
-add.boxplot.box = function(x, y, col = 'grey', border = 'black', width = 0.7, lty = 1, lcol = 'black',
-                           lwd = 1, xlwd = NULL, outliers = T, pcol = 'black', pch = 1, cex = 1) {
+add.boxplot.box = function(x, y, side = 1, col = '#33333330', border.col = 'black', line.col = 'black', point.col = 'black',
+                           width = 0.7, lty = 1, lwd = 1, xlwd = NULL, outliers = T, pch = 1, cex = 1) {
 
   if (length(x) < length(y)) { x = rep(x, length(y) / length(x))}
+
   ## Remove NAs before they poison anything...
   l = which(!is.na(x) & !is.na(y))
   x = x[l]
@@ -94,27 +95,78 @@ add.boxplot.box = function(x, y, col = 'grey', border = 'black', width = 0.7, lt
     iqr = IQR(y[l], na.rm = TRUE)
     m = median(y[l], na.rm = TRUE)
 
-    ## Box
-    rect(xleft = xx - width/2, ybottom = q1, xright = xx + width/2, ytop = q3, col = col, border = border)
-    lines(x = c(xx - width/2, xx + width/2), y = rep(m,2)) # Horizontal
+    if (side == 1 | side == 3) {
+      ## Box
+      rect(xleft = xx - width/2, ybottom = q1, xright = xx + width/2, ytop = q3, col = col, border = border)
+      lines(x = c(xx - width/2, xx + width/2), y = rep(m,2)) # Horizontal
 
-    ## Add outliers
-    k = which(y[l] < q1 - 1.5 * iqr | y[l] > q3 + 1.5 * iqr)
-    if (length(k) > 0) { points(x = rep(xx, length(k)), y = y[l[k]], pch = pch, col = pcol, cex = cex) }
+      ## Add outliers
+      k = which(y[l] < q1 - 1.5 * iqr | y[l] > q3 + 1.5 * iqr)
+      if (length(k) > 0) {
+        points(x = rep(xx, length(k)), y = y[l[k]], pch = pch, col = point.col, cex = cex)
+      }
 
-    ## Add whiskers
-    if (length(k) > 0) {
-      lines(x = rep(xx, 2), y = c(q1, min(y[l[-k]])), col = lcol, lwd = lwd)
-      lines(x = rep(xx, 2), y = c(q3, max(y[l[-k]])), col = lcol, lwd = lwd)
-      lines(x = c(xx - xlwd/2, xx + xlwd/2), y = rep(min(y[l[-k]]), 2), col = lcol, lwd = lwd)
-      lines(x = c(xx - xlwd/2, xx + xlwd/2), y = rep(max(y[l[-k]]), 2), col = lcol, lwd = lwd)
+      ## Add whiskers
+      if (length(k) > 0) {
+        lines(x = rep(xx, 2), y = c(q1, min(y[l[-k]])), col = line.col, lwd = lwd)
+        lines(x = rep(xx, 2), y = c(q3, max(y[l[-k]])), col = line.col, lwd = lwd)
+        lines(x = c(xx - xlwd/2, xx + xlwd/2), y = rep(min(y[l[-k]]), 2), col = line.col, lwd = lwd)
+        lines(x = c(xx - xlwd/2, xx + xlwd/2), y = rep(max(y[l[-k]]), 2), col = line.col, lwd = lwd)
+      } else {
+        lines(x = rep(xx, 2), y = c(q1, min(y[l])), col = line.col, lwd = lwd)
+        lines(x = rep(xx, 2), y = c(q3, max(y[l])), col = line.col, lwd = lwd)
+        lines(x = c(xx - xlwd/2, xx + xlwd/2), y = rep(min(y[l]), 2), col = line.col, lwd = lwd)
+        lines(x = c(xx - xlwd/2, xx + xlwd/2), y = rep(max(y[l]), 2), col = line.col, lwd = lwd)
+      }
     } else {
-      lines(x = rep(xx, 2), y = c(q1, min(y[l])), col = lcol, lwd = lwd)
-      lines(x = rep(xx, 2), y = c(q3, max(y[l])), col = lcol, lwd = lwd)
-      lines(x = c(xx - xlwd/2, xx + xlwd/2), y = rep(min(y[l]), 2), col = lcol, lwd = lwd)
-      lines(x = c(xx - xlwd/2, xx + xlwd/2), y = rep(max(y[l]), 2), col = lcol, lwd = lwd)
-    }
+      #### HORIZONTAL
+      ## Box
+      rect(ybottom = xx - width/2, xleft = q1, ytop = xx + width/2, xright = q3, col = col, border = border.col)
+      lines(y = c(xx - width/2, xx + width/2), x = rep(m,2)) # Horizontal
 
+      ## Add outliers
+      k = which(y[l] < q1 - 1.5 * iqr | y[l] > q3 + 1.5 * iqr)
+      if (length(k) > 0) { points(y = rep(xx, length(k)), x = y[l[k]], pch = pch, col = point.col, cex = cex) }
+
+      ## Add whiskers
+      if (length(k) > 0) {
+        lines(y = rep(xx, 2), x = c(q1, min(y[l[-k]])), col = line.col, lwd = lwd)
+        lines(y = rep(xx, 2), x = c(q3, max(y[l[-k]])), col = line.col, lwd = lwd)
+        lines(y = c(xx - xlwd/2, xx + xlwd/2), x = rep(min(y[l[-k]]), 2), col = line.col, lwd = lwd)
+        lines(y = c(xx - xlwd/2, xx + xlwd/2), x = rep(max(y[l[-k]]), 2), col = line.col, lwd = lwd)
+      } else {
+        lines(y = rep(xx, 2), x = c(q1, min(y[l])), col = line.col, lwd = lwd)
+        lines(y = rep(xx, 2), x = c(q3, max(y[l])), col = line.col, lwd = lwd)
+        lines(y = c(xx - xlwd/2, xx + xlwd/2), x = rep(min(y[l]), 2), col = line.col, lwd = lwd)
+        lines(y = c(xx - xlwd/2, xx + xlwd/2), x = rep(max(y[l]), 2), col = line.col, lwd = lwd)
+      }
+    }
+  }
+}
+
+
+add.violin = function(x, y, side = 1, col = '#00000080', scale = 1, ...) {
+
+  ## Get 1 to 1 matching
+  if (length(x) < length(y)) {
+    x = rep(x, length(y) / length(x))
+  }
+
+  ## Remove NAs
+  l = which(!is.na(x) & !is.na(y))
+  x = x[l]
+  y = y[l]
+
+  for (xx in unique(x)) {
+    l = which(x == xx)
+    ## Calculate density function
+    d = density(y[l], n = 5e3, ...)
+
+    if (side == 1 | side == 3) {
+      polygon(x = c(d$x, rev(d$x)), y = xx + scale * c(d$y, -rev(d$y)), col = col, border = NA)
+    } else {
+      polygon(x = xx + scale * c(d$y, -rev(d$y)), y = c(d$x, rev(d$x)), col = col, border = NA)
+    }
   }
 }
 
@@ -410,6 +462,7 @@ add.log.axis = function(side = 1, at = NULL, labels = NULL, ticks = T, base = 10
 #' @param x data values to be transformed (e.g. depth)
 #' @param power a positive value, typically less than 1, which is the exponent of the transformation (default = 0.8)
 #' @param ... optional values that are passed onto axis()
+#' @export
 add.exaggerated.axis = function(side, power = 0.8, at = NULL, labels = NULL, grid = F, ...) {
   if (is.null(at)) {
     if (side == 1 | side == 3) {
@@ -432,12 +485,8 @@ add.exaggerated.axis = function(side, power = 0.8, at = NULL, labels = NULL, gri
 #' @author Thomas Bryce Kelly
 #' @param x data values to be transformed (e.g. depth)
 #' @param power a positive value, typically less than 1, which is the exponent of the transformation (default = 0.8)
+#' @export
 exaggerate = function(x, power = 0.8) {
   x^power
 }
-
-par(plt = c(0.3,0.7,0.2,0.9))
-plot(runif(3e3), exaggerate(1:3e3), yaxt = 'n', ylim = c(3e3, 0)^0.8)
-add.exaggerated.axis(4)
-
 

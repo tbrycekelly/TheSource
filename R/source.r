@@ -32,10 +32,13 @@
 #' conv.time.excel(conv.time.excel(42550), rev = T)
 #' @export
 conv.time.excel = function (x, tz = "GMT", rev = FALSE) {
-    if (rev) {
-        return(as.numeric(difftime(x, as.POSIXct("1899-12-30 00:00:00", tz = 'GMT'), unit = 'days')))
-    }
-    as.POSIXct(x*86400, origin = "1899-12-30 00:00:00", tz = tz)
+  if (rev) {
+    return(as.numeric(difftime(x, as.POSIXct("1899-12-30 00:00:00", tz = 'GMT'), unit = 'days')))
+  }
+  if (any(is.POSIXct(x))) {
+    return(x)
+  }
+  as.POSIXct(x*86400, origin = "1899-12-30 00:00:00", tz = tz)
 }
 
 
@@ -48,7 +51,8 @@ conv.time.excel = function (x, tz = "GMT", rev = FALSE) {
 #' conv.time.unix(as.numeric(Sys.time()))
 #' @export
 conv.time.unix = function(x, tz = 'GMT') {
-    as.POSIXct(x, origin="1970-01-01", tz=tz)
+  if (any(is.POSIXct(x))) { return(x) }
+  as.POSIXct(x, origin="1970-01-01", tz=tz)
 }
 
 
@@ -58,7 +62,8 @@ conv.time.unix = function(x, tz = 'GMT') {
 #' conv.time.matlab(720000)
 #' @export
 conv.time.matlab = function (x, tz = "GMT") {
-    as.POSIXct((x - 1)*86400, origin = "0000-01-01", tz = tz)
+  if (any(is.POSIXct(x))) { return(x) }
+  as.POSIXct((x - 1)*86400, origin = "0000-01-01", tz = tz)
 }
 
 
@@ -149,22 +154,17 @@ get.seconds = function (x) {
 
 #' @title Which Closest Time
 #' @description  Find the indicies of the closest times for each entry of x
-#' @example
-#' a = Sys.time()
-#' b = seq(make.time(2010), make.time(2050), by = '1 year')
-#' which.closest.time(a, b)
 #' @export
 which.closest.time = function(x, y) {
-    if (length(y) > 1) {
-        l = c()
-        for (i in 1:length(x)) {
-            l.new = which.min(as.numeric(difftime(x[i], y, units='mins'))^2)
-            l = c(l, l.new)
-        }
-    } else {
-        l = which.min(as.numeric(difftime(x, y, units='mins'))^2)
+  if (length(y) > 1) {
+    l = rep(NA, length(x))
+    for (i in 1:length(x)) {
+      l[i] = which.min(as.numeric(difftime(x[i], y, units='mins'))^2)
     }
-    l
+  } else {
+    l = which.min(as.numeric(difftime(x, y, units='mins'))^2)
+  }
+  l
 }
 
 
@@ -186,7 +186,7 @@ is.POSIXct = function(x) {inherits(x, "POSIXct")}
 #' which.unique(c('a', 1:3, 1))
 #' @export
 which.unique = function(x) {
-    which(!duplicated(x))
+  which(!duplicated(x))
 }
 
 
@@ -309,6 +309,62 @@ is.inside = function(pos, box, verbose = FALSE) {
   ans
 }
 
+
+#' @title Sync file directory
+#' @param source String leading to the folder to be synced
+#' @param destination Destination where files and folders should be copied.
+#' @param pattern File/folder name value to be matched against possible files and folders. Default is '*'
+#' @param verbose Output flag
+#' @param level A recursion counter for the number of sublevels indexed (used for logging)
+#' @param sep The folder/folder seperator, default is
+#' @export
+sync.dir = function(source, destination, pattern = '*', verbose = T, level = 0, sep = '/') {
+  source.files = list.files(source, pattern = pattern)
+  destination.files = list.files(destination, pattern = pattern)
+  tab = paste0(rep(' ', level), collapse = '')
+
+  a = Sys.time()
+
+  ## For each source file
+  if (length(source.files) > 0) {
+    for (i in 1:length(source.files)) {
+      if (verbose) {message(tab, Sys.time(), ': Considering file ', source.files[i])}
+
+      if (!is.na(file.size(paste0(source, sep, source.files[i])))) {
+        ## file exists
+        if (file.exists(paste0(source, sep, source.files[i])) & file.exists(paste0(destination, sep, source.files[i]))) {
+          ## is a directory
+          if (file.size(paste0(source, sep, source.files[i])) == 0) {
+            if (verbose) { message(tab, Sys.time(), ': File ', i, ' is a folder, recursing...') }
+            ## Recursion
+            sync.dir(source = paste0(source, sep, source.files[i]), destination = paste0(destination, sep, source.files[i]), level = level + 1, verbose = verbose)
+          } else {
+            if (file.size(paste0(source, sep, source.files[i])) != file.size(paste0(destination, sep, source.files[i]))) {
+              ## Copy file if they are not the same size.
+              if (verbose) { message(tab, Sys.time(), ': File ', i, ' was corrupted, copying from source.') }
+              file.copy(paste0(source, sep, source.files[i]), paste0(destination, sep, source.files[i]))
+            } else {
+              if (verbose) { message(tab, Sys.time(), ': File ', i, ' already exists.') }
+            }
+          }
+        } else { ## file or dir does not exist
+          if (file.size(paste0(source, sep, source.files[i])) == 0) {
+            ## Create directory and recurse
+            if (verbose) { message(tab, Sys.time(), ': File ', i, ' is a folder and missing from destination, recursing...') }
+            dir.create(paste0(destination, sep, source.files[i]))
+            sync.dir(source = paste0(source, sep, source.files[i]), destination = paste0(destination, sep, source.files[i]), level = level + 1, verbose = verbose)
+          } else {
+            if (verbose) { message(tab, Sys.time(), ': File ', i, ' was copied to destination.') }
+            file.copy(paste0(source, sep, source.files[i]), paste0(destination, sep, source.files[i]))
+          }
+        }
+      }
+    }
+  }
+
+  b = Sys.time()
+  if (verbose & level == 0) {message('Sync took ', round((as.numeric(b) - as.numeric(a))*100)/100, ' seconds.')}
+}
 
 
 #' @title Update TheSource

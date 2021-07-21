@@ -14,16 +14,17 @@ build.section(
   weight = NULL,
   xlim = NULL,
   ylim = NULL,
-  x.factor = 1,
-  y.factor = 1,
+  x.factor = NULL,
+  y.factor = NULL,
   x.scale = NULL,
   y.scale = NULL,
   uncertainty = 1e-12,
-  p = 3,
+  p = 2,
   gridder = NULL,
   field.names = NULL,
   nx = 50,
   ny = 50,
+  proj = NULL,
   verbose = T
 )
 }
@@ -53,6 +54,8 @@ build.section(
 \item{nx}{The number of splits to make in the x direction (defaults to 50). Used only if x.scale is not set.}
 
 \item{ny}{The number of splits to make in the y direction (defaults to 50). Used only if y.scale is not set.}
+
+\item{proj}{A gdal projection string such as from make.proj() function. Used to redistribute grid over non-euclidean surfaces like maps.}
 
 \item{field.name}{Sets the name of the new interpolated field. By default the name is 'z1'}
 }

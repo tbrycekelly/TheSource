@@ -25,32 +25,35 @@ model.dunne = function(NPP, SST, Chl) {
     NPP * a
 }
 
+
 #' @title Laws et al Model
 #' @author Thomas Bryce Kelly
 #' @export
-model.laws = function(NPP, SST, chl) {
+model.laws = function(NPP, SST, chl = NULL) {
     a = 0.78 - 0.43 * SST / 30
     a * NPP ^ 0.307 * 0.04756 * NPP
 }
 
+
 #' @title Henson et al Model
 #' @author Thomas Bryce Kelly
 #' @export
-model.henson = function(NPP, SST, chl) {
+model.henson = function(NPP, SST, chl = NULL) {
     NPP * 0.23 * exp(SST * -0.08)
 }
 
 #' @title Kelly et al Model
 #' @author Thomas Bryce Kelly
 #' @export
-model.kelly = function(NPP, SST, chl) {
+model.kelly = function(NPP, SST = NULL, chl = NULL) {
     NPP * 0.081 + 71.84
 }
+
 
 #' @title Kelly et al Model
 #' @author Thomas Bryce Kelly
 #' @export
-model.kelly.sst = function(NPP, SST, chl) {
+model.kelly.sst = function(NPP, SST, chl = NULL) {
     min.ee = 0.05
 
     SST[is.na(SST)] = median(SST, na.rm = TRUE)

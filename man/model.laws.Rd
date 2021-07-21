@@ -4,7 +4,7 @@
 \alias{model.laws}
 \title{Laws et al Model}
 \usage{
-model.laws(NPP, SST, chl)
+model.laws(NPP, SST, chl = NULL)
 }
 \description{
 Laws et al Model

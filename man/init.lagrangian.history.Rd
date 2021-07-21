@@ -4,8 +4,14 @@
 \alias{init.lagrangian.history}
 \title{Initialize Lagrangian History}
 \usage{
-init.lagrangian.history(meta, verbose = T)
+init.lagrangian.history(meta, extra.tracers = NULL, verbose = T)
+}
+\arguments{
+\item{meta}{list object containing lagrangian model setup (see init.lagrangian.model())}
 }
 \description{
 Initialize Lagrangian History
+}
+\author{
+Thomas Bryce Kelly
 }

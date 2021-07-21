@@ -235,3 +235,14 @@ greyscale = function(n, rev = FALSE) {
   grey.colors(n, 0, 1, rev = rev)
 }
 
+#' @export
+add.alpha = function(pal) {
+
+  f = function(n) {
+    alpha.vals = (c(0:(n-1))/(n-1))
+    scales::alpha(do.call(pal, list(n)), alpha.vals)
+  }
+
+  return(f)
+}
+

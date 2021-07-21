@@ -4,7 +4,7 @@
 \alias{model.kelly}
 \title{Kelly et al Model}
 \usage{
-model.kelly(NPP, SST, chl)
+model.kelly(NPP, SST = NULL, chl = NULL)
 }
 \description{
 Kelly et al Model

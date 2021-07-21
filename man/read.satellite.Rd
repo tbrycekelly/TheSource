@@ -10,7 +10,6 @@ read.satellite(
   conv = function(x) {     x },
   entry = 1,
   verbose = F,
-  trim = T,
   lon = NULL,
   lat = NULL
 )

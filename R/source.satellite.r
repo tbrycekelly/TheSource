@@ -12,63 +12,6 @@
 ## National High Magnetic Field Laboratory
 ## Florida State University
 
-
-###############################
-#### Conversion functions #####
-###############################
-
-#' @title Convert Data to SST (Kahru)
-#' @author Thomas Bryce Kelly
-#' @description Convert
-#' @param x The pixel values (or a vector or matrix)
-#' @export
-conv.kahru.sst = function(x) {
-    ## Apply fix for signed vs unsigned int values
-    if (any(x < 0)) {
-        x[which(x < 0)] = x[which(x < 0)] + 256
-    }
-    ## Remove invalid data
-    l = which(x <= 0 | x >= 255)
-    x[l] = NA
-
-    0.15 * x - 3
-}
-
-#' @title Convert Data to Chl (Kahru)
-#' @author Thomas Bryce Kelly
-#' @description Convert Kahru's data to mg Chl m-2
-#' @param x Raw value
-#' @export
-conv.kahru.chl = function(x) {
-    ## Apply fix for signed vs unsigned int values
-    if (any(x < 0)) {
-        x[which(x < 0)] = x[which(x < 0)] + 256
-    }
-    ## Remove invalid data
-    l = which(x <= 0 | x >= 255)
-    x[l] = NA
-
-    10^(0.015 * x - 2)
-}
-
-#' @title Convert Data to NPP (Kahru)
-#' @author Thomas Bryce Kelly
-#' @description Converts kahru's data to npp
-#' @param x raw value
-#' @export
-conv.kahru.npp = function(x) {
-    x[x < 0] = NA
-    x
-}
-
-#' @title Convert Data to Chl (NASA)
-#' @author Thomas Bryce Kelly
-#' @description convert
-#' @param x raw value
-#' @export
-conv.nasa.chl = function(x) { 10 ^ x }
-
-
 ###########################
 ###### File SECTION #######
 ###########################
@@ -79,15 +22,18 @@ conv.nasa.chl = function(x) { 10 ^ x }
 #' @param input.dir the input directory
 #' @export
 ## Read nc file and do preliminary parsing/conversion
-read.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, entry = 1, verbose = F, trim = T, lon = NULL, lat = NULL) {
+read.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, entry = 1,
+                          verbose = F, lon = NULL, lat = NULL) {
 
-  if (verbose) { message(Sys.time(), ' ~ Loading satellite file: ', file[1]) }
   sate = list()
 
+  ## Load and trim satellite data products
   for (i in 1:length(file)) {
-    if (verbose) { message(Sys.time(), ' ~ Loading satellite file: ', file[i]) }
+    if (verbose) { message(Sys.time(), ': Loading satellite file: ', file[i]) }
     sate[[i]] = load.satellite(input.dir = input.dir, file = file[i], conv = conv, entry = entry)
-    if (trim) { sate[[i]] = trim.satellite(sate[[i]], lon = lon, lat = lat) }
+    if (!is.null(lon) | !is.null(lat)) {
+      sate[[i]] = trim.satellite(sate[[i]], lon = lon, lat = lat)
+    }
   }
 
   if (length(file) > 1) {
@@ -105,13 +51,15 @@ read.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, 
       if (length(sate[[i]]$field) != length(sate[[1]]$field)) { stop(paste0('Number of entries do not match in files: ', file[1], ' and ', file[i])) }
     }
   }
-  if (verbose) { message(Sys.time(), ' ~ Checks complete (success).') }
+  if (verbose) { message(Sys.time(), ': Checks complete (success).') }
 
+  ## Calculate average field
   if (length(file) > 1) {
     n = matrix(0, nrow = nrow(sate[[1]]$field), ncol = ncol(sate[[1]]$field))
     res = matrix(0, nrow = nrow(sate[[1]]$field), ncol = ncol(sate[[1]]$field))
     times = list(start = 0, mid = 0, end = 0)
 
+    ## Add together all fields
     for (i in 1:length(sate)) {
       temp = sate[[i]]$field
       n = n + !is.na(temp)
@@ -123,11 +71,14 @@ read.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, 
       times$end = times$end + as.numeric(sate[[i]]$times$end)
       sate[[1]]$file = c(sate[[1]]$file, sate[[i]]$file)
     }
+
+    ## Calculate mean field value
     res = res / n
     res[!is.finite(res)] = NA
-    sate[[1]]$file = sate[[1]]$file[-1]
-
     sate[[1]]$field = res
+
+    ## Update times and filenames
+    sate[[1]]$file = 'composite file'
     sate[[1]]$times$start = conv.time.unix(times$start / length(sate))
     sate[[1]]$times$mid = conv.time.unix(times$mid / length(sate))
     sate[[1]]$times$end = conv.time.unix(times$end / length(sate))
@@ -145,6 +96,7 @@ read.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, 
   ## Return
   sate[[1]]
 }
+
 
 #' @title Read Satellite Data
 #' @author Thomas Bryce Kelly
@@ -174,6 +126,7 @@ load.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, 
       lon = seq(-180, 180, length.out = dim(x)[1])
     }
 
+    ### Kahru data aproducts:
     else if (dim(x)[1] == 540) {  # Standard 4k
       lat = seq(45, 30.03597, length.out = dim(x)[2])
       lon = seq(-140, -115.5454, length.out = dim(x)[1])
@@ -279,6 +232,7 @@ get.satellite.times = function(x) {
         mid[i] = mean(c(start[i], end[i]))
     }
 
+    ## Return
     list(start = start, mid = mid, end = end)
 }
 
@@ -401,3 +355,65 @@ rebuild.satellite.index = function(dir = 'Z:/Data/Data_Satellite/Raw', verbose =
   ## Return
   summary
 }
+
+
+###############################
+#### Conversion functions #####
+###############################
+
+## Depreciated
+
+#' @title Convert Data to SST (Kahru)
+#' @author Thomas Bryce Kelly
+#' @description Convert
+#' @param x The pixel values (or a vector or matrix)
+#' @export
+conv.kahru.sst = function(x) {
+  ## Apply fix for signed vs unsigned int values
+  if (any(x < 0)) {
+    x[which(x < 0)] = x[which(x < 0)] + 256
+  }
+  ## Remove invalid data
+  l = which(x <= 0 | x >= 255)
+  x[l] = NA
+
+  0.15 * x - 3
+}
+
+
+#' @title Convert Data to Chl (Kahru)
+#' @author Thomas Bryce Kelly
+#' @description Convert Kahru's data to mg Chl m-2
+#' @param x Raw value
+#' @export
+conv.kahru.chl = function(x) {
+  ## Apply fix for signed vs unsigned int values
+  if (any(x < 0)) {
+    x[which(x < 0)] = x[which(x < 0)] + 256
+  }
+  ## Remove invalid data
+  l = which(x <= 0 | x >= 255)
+  x[l] = NA
+
+  10^(0.015 * x - 2)
+}
+
+
+#' @title Convert Data to NPP (Kahru)
+#' @author Thomas Bryce Kelly
+#' @description Converts kahru's data to npp
+#' @param x raw value
+#' @export
+conv.kahru.npp = function(x) {
+  x[x < 0] = NA
+  x
+}
+
+
+#' @title Convert Data to Chl (NASA)
+#' @author Thomas Bryce Kelly
+#' @description convert
+#' @param x raw value
+#' @export
+conv.nasa.chl = function(x) { 10 ^ x }
+
