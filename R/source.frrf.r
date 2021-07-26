@@ -198,13 +198,13 @@ load.frrf = function(input.dir, file.names = NULL, verbose = T) {
                 minute = substr(file.name, 12, 13)
                 second = substr(file.name, 14, 15)
 
-                return(as.POSIXct(paste0(year, '-', month, '-', day, ' ', hour, ':', minute, ':', second)))
+                as.POSIXct(paste0(year, '-', month, '-', day, ' ', hour, ':', minute, ':', second))
             },
             error = function(c) {
-                return(NA)
+                NA
             },
             warning = function(c) {
-                return(NA)
+                NA
             }
         )
         if (!is.na(datetime)) {
