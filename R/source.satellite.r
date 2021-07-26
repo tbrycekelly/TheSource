@@ -292,38 +292,42 @@ rebuild.satellite.index = function(dir = 'Z:/Data/Data_Satellite/Raw', verbose =
 
 
   #### Populate data fields
-  summary = data.frame(File = files, Sensor = NA, Datetime = NA, Year = NA,
+  summary = data.frame(File = c(files, NA), Sensor = NA, Datetime = NA, Year = NA,
                          Julian.Day = NA, Month = NA, Day = NA, Level = NA,
                          Timeframe = NA, Param = NA, Resolution = NA, stringsAsFactors = FALSE)
 
-  for (i in 1:length(files)) {
-    if (file.size(paste0(dir, files[i])) > 0) {
-      if (verbose) { message(Sys.time(), ': Attempting to scrub metadata from ', files[i], ' (', i, '/', length(files), ')... ', appendLF = F) }
+  if (length(files) > 0) {
+    for (i in 1:length(files)) {
+      if (file.size(paste0(dir, files[i])) > 0) {
+        if (verbose) { message(Sys.time(), ': Attempting to scrub metadata from ', files[i], ' (', i, '/', length(files), ')... ', appendLF = F) }
 
-      prime = strsplit(files[i], split = '\\.')[[1]]
-      second = strsplit(prime[2], split = '_')[[1]]
-      datetime = substr(prime[1], 2, 8)
+        summary$File[i] = paste0(dir, files[i])
 
-      summary$Sensor[i] = substr(prime[1], 1, 1)
+        prime = strsplit(files[i], split = '\\.')[[1]]
+        second = strsplit(prime[2], split = '_')[[1]]
+        datetime = substr(prime[1], 2, 8)
 
-      summary$Year[i] = as.numeric(substr(datetime, 1, 4))
-      summary$Julian.Day[i] = as.numeric(substr(datetime, 5, 7))
+        summary$Sensor[i] = substr(prime[1], 1, 1)
 
-      summary$Datetime[i] = paste0(as.POSIXct(summary$Julian.Day[i]*86400,
-                                                    origin = paste0(summary$Year[i], '-01-01'), tz = 'GMT'))
-      summary$Month[i] = as.numeric(substr(summary$Datetime[i], 6, 7))
-      summary$Day[i] = as.numeric(substr(summary$Datetime[i], 9, 10))
+        summary$Year[i] = as.numeric(substr(datetime, 1, 4))
+        summary$Julian.Day[i] = as.numeric(substr(datetime, 5, 7))
 
-      summary$Level[i] = second[1]
-      summary$Timeframe[i] = second[2]
-      summary$Resolution[i] = second[length(second)]
-      if (length(second) > 4) {
-        summary$Param[i] = paste(second[-c(1:2)], collapse = '.')
-      } else {
-        summary$Param[i] = second[3]
+        summary$Datetime[i] = paste0(as.POSIXct(summary$Julian.Day[i]*86400,
+                                                      origin = paste0(summary$Year[i], '-01-01'), tz = 'GMT'))
+        summary$Month[i] = as.numeric(substr(summary$Datetime[i], 6, 7))
+        summary$Day[i] = as.numeric(substr(summary$Datetime[i], 9, 10))
+
+        summary$Level[i] = second[1]
+        summary$Timeframe[i] = second[2]
+        summary$Resolution[i] = second[length(second)]
+        if (length(second) > 4) {
+          summary$Param[i] = paste(second[-c(1:2)], collapse = '.')
+        } else {
+          summary$Param[i] = second[3]
+        }
+
+        if (verbose) { message('Success.') }
       }
-
-      if (verbose) { message('Success.') }
     }
   }
 
@@ -335,21 +339,12 @@ rebuild.satellite.index = function(dir = 'Z:/Data/Data_Satellite/Raw', verbose =
   #### Finish up
   summary$Datetime = as.POSIXct(summary$Datetime, tz = 'GMT')
 
-  if (verbose) {
-    message(unique(summary$Year))
-    message(unique(summary$Sensor))
-    message(unique(summary$Level))
-    message(unique(summary$Timeframe))
-    message(unique(summary$Param))
-    message(unique(summary$Resolution))
-    message(Sys.time(), ': Meta data took ', round(as.numeric(c) - as.numeric(c)), ' seconds.')
-  }
-
   ## Recursively delve into subfolders:
-  list.dirs(path = dir, recursive = F, full.names = T)
+  dirs = list.dirs(path = dir, recursive = F, full.names = T)
   if (length(dirs) > 0) {
     for (i in 1:length(dirs)) {
-      summary = rbind(summary, rebuild.satellite.index(dir = dirs[i], verbose = verbose))
+      if (verbose) { message(' Delving into ', dirs[i])}
+      summary = rbind(summary, rebuild.satellite.index(dir = paste0(dirs[i], '/'), verbose = verbose))
     }
   }
   ## Return

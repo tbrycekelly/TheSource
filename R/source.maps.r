@@ -441,6 +441,11 @@ add.map.quiver = function(lon, lat, u, v, zscale = 1, col = 'black', lwd = 1) {
   }
 }
 
+#' @export
+add.map.scale = function(x) {
+  oce::mapScalebar(x)
+}
+
 
 #' @title Add Map Contours
 #' @export
@@ -504,6 +509,17 @@ make.map.arctic = function(coast = 'coastlineWorld', lon.min = -180, lon.max = 1
                  p = p, land.col = land.col, grid = grid, dlon = dlon, dlat = dlat)
 }
 
+#' @title Make Map (NGA)
+#' @author Thomas Bryce Kelly
+#' @description An example map of the NGA -- basemap only.
+#' @inheritParams make.map
+#' @export
+make.map.nga = function(coast = 'coastlineWorldFine', lon.min = -153, lon.max = -150, lat.min = 56, lat.max = 60.5,
+                           p = make.proj('stere', lat = 60, lon = -150), dlat = 3, dlon = 3, land.col = '#333333', grid = TRUE) {
+
+  make.map(coast = coast, lon.min = lon.min, lon.max = lon.max, lat.min = lat.min, lat.max = lat.max,
+           p = p, land.col = land.col, grid = grid, dlon = dlon, dlat = dlat)
+}
 
 #' @title Make Map (CCE)
 #' @author Thomas Bryce Kelly

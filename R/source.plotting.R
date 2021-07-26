@@ -144,7 +144,7 @@ add.boxplot.box = function(x, y, side = 1, col = '#33333330', border.col = 'blac
   }
 }
 
-
+#' @export
 add.violin = function(x, y, side = 1, col = '#00000080', scale = 1, ...) {
 
   ## Get 1 to 1 matching
