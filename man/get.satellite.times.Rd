@@ -4,7 +4,7 @@
 \alias{get.satellite.times}
 \title{Get Satellite Times}
 \usage{
-get.satellite.times(x)
+get.satellite.times(x, verbose = T)
 }
 \arguments{
 \item{x}{raw}

@@ -17,8 +17,7 @@ sync.dir(source, destination, pattern = "*", verbose = T, level = 0, sep = "/")
 
 \item{level}{A recursion counter for the number of sublevels indexed (used for logging)}
 
-\item{sep}{The folder/folder seperator, default is
-'/'}
+\item{sep}{The folder/folder seperator, default is}
 }
 \description{
 Sync file directory

@@ -257,8 +257,8 @@ add.barplot.bar = function(data, sd = NULL, x = 1, width = 0.6, col = NULL, pal 
 plot.image = function(x = NULL, y = NULL, z, xlab = NULL, ylab = NULL,
                       xlim = NULL, ylim = NULL, zlim = NULL,
                       pal = 'greyscale', n = 255, rev = F, ...) {
-  if (is.null(x)) {x = 1:dim(z[1])}
-  if (is.null(x)) {x = 1:dim(z[2])}
+  if (is.null(x)) {x = c(1:dim(z)[1])}
+  if (is.null(y)) {y = c(1:dim(z)[2])}
   if (is.null(xlim)) {xlim = range(x)}
   if (is.null(ylim)) {ylim = range(y)}
   if (is.null(zlim)) {zlim = range(z)}
@@ -270,7 +270,7 @@ plot.image = function(x = NULL, y = NULL, z, xlab = NULL, ylab = NULL,
   yy = unique(y)
 
   if (length(z) != length(xx) * length(yy)) {
-    stop('Z must have length equal to the grid generated from the unique values of x and y (i.e. z = f(x,y)).')
+    warning('Z must have length equal to the grid generated from the unique values of x and y (i.e. z = f(x,y)).')
   }
 
   ## If data was not originally a matrix format.

@@ -6,9 +6,10 @@
 \usage{
 load.satellite(
   input.dir = NULL,
-  file = NULL,
+  file,
   conv = function(x) {     x },
-  entry = 1
+  entry = 1,
+  verbose = T
 )
 }
 \arguments{

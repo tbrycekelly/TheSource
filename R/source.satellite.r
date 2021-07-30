@@ -265,34 +265,77 @@ get.satellite.times = function(x, verbose = T) {
 }
 
 
-#' @title Print NetCDF
-#' @import ncdf4
-#' @export
-print.nc = function(file) {
-  file = ncdf4::nc_open(file)
-  print(file)
-  ncdf4::nc_close(file)
-}
-
-
 #' @title Load NetCDF
 #' @import ncdf4
 #' @param file The location of a .nc file.
 #' @export
-load.nc = function(file) {
+load.nc = function(file, var = NULL, test = F, verbose = T) {
+
+  if (verbose) { message('Attempting to load data from ', file)}
   file = ncdf4::nc_open(file)
-  data = list()
-  for (dim in names(file$dim)){
-    data[[dim]] = ncdf4::ncvar_get(nc = file, varid = dim)
-  }
-  for (var in names(file$var)) {
-    data[[var]] = ncdf4::ncvar_get(nc = file, varid = var)
+  if (verbose) { message(' File openned.')}
+
+  all.var = c(names(file$var), names(file$dim))
+  #all.dim = names(file$dim)
+
+  if (is.null(var)) {
+    var = all.var
+    if (verbose) { message(' No variables specified, loading all ', length(var), ' entires.') }
   }
 
+  ## Allow number of variable to be used as well
+  if (is.numeric(var)) {
+    var = names(file$var)[var]
+  }
+
+  ## Load data
+  data = list()
+
+  for (v in var) {
+
+    if (v %in% all.var) {
+      a = Sys.time()
+      data[[v]] = ncdf4::ncvar_get(nc = file, varid = v)
+      if (test) { data[[v]] = data[[v]][1] }
+      if (verbose) {
+        d = dim(data[[v]])
+        if (is.null(d)) { d = length(data[[v]])}
+        message(' Variable ', v, ' (', paste(d, collapse = 'x'),') loaded from file. \t', round(difftime(Sys.time(), a, units = 'secs')), 's')
+      }
+    } else {
+      a = Sys.time()
+      data[[v]] = NA
+      if (verbose) {
+        message(' Variable ', v, ' (X) does not exist in file. \t', round(difftime(Sys.time(), a, units = 'secs')), 's')
+      }
+    }
+  }
+
+  if (verbose) {message(' Closing file. Finished.')}
   ncdf4::nc_close(file)
 
   ##return
   data
+}
+
+
+#' @title Read NetCDF Variables
+#' @import ncdf4
+#' @param file The location of a .nc file.
+#' @export
+load.nc.vars = function(file, verbose = F) {
+
+  if (verbose) { message('Attempting to load variables from ', file)}
+  file = ncdf4::nc_open(file)
+  if (verbose) { message(' File openned.')}
+
+  var = names(file$var)
+
+  if (verbose) {message(' Closing file. Finished.')}
+  ncdf4::nc_close(file)
+
+  ##return
+  var
 }
 
 

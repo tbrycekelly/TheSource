@@ -4,7 +4,7 @@
 \alias{conv.time.roms}
 \title{Convert ROMS Time}
 \usage{
-conv.time.roms(x, tz = "UTC")
+conv.time.roms(x, origin = "1900-01-01", tz = "UTC")
 }
 \arguments{
 \item{x}{The datetime numeric to be converted}
