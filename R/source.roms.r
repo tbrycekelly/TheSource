@@ -118,9 +118,19 @@ destagger.grid = function(x) {
     nx = dim(x)[1]
     ny = dim(x)[2]
 
-    (x[1:(nx-1), 1:(ny-1)] + x[2:nx, 1:(ny-1)] + x[1:(nx-1), 2:ny] + x[2:nx, 2:ny]) / 4
-}
+    if (length(dim(x)) == 2) {
+        x= (x[1:(nx-1), 1:(ny-1)] + x[2:nx, 1:(ny-1)] + x[1:(nx-1), 2:ny] + x[2:nx, 2:ny]) / 4
+    } else if (length(dim(x)) == 3) {
+        x = (x[1:(nx-1), 1:(ny-1),] + x[2:nx, 1:(ny-1),] + x[1:(nx-1), 2:ny,] + x[2:nx, 2:ny,]) / 4
+    } else if (length(dim(x)) == 4) {
+        x = (x[1:(nx-1), 1:(ny-1),,] + x[2:nx, 1:(ny-1),,] + x[1:(nx-1), 2:ny,,] + x[2:nx, 2:ny,,]) / 4
+    } else if (length(dim(x)) == 4) {
+        x = (x[1:(nx-1), 1:(ny-1),,,] + x[2:nx, 1:(ny-1),,,] + x[1:(nx-1), 2:ny,,,] + x[2:nx, 2:ny,,,]) / 4
+    }
 
+    ## Return x
+    x
+}
 
 #' @export
 calc.roms.depths = function(grid.data, zeta = NULL, verbose = T) {
@@ -171,7 +181,7 @@ calc.roms.depths = function(grid.data, zeta = NULL, verbose = T) {
 
 #' @title Get ROMS z-levels
 #' @author Thomas Bryce Kelly
-calc.roms.depths = function(h, hc, theta, b = 0.6, N) {
+calc.roms.depths.old = function(h, hc, theta, b = 0.6, N) {
     z = array(NA, dim = c(dim(h), N))
     ds = 1 / N
     s = seq(-1 + ds/2, -ds/2, by = ds)
