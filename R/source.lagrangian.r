@@ -355,6 +355,76 @@ load.advection.cmems = function(path, lats = NULL, lons = NULL, get.vel = get.ve
 }
 
 
+
+#' @title Load in CMEMS Advection
+#' @param path CMEMS NC file (includign path) to read in
+#' @param verbose A verbose flag
+#' @export
+#' @author Thomas Bryce Kelly
+#' @import ncdf4
+load.advection.ecco = function(u.path, v.path, w.path, lats = NULL, lons = NULL, get.vel = NULL, verbose = T) {
+  if (verbose) {message('Loading ECCO Advection Product.', appendLF = F)}
+  a = Sys.time()
+
+  if (verbose) {
+    message('\n Loading ECCO input file ', u.path, ' (', format(file.size(u.path)/2^20, digits = 3), ' MB): ', appendLF = F)
+    message('\n Loading ECCO input file ', v.path, ' (', format(file.size(v.path)/2^20, digits = 3), ' MB): ', appendLF = F)
+    message('\n Loading ECCO input file ', w.path, ' (', format(file.size(w.path)/2^20, digits = 3), ' MB): ', appendLF = F)
+  }
+
+  u.file = ncdf4::nc_open(u.path, write = FALSE)
+  v.file = ncdf4::nc_open(v.path, write = FALSE)
+  w.file = ncdf4::nc_open(w.path, write = FALSE)
+
+  #### Load variables
+  ## Vertical Grid
+  u = ncdf4::ncvar_get(u.file, 'UVEL')
+  v = ncdf4::ncvar_get(v.file, 'VVEL')
+  w = ncdf4::ncvar_get(w.file, 'WVEL')
+
+  ## Domain info
+  time = ncdf4::ncvar_get(u.file, 'TIME')* 86400 + make.time(1992, 1, 1)
+  lat = ncdf4::ncvar_get(u.file, 'LATITUDE_T')
+  lon = ncdf4::ncvar_get(u.file, 'LONGITUDE_T')
+  depth = ncdf4::ncvar_get(u.file, 'DEPTH_T')
+
+  ## Close files
+  ncdf4::nc_close(u.file)
+  ncdf4::nc_close(v.file)
+  ncdf4::nc_close(w.file)
+
+  ## Filter domain
+  if (!is.null(lons)) {
+    if (verbose) {message(' Filtering Lon.', appendLF = F)}
+    lons = lons %% 360
+    l = which(lon >= lons[1] & lon <= lons[2]) # TODO Improve lat lon filtering for curvilinear grids!
+    u = u[l,,]
+    v = v[l,,]
+    w = w[l,,]
+  }
+
+  if (!is.null(lats)) {
+    if (verbose) {message(' Filtering Lat.', appendLF = F)}
+      l = which(lat >= lats[1] & lat <= lats[2])
+      u = u[,l,]
+      v = v[,l,]
+      w = w[,l,]
+    }
+
+    #### Calculated
+    #grid = expand.grid(lon = lon, lat = lat)
+
+  ecco = list(lat = lat, lon = lon, z = depth,
+              u = u, v = v, w = w, time = time) ## negate depth to be consistent with other products
+
+  if (verbose){message('\nECCO succesfully loaded (', format(Sys.time() - a, digits = 3), ', ', format(object.size(ecco) / 2^20, digits = 3), ' MB).')}
+  #### Return object
+  ecco$get.vel = get.vel
+  ecco
+}
+
+
+
 #########################################
 #### Functions to retreive velocity #####
 #########################################
@@ -379,7 +449,6 @@ get.vel.oscar = function(lon, lat, depth, time, advection) {
   t2 = min(which(advection$time > time))
   t1 = t2-1
   t1w = as.numeric(advection$time[t2] - time) / as.numeric(advection$time[t2] - advection$time[t1])
-
 
   x2 = sapply(grid$lon, function(x) {min(which(advection$lon > x), length(advection$lon))})
   y2 = sapply(grid$lat, function(x) {max(which(advection$lat > x), 1)})

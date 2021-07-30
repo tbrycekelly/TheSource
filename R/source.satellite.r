@@ -103,7 +103,7 @@ read.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, 
 #' @description read
 #' @param input.dir the input directory
 ## Read nc file and do preliminary parsing/conversion
-load.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, entry = 1) {
+load.satellite = function(input.dir = NULL, file, conv = function(x){x}, entry = 1, verbose = T) {
 
   nc.file = ncdf4::nc_open(paste0(input.dir, file))
 
@@ -152,8 +152,18 @@ load.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, 
               median = median(as.numeric(x), na.rm = T),
               n.na = sum(is.na(as.numeric(x))),
               n.fields = 1)
-  list(field = x, file = file, dir = input.dir, grid = function() {expand.grid(lon = lon, lat = lat)}, lon = lon, lat = lat,
-       times = get.satellite.times(file), conv = conv, meta = meta, attr = function() {attr})
+
+  ## Return
+  list(field = x,
+       file = file,
+       dir = input.dir,
+       grid = function() {expand.grid(lon = lon, lat = lat)},
+       lon = lon,
+       lat = lat,
+       times = get.satellite.times(file, verbose = verbose),
+       conv = conv,
+       meta = meta,
+       attr = function() {attr})
 }
 
 
@@ -213,27 +223,45 @@ load.sss = function(file, lon = NULL, lat = NULL) {
 #' @description time
 #' @param x raw
 #' @export
-get.satellite.times = function(x) {
-    start = rep(conv.time.unix(1), length(x))
-    mid = rep(conv.time.unix(1), length(x))
-    end = rep(conv.time.unix(1), length(x))
+get.satellite.times = function(x, verbose = T) {
+  start = rep(make.time(), length(x))
+  mid = rep(make.time(1), length(x))
+  end = rep(make.time(1), length(x))
 
-    for (i in 1:length(x)) {
-        start[i] = as.POSIXct(as.numeric(substr(x[i], 6, 8))*86400,
-                                   origin = paste0(substr(x[i], 2, 5), '-01-01'), tz='GMT')
+  for (i in 1:length(x)) {
+    day = as.numeric(substr(x[i], 6, 8))
+    year = as.numeric(substr(x[i], 2, 5))
 
-        timeframe = strsplit(x, '_')[[1]][2]
-        end[i] = start[i]
-        if (timeframe == 'DAY') {end[i] = start[i] + 1 * 86400}
-        if (timeframe == '8D') {end[i] = start[i] + 8 * 86400}
-        if (timeframe == 'MO') {end[i] = start[i] + 365/12 * 86400}
-        if (timeframe == 'YR') {end[i] = start[i] + 365 * 86400}
+    if (verbose) { message(' Processing satellite times for file ', i, ' of ', length(x), ':\tday = ', day, '\tyear = ', year)}
+    if (!is.na(day) & !is.na(year)) {
+      start[i] = as.POSIXct(day * 86400,
+                            origin = paste0(year, '-01-01'),
+                            tz = 'GMT')
 
-        mid[i] = mean(c(start[i], end[i]))
+      timeframe = strsplit(x, '_')[[1]][2]
+      end[i] = start[i]
+      if (timeframe == 'DAY') {
+        end[i] = start[i] + 1 * 86400
+      }
+      if (timeframe == '8D') {
+        end[i] = start[i] + 8 * 86400
+      }
+      if (timeframe == 'MO') {
+        end[i] = start[i] + 365 / 12 * 86400
+      }
+      if (timeframe == 'YR') {
+        end[i] = start[i] + 365 * 86400
+      }
+      mid[i] = mean(c(start[i], end[i]))
+    } else {
+      start[i] = NA
+      mid[i] = NA
+      end[i] = NA
     }
+  }
 
-    ## Return
-    list(start = start, mid = mid, end = end)
+  ## Return
+  list(start = start, mid = mid, end = end)
 }
 
 
@@ -293,8 +321,8 @@ rebuild.satellite.index = function(dir = 'Z:/Data/Data_Satellite/Raw', verbose =
 
   #### Populate data fields
   summary = data.frame(File = c(files, NA), Sensor = NA, Datetime = NA, Year = NA,
-                         Julian.Day = NA, Month = NA, Day = NA, Level = NA,
-                         Timeframe = NA, Param = NA, Resolution = NA, stringsAsFactors = FALSE)
+                       Julian.Day = NA, Month = NA, Day = NA, Level = NA,
+                       Timeframe = NA, Param = NA, Resolution = NA, stringsAsFactors = FALSE)
 
   if (length(files) > 0) {
     for (i in 1:length(files)) {
@@ -313,7 +341,7 @@ rebuild.satellite.index = function(dir = 'Z:/Data/Data_Satellite/Raw', verbose =
         summary$Julian.Day[i] = as.numeric(substr(datetime, 5, 7))
 
         summary$Datetime[i] = paste0(as.POSIXct(summary$Julian.Day[i]*86400,
-                                                      origin = paste0(summary$Year[i], '-01-01'), tz = 'GMT'))
+                                                origin = paste0(summary$Year[i], '-01-01'), tz = 'GMT'))
         summary$Month[i] = as.numeric(substr(summary$Datetime[i], 6, 7))
         summary$Day[i] = as.numeric(substr(summary$Datetime[i], 9, 10))
 

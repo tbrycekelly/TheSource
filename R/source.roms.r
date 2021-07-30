@@ -54,84 +54,413 @@ get.roms.time = function(path, convert = TRUE) {
 }
 
 
+load.roms = function(path, max.var = NULL, verbose = T) {
+    if (verbose) { message(Sys.time(), ': Attempting to load ROMS file ', path, appendLF = F)}
+    file = ncdf4::nc_open(path, write=FALSE)
+    if (verbose) { message(' success.')}
+
+    vars = names(file$var)
+    if (is.null(max.var)) {
+        max.var = length(vars)
+    } else {
+        max.var = min(max.var, length(vars))
+    }
+
+    model = list()
+    for (v in vars[1:max.var]) {
+        if (verbose) { message(' Loading ', v, ' from file...', appendLF = F); a = Sys.time()}
+        model[[v]] = ncdf4::ncvar_get(file, v)
+        if (verbose) { message(' Success. (', round(Sys.time() - a, digits = 5), ')')}
+        Sys.sleep(0.1)
+    }
+
+    ncdf4::nc_close(file)
+    model$path = path
+    model
+}
+
+
 #' @title Load in ROMS Data
 #' @export
 #' @author Thomas Bryce Kelly
 #' @import ncdf4
-load.roms = function(path) {
+load.roms = function(path, verbose = T) {
+    if (verbose) { message(Sys.time(), ': Attempting to load ROMS file ', path, appendLF = F)}
     file = ncdf4::nc_open(path, write=FALSE)
+    if (verbose) { message(' success.')}
+
+    vars = names(file$var)
 
     #### Load variables
     ## Vertical Grid
-    h = ncdf4::ncvar_get(file, 'h')
-    hc = ncdf4::ncvar_get(file, 'hc')
-    theta = ncdf4::ncvar_get(file, 'theta_s')
-    N = 42 # Hard coded
+    if ('h' %in% vars) {
+        if (verbose) { message(' Loading h...')}
+        h = ncdf4::ncvar_get(file, 'h')
+    } else {
+        stop('Error, no h variable found.')
+    }
+
+    if ('hc' %in% vars) {
+        if (verbose) { message(' Loading hc...')}
+        hc = ncdf4::ncvar_get(file, 'hc')
+    } else {
+        stop('Error, no hc variable found.')
+    }
+
+    if ('theta_s' %in% vars) {
+        if (verbose) { message(' Loading theta.s...')}
+        theta.s = ncdf4::ncvar_get(file, 'theta_s')
+    } else {
+        stop('Error, no theta_s variable found.')
+    }
+
+    if ('theta_b' %in% vars) {
+        if (verbose) { message(' Loading theta.b...')}
+        theta.b = ncdf4::ncvar_get(file, 'theta_b')
+    } else {
+        message('Warning, no theta_b variable found, setting to zero.')
+        theta.b = 0
+    }
 
     h = (h[2:dim(h)[1],] + h[1:(dim(h)[1] - 1),]) / 2 ## interpolate to center of each grid cell
     h = (h[,2:dim(h)[2]] + h[,1:(dim(h)[2] - 1)]) / 2
 
     ## Horizontal
-    lat = ncdf4::ncvar_get(file, 'lat_psi')
-    lon = ncdf4::ncvar_get(file, 'lon_psi')
-    grid = list(lat = c(lat), lon = c(lon))
+    if ('lat_psi' %in% vars) {
+        if (verbose) { message(' Loading lat_psi...')}
+        lat = ncdf4::ncvar_get(file, 'lat_psi')
+
+        if (verbose) { message(' Loading lon_psi...')}
+        lon = ncdf4::ncvar_get(file, 'lon_psi')
+    } else if ('x_psi' %in% vars) {
+        if (verbose) { message(' Loading x_psi...')}
+        lon = ncdf4::ncvar_get(file, 'x_psi')
+        if (verbose) { message(' Loading y_psi...')}
+        lat = ncdf4::ncvar_get(file, 'y_psi')
+    } else {
+        message('No positional coordiantes found!')
+    }
+
+    grid = list(lon = lon, lat = lat)
+    if (verbose) { message(' Formed grid ', length(grid$lon), 'x', length(grid$lat))}
 
     ## Advect
-    u = ncdf4::ncvar_get(file, 'u')
-    u = (u[,2:dim(u)[2],,] + u[,1:(dim(u)[2] - 1),,]) / 2
+    if ('u' %in% vars) {
+        if (verbose) { message(' Loading u... ', appendLF = F); a = Sys.time()}
+        u = ncdf4::ncvar_get(file, 'u')
+        if (verbose) { message('(',Sys.time() - a, ')')}
+        u = (u[,2:dim(u)[2],,] + u[,1:(dim(u)[2] - 1),,]) / 2
+    } else if ('Huon' %in% vars) {
+        if (verbose) { message(' Loading Huon... ', appendLF = F); a = Sys.time()}
+        u = ncdf4::ncvar_get(file, 'Huon')
+        if (verbose) { message('(',Sys.time() - a, ')')}
+        u = (u[,2:dim(u)[2],,] + u[,1:(dim(u)[2] - 1),,]) / 2
+    } else {
+        stop('Error, no u velocity found.')
+    }
 
-    v = ncdf4::ncvar_get(file, 'v')
-    v = (v[2:dim(v)[1],,,] + v[1:(dim(v)[1] - 1),,,]) / 2
+    if ('v' %in% vars) {
+        if (verbose) { message(' Loading v... ', appendLF = F); a = Sys.time()}
+        v = ncdf4::ncvar_get(file, 'v')
+        if (verbose) { message('(',Sys.time() - a, ')')}
+        v = (v[2:dim(v)[1],,,] + v[1:(dim(v)[1] - 1),,,]) / 2
+    } else if ('Hvom' %in% vars) {
+        if (verbose) { message(' Loading Hvom... ', appendLF = F); a = Sys.time()}
+        v = ncdf4::ncvar_get(file, 'Hvom')
+        if (verbose) { message('(',Sys.time() - a, ')')}
+        v = (v[2:dim(v)[1],,,] + v[1:(dim(v)[1] - 1),,,]) / 2
+    } else {
+        stop('Error, no v velocity found.')
+    }
 
-    w = ncdf4::ncvar_get(file, 'w')
-    w = (w[,,2:dim(w)[3],] + w[,,1:(dim(w)[3] - 1),]) / 2 # depth averaged w
-    w = (w[2:dim(w)[1],,,] + w[1:(dim(w)[1] - 1),,,]) / 2
-    w = (w[,2:dim(w)[2],,] + w[,1:(dim(w)[2] - 1),,]) / 2
+    if ('w' %in% vars) {
+        if (verbose) { message(' Loading w... ', appendLF = F); a = Sys.time()}
+        w = ncdf4::ncvar_get(file, 'w')
+        if (verbose) { message('(',Sys.time() - a, ')')}
+        w = (w[,,2:dim(w)[3],] + w[,,1:(dim(w)[3] - 1),]) / 2 # depth averaged w
+        w = (w[2:dim(w)[1],,,] + w[1:(dim(w)[1] - 1),,,]) / 2
+        w = (w[,2:dim(w)[2],,] + w[,1:(dim(w)[2] - 1),,]) / 2
+    } else {
+        stop('Error, no w velocity found.')
+    }
 
+    if (verbose) { message(' Unifying grid layout...')}
     dims = c(dim(u)[1] * dim(u)[2], dim(u)[3], dim(u)[4])
     dim(u) = dims
     dim(v) = dims
     dim(w) = dims
-
-    ## Diffusivity
-    AKt = ncdf4::ncvar_get(file, 'AKt')
-
-    ## Fields
-    temp = ncdf4::ncvar_get(file, 'temp')
-    if ('rho' %in% names(file$var)) {rho = ncvar_get(file, 'rho')} else {rho = NULL}
-    salt = ncvar_get(file, 'salt')
-
-    temp = (temp[2:dim(temp)[1],,,] + temp[1:(dim(temp)[1] - 1),,,]) / 2
-    temp = (temp[,2:dim(temp)[2],,] + temp[,1:(dim(temp)[2] - 1),,]) / 2
-
-    rho = (rho[2:dim(rho)[1],,,] + rho[1:(dim(rho)[1] - 1),,,]) / 2
-    rho = (rho[,2:dim(rho)[2],,] + rho[,1:(dim(rho)[2] - 1),,]) / 2
-
-    salt = (salt[2:dim(salt)[1],,,] + salt[1:(dim(salt)[1] - 1),,,]) / 2
-    salt = (salt[,2:dim(salt)[2],,] + salt[,1:(dim(salt)[2] - 1),,]) / 2
-
-    AKt = (AKt[2:dim(AKt)[1],,,] + AKt[1:(dim(AKt)[1] - 1),,,]) / 2
-    AKt = (AKt[,2:dim(AKt)[2],,] + AKt[,1:(dim(AKt)[2] - 1),,]) / 2
-    AKt = (AKt[,,2:dim(AKt)[3],] + AKt[,,1:(dim(AKt)[3] - 1),]) / 2
-
-    dim(temp) = dims
-    dim(rho) = dims
-    dim(salt) = dims
-    dim(AKt) = dims
-
     dim(lon) = dims[1]
     dim(lat) = dims[1]
     dim(h) = dims[1]
+    N = dims[2]
+
+    ## Diffusivity
+    if ('AKt' %in% vars) {
+        if (verbose) { message(' Loading AKt...')}
+        AKt = ncdf4::ncvar_get(file, 'AKt')
+    } else {
+        AKt = NULL
+    }
+
+    ## Fields
+    if ('temp' %in% vars) {
+        if (verbose) { message(' Loading pot temp...')}
+        temp = ncdf4::ncvar_get(file, 'temp')
+    } else {
+        temp = NULL
+    }
+
+    if ('rho' %in% vars) {
+        if (verbose) { message(' Loading rho...')}
+        rho = ncvar_get(file, 'rho')
+    } else {
+        rho = NULL
+    }
+    if ('salt' %in% vars) {
+        if (verbose) { message(' Loading salinity...')}
+        salt = ncvar_get(file, 'salt')
+    } else {
+        salt = NULL
+    }
+
+    if (verbose) { message(' Adjusting tracer grid...')}
+    if (!is.null(temp)) {
+        temp = (temp[2:dim(temp)[1],,,] + temp[1:(dim(temp)[1] - 1),,,]) / 2
+        temp = (temp[,2:dim(temp)[2],,] + temp[,1:(dim(temp)[2] - 1),,]) / 2
+        dim(temp) = dims
+    }
+
+    if (!is.null(rho)) {
+        rho = (rho[2:dim(rho)[1],,,] + rho[1:(dim(rho)[1] - 1),,,]) / 2
+        rho = (rho[,2:dim(rho)[2],,] + rho[,1:(dim(rho)[2] - 1),,]) / 2
+        dim(rho) = dims
+    }
+
+    if (!is.null(salt)) {
+        salt = (salt[2:dim(salt)[1],,,] + salt[1:(dim(salt)[1] - 1),,,]) / 2
+        salt = (salt[,2:dim(salt)[2],,] + salt[,1:(dim(salt)[2] - 1),,]) / 2
+        dim(salt) = dims
+    }
+
+    if (!is.null(AKt)) {
+        AKt = (AKt[2:dim(AKt)[1],,,] + AKt[1:(dim(AKt)[1] - 1),,,]) / 2
+        AKt = (AKt[,2:dim(AKt)[2],,] + AKt[,1:(dim(AKt)[2] - 1),,]) / 2
+        AKt = (AKt[,,2:dim(AKt)[3],] + AKt[,,1:(dim(AKt)[3] - 1),]) / 2
+        dim(AKt) = dims
+    }
 
     #### Calculated
-    z = get.zlevel.roms(h, hc, theta, N=N)
+    z = get.zlevel.roms(h, hc, theta.s, N=N)
     time = get.roms.time(path, TRUE)
+    meta = list(path = path, theta.b = theta.b, theta.s = theta.s, hc = hc, N = N, dims = dims)
 
     #### Return object
-    list(path=path, lat=lat, lon=lon, grid=grid, depth= function(x) {-get.zlevel.roms(x, hc, theta, N=N)}, z = z,
-         h=h, u=u, v=v, w=w, AKt=AKt, T=temp, rho=rho, S=salt, time=time)
+    list(lat = lat,
+         lon = lon,
+         grid = grid,
+         depth = function(x) {-get.zlevel.roms(x, hc, theta.s, N = N)},
+         z = z,
+         h = h,
+         u = u,
+         v = v,
+         w = w,
+         AKt = AKt,
+         T = temp,
+         rho = rho,
+         S = salt,
+         time = time,
+         meta = meta)
 }
 
+
+#' @export
+load.roms.old = function(path, verbose = T) {
+    if (verbose) { message(Sys.time(), ': Attempting to load ROMS file ', path, appendLF = F)}
+    file = ncdf4::nc_open(path, write=FALSE)
+    if (verbose) { message(' success.')}
+
+    vars = names(file$var)
+
+    #### Load variables
+    ## Vertical Grid
+    if ('h' %in% vars) {
+        if (verbose) { message(' Loading h...')}
+        h = ncdf4::ncvar_get(file, 'h')
+    } else {
+        stop('Error, no h variable found.')
+    }
+
+    if ('hc' %in% vars) {
+        if (verbose) { message(' Loading hc...')}
+        hc = ncdf4::ncvar_get(file, 'hc')
+    } else {
+        stop('Error, no hc variable found.')
+    }
+
+    if ('theta_s' %in% vars) {
+        if (verbose) { message(' Loading theta.s...')}
+        theta.s = ncdf4::ncvar_get(file, 'theta_s')
+    } else {
+        stop('Error, no theta_s variable found.')
+    }
+
+    if ('theta_b' %in% vars) {
+        if (verbose) { message(' Loading theta.b...')}
+        theta.b = ncdf4::ncvar_get(file, 'theta_b')
+    } else {
+        message('Warning, no theta_b variable found, setting to zero.')
+        theta.b = 0
+    }
+
+    h = (h[2:dim(h)[1],] + h[1:(dim(h)[1] - 1),]) / 2 ## interpolate to center of each grid cell
+    h = (h[,2:dim(h)[2]] + h[,1:(dim(h)[2] - 1)]) / 2
+
+    ## Horizontal
+    if ('lat_psi' %in% vars) {
+        if (verbose) { message(' Loading lat_psi...')}
+        lat = ncdf4::ncvar_get(file, 'lat_psi')
+
+        if (verbose) { message(' Loading lon_psi...')}
+        lon = ncdf4::ncvar_get(file, 'lon_psi')
+    } else if ('x_psi' %in% vars) {
+        if (verbose) { message(' Loading x_psi...')}
+        lon = ncdf4::ncvar_get(file, 'x_psi')
+        if (verbose) { message(' Loading y_psi...')}
+        lat = ncdf4::ncvar_get(file, 'y_psi')
+    } else {
+        message('No positional coordiantes found!')
+    }
+
+    grid = list(lon = lon, lat = lat)
+    if (verbose) { message(' Formed grid ', length(grid$lon), 'x', length(grid$lat))}
+
+    ## Advect
+    if ('u' %in% vars) {
+        if (verbose) { message(' Loading u... ', appendLF = F); a = Sys.time()}
+        u = ncdf4::ncvar_get(file, 'u')
+        if (verbose) { message('(',Sys.time() - a, ')')}
+        u = (u[,2:dim(u)[2],,] + u[,1:(dim(u)[2] - 1),,]) / 2
+    } else if ('Huon' %in% vars) {
+        if (verbose) { message(' Loading Huon... ', appendLF = F); a = Sys.time()}
+        u = ncdf4::ncvar_get(file, 'Huon')
+        if (verbose) { message('(',Sys.time() - a, ')')}
+        u = (u[,2:dim(u)[2],,] + u[,1:(dim(u)[2] - 1),,]) / 2
+    } else {
+        stop('Error, no u velocity found.')
+    }
+
+    if ('v' %in% vars) {
+        if (verbose) { message(' Loading v... ', appendLF = F); a = Sys.time()}
+        v = ncdf4::ncvar_get(file, 'v')
+        if (verbose) { message('(',Sys.time() - a, ')')}
+        v = (v[2:dim(v)[1],,,] + v[1:(dim(v)[1] - 1),,,]) / 2
+    } else if ('Hvom' %in% vars) {
+        if (verbose) { message(' Loading Hvom... ', appendLF = F); a = Sys.time()}
+        v = ncdf4::ncvar_get(file, 'Hvom')
+        if (verbose) { message('(',Sys.time() - a, ')')}
+        v = (v[2:dim(v)[1],,,] + v[1:(dim(v)[1] - 1),,,]) / 2
+    } else {
+        stop('Error, no v velocity found.')
+    }
+
+    if ('w' %in% vars) {
+        if (verbose) { message(' Loading w... ', appendLF = F); a = Sys.time()}
+        w = ncdf4::ncvar_get(file, 'w')
+        if (verbose) { message('(',Sys.time() - a, ')')}
+        w = (w[,,2:dim(w)[3],] + w[,,1:(dim(w)[3] - 1),]) / 2 # depth averaged w
+        w = (w[2:dim(w)[1],,,] + w[1:(dim(w)[1] - 1),,,]) / 2
+        w = (w[,2:dim(w)[2],,] + w[,1:(dim(w)[2] - 1),,]) / 2
+    } else {
+        stop('Error, no w velocity found.')
+    }
+
+    if (verbose) { message(' Unifying grid layout...')}
+    dims = c(dim(u)[1] * dim(u)[2], dim(u)[3], dim(u)[4])
+    dim(u) = dims
+    dim(v) = dims
+    dim(w) = dims
+    dim(lon) = dims[1]
+    dim(lat) = dims[1]
+    dim(h) = dims[1]
+    N = dims[2]
+
+    ## Diffusivity
+    if ('AKt' %in% vars) {
+        if (verbose) { message(' Loading AKt...')}
+        AKt = ncdf4::ncvar_get(file, 'AKt')
+    } else {
+        AKt = NULL
+    }
+
+    ## Fields
+    if ('temp' %in% vars) {
+        if (verbose) { message(' Loading pot temp...')}
+        temp = ncdf4::ncvar_get(file, 'temp')
+    } else {
+        temp = NULL
+    }
+
+    if ('rho' %in% vars) {
+        if (verbose) { message(' Loading rho...')}
+        rho = ncvar_get(file, 'rho')
+    } else {
+        rho = NULL
+    }
+    if ('salt' %in% vars) {
+        if (verbose) { message(' Loading salinity...')}
+        salt = ncvar_get(file, 'salt')
+    } else {
+        salt = NULL
+    }
+
+    if (verbose) { message(' Adjusting tracer grid...')}
+    if (!is.null(temp)) {
+        temp = (temp[2:dim(temp)[1],,,] + temp[1:(dim(temp)[1] - 1),,,]) / 2
+        temp = (temp[,2:dim(temp)[2],,] + temp[,1:(dim(temp)[2] - 1),,]) / 2
+        dim(temp) = dims
+    }
+
+    if (!is.null(rho)) {
+        rho = (rho[2:dim(rho)[1],,,] + rho[1:(dim(rho)[1] - 1),,,]) / 2
+        rho = (rho[,2:dim(rho)[2],,] + rho[,1:(dim(rho)[2] - 1),,]) / 2
+        dim(rho) = dims
+    }
+
+    if (!is.null(salt)) {
+        salt = (salt[2:dim(salt)[1],,,] + salt[1:(dim(salt)[1] - 1),,,]) / 2
+        salt = (salt[,2:dim(salt)[2],,] + salt[,1:(dim(salt)[2] - 1),,]) / 2
+        dim(salt) = dims
+    }
+
+    if (!is.null(AKt)) {
+        AKt = (AKt[2:dim(AKt)[1],,,] + AKt[1:(dim(AKt)[1] - 1),,,]) / 2
+        AKt = (AKt[,2:dim(AKt)[2],,] + AKt[,1:(dim(AKt)[2] - 1),,]) / 2
+        AKt = (AKt[,,2:dim(AKt)[3],] + AKt[,,1:(dim(AKt)[3] - 1),]) / 2
+        dim(AKt) = dims
+    }
+
+    #### Calculated
+    z = get.zlevel.roms(h, hc, theta.s, N=N)
+    time = get.roms.time(path, TRUE)
+    meta = list(path = path, theta.b = theta.b, theta.s = theta.s, hc = hc, N = N, dims = dims)
+
+    #### Return object
+    list(lat = lat,
+         lon = lon,
+         grid = grid,
+         depth = function(x) {-get.zlevel.roms(x, hc, theta.s, N = N)},
+         z = z,
+         h = h,
+         u = u,
+         v = v,
+         w = w,
+         AKt = AKt,
+         T = temp,
+         rho = rho,
+         S = salt,
+         time = time,
+         meta = meta)
+}
 
 #' @title Load LTRANS Data
 #' @author Thomas Bryce Kelly
