@@ -114,25 +114,6 @@ calc.roms.time = function(time.data, tz = 'UTC') {
 
 
 #' @export
-destagger.grid = function(x) {
-    nx = dim(x)[1]
-    ny = dim(x)[2]
-
-    if (length(dim(x)) == 2) {
-        x= (x[1:(nx-1), 1:(ny-1)] + x[2:nx, 1:(ny-1)] + x[1:(nx-1), 2:ny] + x[2:nx, 2:ny]) / 4
-    } else if (length(dim(x)) == 3) {
-        x = (x[1:(nx-1), 1:(ny-1),] + x[2:nx, 1:(ny-1),] + x[1:(nx-1), 2:ny,] + x[2:nx, 2:ny,]) / 4
-    } else if (length(dim(x)) == 4) {
-        x = (x[1:(nx-1), 1:(ny-1),,] + x[2:nx, 1:(ny-1),,] + x[1:(nx-1), 2:ny,,] + x[2:nx, 2:ny,,]) / 4
-    } else if (length(dim(x)) == 4) {
-        x = (x[1:(nx-1), 1:(ny-1),,,] + x[2:nx, 1:(ny-1),,,] + x[1:(nx-1), 2:ny,,,] + x[2:nx, 2:ny,,,]) / 4
-    }
-
-    ## Return x
-    x
-}
-
-#' @export
 calc.roms.depths = function(grid.data, zeta = NULL, verbose = T) {
 
     ## Setup
@@ -161,7 +142,8 @@ calc.roms.depths = function(grid.data, zeta = NULL, verbose = T) {
     ## Setup depths and calculate
     z = array(0, dim = c(nx-1, ny-1, length(grid.data$Cs_r)))
 
-    if (!is.na(grid.data$Vtransform) & grid.data$Vtransform == 1) { ## Equation 1
+    if (is.na(grid.data$Vtransform) | grid.data$Vtransform == 1) { ## Equation 1
+        if (is.na(grid.data$Vtransform)) {message(' No Vtransform equation found, assuming equation 1!')}
         for (i in 1:length(grid.data$Cs_r)) {
             z0 = (grid.data$s_rho[i] - grid.data$Cs_r[i]) * grid.data$hc + grid.data$Cs_r[i] * (h + zice)
             z[,,i] = z0 + zeta * (1 + z0 / (h + zice)) + zice
@@ -179,23 +161,232 @@ calc.roms.depths = function(grid.data, zeta = NULL, verbose = T) {
 }
 
 
-#' @title Get ROMS z-levels
-#' @author Thomas Bryce Kelly
-calc.roms.depths.old = function(h, hc, theta, b = 0.6, N) {
-    z = array(NA, dim = c(dim(h), N))
-    ds = 1 / N
-    s = seq(-1 + ds/2, -ds/2, by = ds)
-    A = sinh(theta * s) / sinh(theta)
-    B = (tanh(theta * (s + 0.5)) - tanh(theta * 0.5)) / (2 * tanh(theta * 0.5))
-    C = (1 - b) * A + b * B
+#' @export
+calc.roms.areas = function(grid.data, zeta = NULL, verbose = T) {
 
-    for (i in 1:dim(h)[1]) {
-        for (j in 1:dim(h)[2]) {
-            z[i,j,] = hc * s + (h[i,j] - hc) * C
+    ## Setup
+    nx = dim(grid.data$h)[1]
+    ny = dim(grid.data$h)[2]
+
+    if (verbose) { message('Calculating areas for all planes.')}
+    h.center = destagger.grid(grid.data$h)
+    h.x = destagger.grid.x(grid.data$h)
+    h.y = destagger.grid.y(grid.data$h)
+
+    if (!is.na(grid.data$zice[1])) {
+        zice = destagger.grid(grid.data$zice)
+        zice.x = destagger.grid.x(grid.data$zice)
+        zice.y = destagger.grid.y(grid.data$zice)
+    } else {
+        zice = matrix(0, nrow = nx - 1, ncol = ny - 1)
+        zice.x = matrix(0, nrow = nx - 1, ncol = ny)
+        zice.y = matrix(0, nrow = nx, ncol = ny - 1)
+    }
+
+
+    ## Free surface
+    if (is.null(zeta)) {
+        zeta = matrix(0, nrow = nx - 1, ncol = ny - 1)
+        zeta.x = matrix(0, nrow = nx - 1, ncol = ny)
+        zeta.y = matrix(0, nrow = nx, ncol = ny - 1)
+
+    } else {
+        if (verbose) { message(' Calculating free surface...')}
+        if (length(dim(zeta)) > 2) {
+            message(' Zeta has dimensions greater than 2. Ignoring zeta...')
+            zeta = matrix(0, nrow = nx - 1, ncol = ny - 1)
+        } else {
+            zeta.x = destagger.grid.x(zeta)
+            zeta.y = destagger.grid.y(zeta)
+            zeta = destagger.grid(zeta)
         }
     }
-    z
+
+    ## Setup depths and calculate
+    z = array(0, dim = c(nx-1, ny-1, length(grid.data$Cs_r)))
+    z.x = array(0, dim = c(nx-1, ny, length(grid.data$Cs_r)))
+    z.y = array(0, dim = c(nx, ny-1, length(grid.data$Cs_r)))
+
+    area.f = array(0, dim = c(nx-1, ny-1))
+    area.x = array(0, dim = c(nx-1, ny, length(grid.data$Cs_r)))
+    area.y = array(0, dim = c(nx, ny-1, length(grid.data$Cs_r)))
+
+    ## Calculate depths
+    if (is.na(grid.data$Vtransform) | grid.data$Vtransform == 1) { ## Equation 1
+        for (i in 1:length(grid.data$Cs_r)) {
+            z0 = (grid.data$s_rho[i] - grid.data$Cs_r[i]) * grid.data$hc + grid.data$Cs_r[i] * (h + zice)
+            z[,,i] = z0 + zeta * (1 + z0 / (h + zice)) + zice
+
+            z0 = (grid.data$s_rho[i] - grid.data$Cs_w[i]) * grid.data$hc + grid.data$Cs_w[i] * (h.x + zice.x)
+            z.x[,,i] = z0 + zeta.x * (1 + z0 / (h.x + zice.x)) + zice.x
+
+            z0 = (grid.data$s_rho[i] - grid.data$Cs_w[i]) * grid.data$hc + grid.data$Cs_w[i] * (h.y + zice.y)
+            z.y[,,i] = z0 + zeta.y * (1 + z0 / (h.y + zice.y)) + zice.y
+        }
+    } else {
+        message(' No valid Vtransform given. Returning zeros!')
+    }
+
+    ## Calculate Areas
+    if (verbose) { message(' Calculating vertical area panels in x and y...')}
+    for (i in length(grid.data$Cs_r):1) {
+        if (i == length(grid.data$Cs_r)) {
+            for (j in 1:(dim(area.x)[2]-1)) {
+                area.x[,j,i] = diff(grid.data$x_v[,j]) * z.x[,j,i]
+            }
+            j = dim(area.x)[2]
+            area.x[,j,i] = diff(grid.data$x_v[,j-1]) * z.x[,j,i]
+
+            for (j in 1:(dim(area.y)[1]-1)) {
+                area.y[j,,i] = diff(grid.data$y_u[j,]) * z.y[j,,i]
+            }
+            j = dim(area.y)[1]
+            area.y[j,,i] = diff(grid.data$y_u[j-1,]) * z.y[j,,i]
+        } else {
+            for (j in 1:(dim(area.x)[2])-1) {
+                area.x[,j,i] = diff(grid.data$x_v[,j]) * (z.x[,j,i] - z.x[,j,i+1])
+            }
+            j = dim(area.x)[2]
+            area.x[,j,i] = diff(grid.data$x_v[,j-1]) * (z.x[,j,i] - z.x[,j,i+1])
+
+            for (j in 1:(dim(area.y)[1])-1) {
+                area.y[j,,i] = diff(grid.data$y_u[j,]) * (z.y[j,,i] - z.y[j,,i+1])
+            }
+            j = dim(area.y)[1]
+            area.y[j,,i] = diff(grid.data$y_u[j-1,]) * (z.y[j,,i] - z.y[j,,i+1])
+        }
+    }
+    area.x = abs(area.x)
+    area.y = abs(area.y)
+
+    if (verbose) { message(' Calculating lateral area panels in x and y...')}
+    ## Calculate lateral area of each cell (this is very inefficient but simple, should improve it later!)
+    for (i in 1:dim(grid.data$x_u)[1]) {
+        for (j in 1:dim(grid.data$y_v)[2]) {
+            area.f[i,j] = diff(grid.data$x_v[,j])[i] * diff(grid.data$y_u[i,])[j]
+        }
+    }
+
+    ## Return
+    list(lateral = area.f, x = area.x, y = area.y)
 }
+
+
+#### GRID UTILITIES
+
+#' @export
+calc.roms.location = function(lon, lat, grid.data) {
+
+    lon = lon %% 360
+    grid.data$lon_psi = grid.data$lon_psi %% 360
+
+    locations = data.frame(lon = as.numeric(grid.data$lon_psi), lat = as.numeric(grid.data$lat_psi))
+    i = rep(NA, length(lon))
+    j = rep(NA, length(lat))
+
+    for (k in 1:length(lon)) {
+        a = which.min((locations$lon - lon[k])^2 + (locations$lat - lat[k])^2)
+        i[k] = a %% dim(grid.data$lon_psi)[1]
+        if (i[k] == 0) { i[k] = dim(grid.data$lon_psi)[1] }
+        j[k] = floor((a - i[k]) / dim(grid.data$lon_psi)[1]) + 1
+    }
+
+    ## Return
+    data.frame(i = i, j = j)
+}
+
+
+#' @export
+destagger.grid = function(x) {
+    x = as.array(x)
+    nx = dim(x)[1]
+    ny = dim(x)[2]
+
+    if (length(dim(x)) == 1) {
+        x = (x[1:(nx-1)] + x[2:nx]) / 2
+    } else if (length(dim(x)) == 2) {
+        x = (x[1:(nx-1), 1:(ny-1)] + x[2:nx, 1:(ny-1)] + x[1:(nx-1), 2:ny] + x[2:nx, 2:ny]) / 4
+    } else if (length(dim(x)) == 3) {
+        x = (x[1:(nx-1), 1:(ny-1),] + x[2:nx, 1:(ny-1),] + x[1:(nx-1), 2:ny,] + x[2:nx, 2:ny,]) / 4
+    } else if (length(dim(x)) == 4) {
+        x = (x[1:(nx-1), 1:(ny-1),,] + x[2:nx, 1:(ny-1),,] + x[1:(nx-1), 2:ny,,] + x[2:nx, 2:ny,,]) / 4
+    } else if (length(dim(x)) == 5) {
+        x = (x[1:(nx-1), 1:(ny-1),,,] + x[2:nx, 1:(ny-1),,,] + x[1:(nx-1), 2:ny,,,] + x[2:nx, 2:ny,,,]) / 4
+    }
+
+    ## Return x
+    x
+}
+
+#' @export
+destagger.grid.x = function(x) {
+    x = as.array(x)
+    nx = dim(x)[1]
+
+    if (length(dim(x)) == 1) {
+        x = (x[1:(nx-1)] + x[2:nx]) / 2
+    } else if (length(dim(x)) == 2) {
+        x = (x[1:(nx-1),] + x[2:nx,]) / 2
+    } else if (length(dim(x)) == 3) {
+        x = (x[1:(nx-1),,] + x[2:nx,,]) / 2
+    } else if (length(dim(x)) == 4) {
+        x = (x[1:(nx-1),,,] + x[2:nx,,,]) / 2
+    } else if (length(dim(x)) == 5) {
+        x = (x[1:(nx-1),,,,] + x[2:nx,,,,]) / 2
+    }
+
+    ## Return x
+    x
+}
+
+
+#' @export
+destagger.grid.y = function(x) {
+    x = as.array(x)
+    nx = dim(x)[2]
+
+    if (length(dim(x)) == 1) {
+        nx = dim(x)[1]
+        x = (x[1:(nx-1)] + x[2:nx]) / 2
+    } else if (length(dim(x)) == 2) {
+        x = (x[,1:(nx-1)] + x[,2:nx]) / 2
+    } else if (length(dim(x)) == 3) {
+        x = (x[,1:(nx-1),] + x[,2:nx,]) / 2
+    } else if (length(dim(x)) == 4) {
+        x = (x[,1:(nx-1),,] + x[,2:nx,,]) / 2
+    } else if (length(dim(x)) == 5) {
+        x = (x[,1:(nx-1),,,] + x[,2:nx,,,]) / 2
+    }
+
+    ## Return x
+    x
+}
+
+
+#' @export
+destagger.grid.z = function(x) {
+    x = as.array(x)
+    nx = dim(x)[3]
+
+    if (length(dim(x)) == 1) {
+        nx = dim(x)[1]
+        x = (x[1:(nx-1)] + x[2:nx]) / 2
+    } else if (length(dim(x)) == 2) {
+        nx = dim(x)[2]
+        x = (x[,1:(nx-1)] + x[,2:nx]) / 2
+    } else if (length(dim(x)) == 3) {
+        x = (x[,,1:(nx-1)] + x[,,2:nx]) / 2
+    } else if (length(dim(x)) == 4) {
+        x = (x[,,1:(nx-1),] + x[,,2:nx,]) / 2
+    } else if (length(dim(x)) == 5) {
+        x = (x[,,1:(nx-1),,] + x[,,2:nx,,]) / 2
+    }
+
+    ## Return x
+    x
+}
+
+
 
 
 
@@ -229,6 +420,25 @@ get.roms.time.old = function(path, convert = TRUE) {
     roms.times
 }
 
+
+
+#' @title Get ROMS z-levels
+#' @author Thomas Bryce Kelly
+calc.roms.depths.old = function(h, hc, theta, b = 0.6, N) {
+    z = array(NA, dim = c(dim(h), N))
+    ds = 1 / N
+    s = seq(-1 + ds/2, -ds/2, by = ds)
+    A = sinh(theta * s) / sinh(theta)
+    B = (tanh(theta * (s + 0.5)) - tanh(theta * 0.5)) / (2 * tanh(theta * 0.5))
+    C = (1 - b) * A + b * B
+
+    for (i in 1:dim(h)[1]) {
+        for (j in 1:dim(h)[2]) {
+            z[i,j,] = hc * s + (h[i,j] - hc) * C
+        }
+    }
+    z
+}
 
 #' @export
 load.roms.old = function(path, verbose = T) {
