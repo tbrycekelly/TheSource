@@ -5,6 +5,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // gridIDW
 NumericVector gridIDW(NumericVector gx, NumericVector gy, NumericVector x, NumericVector y, NumericVector z, double p, double xscale, double yscale, double uncertainty);
 RcppExport SEXP _TheSource_gridIDW(SEXP gxSEXP, SEXP gySEXP, SEXP xSEXP, SEXP ySEXP, SEXP zSEXP, SEXP pSEXP, SEXP xscaleSEXP, SEXP yscaleSEXP, SEXP uncertaintySEXP) {

@@ -24,7 +24,12 @@
 #' @param verbose output flag for setup data
 #' @author Thomas Bryce Kelly
 #' @export
-init.lagrangian.model = function(t.start, t.end, t.step, save.freq, nparticles, verbose = T) {
+init.lagrangian.model = function(t.start,
+                                 t.end,
+                                 t.step,
+                                 save.freq,
+                                 nparticles,
+                                 verbose = T) {
   if (verbose) {message(Sys.time(), ': Setting up Lagrangian model meta parameters (e.g. timestepping values, number of save points, etc)')}
 
   meta = list(t.start = t.start,
@@ -45,15 +50,19 @@ init.lagrangian.model = function(t.start, t.end, t.step, save.freq, nparticles, 
 #' @title Initialize Lagrangian History
 #' @param meta list object containing lagrangian model setup (see init.lagrangian.model())
 #' @author Thomas Bryce Kelly
-init.lagrangian.history = function(meta, extra.tracers = NULL, verbose = T) {
+init.lagrangian.history = function(meta,
+                                   extra.tracers = NULL,
+                                   verbose = T) {
   ## 1) lon, 2) lat, 3) depth, 4) u, 5) v, 6) w, 7) T, 8) S, 9) Alive
   hist = array(NA, dim = c(meta$nparticles, meta$nsave, 9), dimnames = list(x = c(1:meta$nparticles),
                                                                             y = c(1:meta$nsave),
                                                                             z = c('lon', 'lat', 'depth', 'u', 'v', 'w', 'T', 'S', 'Alive')))
 
   if (!is.null(extra.tracers)) {
-    if (class(extra.tracers)) {
-
+    if (class(extra.tracers) == 'data.frame') { ## Incomplete
+      for (i in names(extra.tracers)) {
+        hist[[i]] = NA
+      }
     } else {
       for (i in extra.tracers) {
         hist[[i]] = NA
@@ -79,7 +88,14 @@ init.lagrangian.history = function(meta, extra.tracers = NULL, verbose = T) {
 #' @param density Density (kg m-3) of the float in order to maintain isopycnal position
 #' @param verbose Verbose flag, default = T
 #' @export
-init.lagrangian.particles = function(lon = NA, lat = NA, depth = NA, time = NA, sink = NA, const.depth = NA, density = NA, verbose = T) {
+init.lagrangian.particles = function(lon = NA,
+                                     lat = NA,
+                                     depth = NA,
+                                     time = NA,
+                                     sink = NA,
+                                     const.depth = NA,
+                                     density = NA,
+                                     verbose = T) {
 
   if (verbose) {
     message('Initializing Langraign Particle Data Structure...')
@@ -192,6 +208,10 @@ load.advection.oscar = function(file, lats = NULL, lons = NULL, get.vel = get.ve
   ## Return
   oscar
 }
+
+
+
+
 
 
 

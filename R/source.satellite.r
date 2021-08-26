@@ -19,10 +19,9 @@
 #' @title Read Satellite Data
 #' @author Thomas Bryce Kelly
 #' @description read
-#' @param input.dir the input directory
 #' @export
 ## Read nc file and do preliminary parsing/conversion
-read.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, entry = 1,
+read.satellite = function(file = NULL, entry = 1,
                           verbose = F, lon = NULL, lat = NULL) {
 
   sate = list()
@@ -30,28 +29,29 @@ read.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, 
   ## Load and trim satellite data products
   for (i in 1:length(file)) {
     if (verbose) { message(Sys.time(), ': Loading satellite file: ', file[i]) }
-    sate[[i]] = load.satellite(input.dir = input.dir, file = file[i], conv = conv, entry = entry)
+    sate[[i]] = load.satellite(file = file[i], entry = entry, verbose = verbose)
     if (!is.null(lon) | !is.null(lat)) {
       sate[[i]] = trim.satellite(sate[[i]], lon = lon, lat = lat)
     }
   }
 
+  if (verbose) { message(' Running checks on satellite files...') }
+
   if (length(file) > 1) {
     ## Run checks
-    if (verbose) { message(Sys.time(), ' ~ Running checks on satellite files.') }
     for (i in 2:length(sate)) {
 
       ## Lon check
-      if (any(sate[[i]]$lon != sate[[1]]$lon)) { stop(paste0('Longitudes do not match in files: ', file[1], ' and ', file[i])) }
+      if (any(sate[[i]]$lon != sate[[1]]$lon)) { message('  Longitudes do not match in files: ', file[1], ' and ', file[i], '. Code will likely fail now.') }
 
       ## lat check
-      if (any(sate[[i]]$lat != sate[[1]]$lat)) { stop(paste0('Latitudes do not match in files: ', file[1], ' and ', file[i])) }
+      if (any(sate[[i]]$lat != sate[[1]]$lat)) { message('  Latitudes do not match in files: ', file[1], ' and ', file[i], '. Code will likely fail now.') }
 
       ## lat check
-      if (length(sate[[i]]$field) != length(sate[[1]]$field)) { stop(paste0('Number of entries do not match in files: ', file[1], ' and ', file[i])) }
+      if (length(sate[[i]]$field) != length(sate[[1]]$field)) { message('  Number of entries do not match in files: ', file[1], ' and ', file[i], '. Code will likely fail now.') }
     }
   }
-  if (verbose) { message(Sys.time(), ': Checks complete (success).') }
+  if (verbose) { message(' Calculating field statistics...') }
 
   ## Calculate average field
   if (length(file) > 1) {
@@ -101,14 +101,12 @@ read.satellite = function(input.dir = NULL, file = NULL, conv = function(x){x}, 
 #' @title Read Satellite Data
 #' @author Thomas Bryce Kelly
 #' @description read
-#' @param input.dir the input directory
 ## Read nc file and do preliminary parsing/conversion
-load.satellite = function(input.dir = NULL, file, conv = function(x){x}, entry = 1, verbose = T) {
+load.satellite = function(file, entry = 1, verbose = T) {
 
-  nc.file = ncdf4::nc_open(paste0(input.dir, file))
+  nc.file = ncdf4::nc_open(file)
 
   x = ncdf4::ncvar_get(nc.file, varid = names(nc.file$var)[entry])
-  attr = ncdf4::ncatt_get(nc = nc.file, varid = names(nc.file$var)[entry])
 
   ## Lat and Lon
   l.lat = which(names(nc.file$dim) == 'lat')
@@ -138,14 +136,13 @@ load.satellite = function(input.dir = NULL, file, conv = function(x){x}, entry =
     }
 
     else {  ## No match.
-      warning('Remote sensing field size is not recognized.')
+      message(' Remote sensing field size is not recognized! Lat and Lon will not be available. Downstream code will likely fail.')
       lat = NULL
       lon = NULL
     }
   }
   ncdf4::nc_close(nc.file)
 
-  x = conv(x)
   meta = list(min = min(as.numeric(x), na.rm = T),
               max = max(as.numeric(x), na.rm = T),
               mean = mean(as.numeric(x), na.rm = T),
@@ -156,14 +153,12 @@ load.satellite = function(input.dir = NULL, file, conv = function(x){x}, entry =
   ## Return
   list(field = x,
        file = file,
-       dir = input.dir,
+       dir = file,
        grid = function() {expand.grid(lon = lon, lat = lat)},
        lon = lon,
        lat = lat,
        times = get.satellite.times(file, verbose = verbose),
-       conv = conv,
-       meta = meta,
-       attr = function() {attr})
+       meta = meta)
 }
 
 
@@ -229,6 +224,8 @@ get.satellite.times = function(x, verbose = T) {
   end = rep(make.time(1), length(x))
 
   for (i in 1:length(x)) {
+    temp = strsplit(x[i], split = '/')[[1]]
+    x[i] = temp[length(temp)]
     day = as.numeric(substr(x[i], 6, 8))
     year = as.numeric(substr(x[i], 2, 5))
 
@@ -276,7 +273,7 @@ load.nc = function(file, var = NULL, test = F, verbose = T) {
   if (verbose) { message(' File openned.')}
 
   all.var = c(names(file$var), names(file$dim))
-  #all.dim = names(file$dim)
+  all.var = all.var[all.var != 'nv']
 
   if (is.null(var)) {
     var = all.var
@@ -329,7 +326,7 @@ load.nc.vars = function(file, verbose = F) {
   file = ncdf4::nc_open(file)
   if (verbose) { message(' File openned.')}
 
-  var = names(file$var)
+  var = c(names(file$var), names(file$dim))
 
   if (verbose) {message(' Closing file. Finished.')}
   ncdf4::nc_close(file)

@@ -97,12 +97,12 @@ add.boxplot.box = function(x, y, side = 1, col = '#33333330', border.col = 'blac
 
     if (side == 1 | side == 3) {
       ## Box
-      rect(xleft = xx - width/2, ybottom = q1, xright = xx + width/2, ytop = q3, col = col, border = border)
+      rect(xleft = xx - width/2, ybottom = q1, xright = xx + width/2, ytop = q3, col = col, border = border.col)
       lines(x = c(xx - width/2, xx + width/2), y = rep(m,2)) # Horizontal
 
       ## Add outliers
       k = which(y[l] < q1 - 1.5 * iqr | y[l] > q3 + 1.5 * iqr)
-      if (length(k) > 0) {
+      if (length(k) > 0 & outliers) {
         points(x = rep(xx, length(k)), y = y[l[k]], pch = pch, col = point.col, cex = cex)
       }
 
@@ -126,7 +126,7 @@ add.boxplot.box = function(x, y, side = 1, col = '#33333330', border.col = 'blac
 
       ## Add outliers
       k = which(y[l] < q1 - 1.5 * iqr | y[l] > q3 + 1.5 * iqr)
-      if (length(k) > 0) { points(y = rep(xx, length(k)), x = y[l[k]], pch = pch, col = point.col, cex = cex) }
+      if (length(k) > 0 & outliers) { points(y = rep(xx, length(k)), x = y[l[k]], pch = pch, col = point.col, cex = cex) }
 
       ## Add whiskers
       if (length(k) > 0) {

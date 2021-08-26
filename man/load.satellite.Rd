@@ -4,16 +4,7 @@
 \alias{load.satellite}
 \title{Read Satellite Data}
 \usage{
-load.satellite(
-  input.dir = NULL,
-  file,
-  conv = function(x) {     x },
-  entry = 1,
-  verbose = T
-)
-}
-\arguments{
-\item{input.dir}{the input directory}
+load.satellite(file, entry = 1, verbose = T)
 }
 \description{
 read

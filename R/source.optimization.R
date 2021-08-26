@@ -79,6 +79,7 @@ parameter.search = function(n, cost, grid = NULL, bounds, splits = 10, progressi
     grid$cost[i] = do.call(cost, args) # cost(grid[i, 1:dim])
     if (verbose & grid$cost[i] < best) {
       message(Sys.time(), ': New optimal parameter set found for n = ', n,': ', paste(grid[i,], collapse = ', '))
+      best = grid$cost[i]
     }
   }
 
@@ -317,79 +318,6 @@ parameter.anneal = function (n, cost, ..., bounds, progression = NULL, max.iter 
   list(min = history[i-1,], bounds = bounds, history = history[!is.na(history$cost),], meta = list(j = j, max.iter = max.iter, progression = progression))
 }
 
-
-#' @title A Gradient Descent Algorithm
-#' @author Thomas Bryce Kelly
-#' @description Implements a recursive grid search routine to solve optimization problems in arbitrary dimensions.
-#' @param n Number of recursions to perform
-#' @param cost The cost function which must return a numeric value and accept parameter values as the first arguments and in the order they are provided.
-#' @param ... Optional argument that is passed directly onto the cost function
-#' @param bounds A dataframe containing the minimum and maximum values permitted of each parameter
-#' @param splits The number of subdivisions to perform for each dimension (so grid size is n x splits ^ dimensionality)
-#' @param progression The size of the new search-space to interrogate. A value between 1 and splits/2. Default value (NULL) will yeield a progression of max(1, splits/4), good for most problems.
-#' @export
-parameter.descent.old = function(cost, guess = NULL, ..., bounds = NULL, max.iter = 1e6, progression = NULL, step = 1e-6, tol = 1e-18) {
-
-  ## Determine cost function arguemnts
-  argnames = formalArgs(cost)
-  argnames = argnames[!argnames %in% names(list(...))] # don't include arguments passed through elipsis
-
-
-  if (is.null(guess)) {
-    message('No initial guess supplied, starting at the origin: guess = c(0,...,0).')
-    guess = rep(0, length(argnames))
-  }
-  if(is.null(progression)) {
-    message('No progression length provided, using 1.')
-    progression = 0.5
-  }
-
-  iter = 0
-  ans = guess
-  hist = as.data.frame(matrix(guess, ncol = length(guess)))
-  colnames(hist) = argnames[1:length(guess)]
-
-  while (T) {
-    iter = iter + 1
-
-    if (iter > max.iter) {
-      break
-    }
-
-    grad = rep(0, length(guess))
-
-    ## Calculate cost at current guess point
-    arg0 = as.list(guess)
-    names(arg0) = argnames[1:length(guess)]
-    arg0 = c(arg0, list(...))
-    cost0 = do.call(cost, arg0)
-
-    ## Calculate gradient at current guess
-    for (j in 1:length(guess)) {
-      arg = arg0
-      arg[[j]] = arg0[[j]] + step
-      grad[j] = (do.call(cost, arg) - cost0) / step
-    }
-
-    ## Update guess
-    guess = guess - progression * grad
-
-    arg1 = as.list(guess)
-    names(arg1) = argnames[1:length(guess)]
-    arg1 = c(arg1, list(...))
-    cost1 = do.call(cost, arg1)
-
-    ## Add to History
-    hist = rbind(hist, guess)
-
-    if (abs(cost0 - cost1) <= tol) {
-      break
-    }
-  }
-
-  ## Return
-  list(min = hist[nrow(hist),], bounds = bounds, guess = hist[1,], history = hist)
-}
 
 #' @title Parameter Search
 #' @author Thomas Bryce Kelly

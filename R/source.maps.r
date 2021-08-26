@@ -467,15 +467,26 @@ add.map.contour = function(x, y, z, col = 'black', levels = NULL, n = 3, labels 
 #' @author Thomas Bryce Kelly
 #' @param map a map object as returned by make.map()
 #' @export
-redraw.map = function(map) {
+redraw.map = function(map,
+                      coast = NULL,
+                      land.col = NULL,
+                      grid = NULL) {
+
+  if (!is.null(coast)) { map$coast = coast}
+  if (!is.null(land.col)) { map$land.col = land.col}
+  if (!is.null(grid)) { map$grid = grid}
+  if (!is.null(coast)) { map$coast = coast}
+  if (!is.null(coast)) { map$coast = coast}
+
+
   mapPolygon(eval(parse(text = map$coast)), col = map$land.col)
 
   lons = seq(-180, 180, by = map$grid.dlon)
   lats = seq(-90, 90, by = map$grid.dlat)
   if (map$grid) { mapGrid(longitude = lons, latitude = lats) }
   box()
-  oce::mapAxis(1, longitude = lons)
-  oce::mapAxis(2, latitude = lats)
+  #oce::mapAxis(1, longitude = lons) ## Is this needed?
+  #oce::mapAxis(2, latitude = lats) ## Is this needed?
 }
 
 #' @title Replot Map

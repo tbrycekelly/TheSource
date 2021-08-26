@@ -30,7 +30,7 @@ load.roms.physics = function(path, verbose = T) {
     model = load.nc(file = path,
                     var = c('u', 'Huon', 'v', 'Hvom', 'w', 'AKt', 'Akt_bak',
                             'temp', 'rho', 'salt', 'hice', 'f', 'nl_tnu2', 'snow_thick',
-                            'uice', 'vice', 'zeta'),
+                            'uice', 'vice', 'zeta', 'ocean_time'),
                     verbose = verbose)
 
     ## Return
@@ -277,6 +277,11 @@ calc.roms.areas = function(grid.data, zeta = NULL, verbose = T) {
 #' @export
 calc.roms.location = function(lon, lat, grid.data) {
 
+    if (length(lon) != length(lat)) {
+        stop('Error, lon and lat length are different!')
+    }
+
+    ## Transform to common ranges
     lon = lon %% 360
     grid.data$lon_psi = grid.data$lon_psi %% 360
 
