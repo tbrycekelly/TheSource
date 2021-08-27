@@ -462,6 +462,14 @@ add.map.contour = function(x, y, z, col = 'black', levels = NULL, n = 3, labels 
              col = col)
 }
 
+#' @title Add Map Polygon
+#' @author Laura Whitmore
+#' @export
+add.map.polygon = function (lon, lat, col = "#00000020", lty = 1, lwd = 1, border = NULL, density = NULL, angle = 45, fillOddEven = FALSE) {
+  oce::mapPolygon(longitude = lon, latitude = lat, col = col, density = density, angle = angle,
+                  lty = lty, lwd = lwd, border = border, fillOddEven = fillOddEven)
+}
+
 
 #' @title Redraw Map
 #' @author Thomas Bryce Kelly
