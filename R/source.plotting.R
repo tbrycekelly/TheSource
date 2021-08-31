@@ -144,8 +144,11 @@ add.boxplot.box = function(x, y, side = 1, col = '#33333330', border.col = 'blac
   }
 }
 
+
+#' @title Add violin to Plot
+#' @author Thomas Bryce Kelly
 #' @export
-add.violin = function(x, y, side = 1, col = '#00000080', scale = 1, ...) {
+add.violin = function(x, y, side = 1, col = 'grey', scale = 1, border = NA, ...) {
 
   ## Get 1 to 1 matching
   if (length(x) < length(y)) {
@@ -163,9 +166,9 @@ add.violin = function(x, y, side = 1, col = '#00000080', scale = 1, ...) {
     d = density(y[l], n = 5e3, ...)
 
     if (side == 1 | side == 3) {
-      polygon(x = c(d$x, rev(d$x)), y = xx + scale * c(d$y, -rev(d$y)), col = col, border = NA)
+      polygon(x = c(d$x, rev(d$x)), y = xx + scale * c(d$y, -rev(d$y)), col = col, border = border)
     } else {
-      polygon(x = xx + scale * c(d$y, -rev(d$y)), y = c(d$x, rev(d$x)), col = col, border = NA)
+      polygon(x = xx + scale * c(d$y, -rev(d$y)), y = c(d$x, rev(d$x)), col = col, border = border)
     }
   }
 }

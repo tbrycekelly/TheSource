@@ -426,8 +426,8 @@ add.map.text = function(lon, lat, text, col = 'black', cex = 1, adj = NULL, pos 
 #' @param lty the type of line to be drawn
 #' @param lwd the width of the line to be drawn
 #' @export
-add.map.line = function(lon, lat, col = 'black', lty = 1, lwd = 1) {
-  oce::mapLines(longitude = lon, latitude = lat, col = col, lty = lty, lwd = lwd)
+add.map.line = function(lon, lat, col = 'black', lty = 1, lwd = 1, greatCircle = T) {
+  oce::mapLines(longitude = lon, latitude = lat, col = col, lty = lty, lwd = lwd, greatCircle = greatCircle)
 }
 
 
