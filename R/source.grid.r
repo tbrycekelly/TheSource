@@ -37,7 +37,7 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = 
                          xlim = NULL, ylim = NULL,
                          x.factor = NULL, y.factor = NULL,
                          x.scale = NULL, y.scale = NULL,
-                         uncertainty = 1e-12, p = 2, gridder = NULL,
+                         uncertainty = 1, p = 2, gridder = NULL,
                          field.names = NULL, nx = 50, ny = 50,
                          proj = NULL, verbose = T) {
 
@@ -88,8 +88,9 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = 
   if (is.null(y.scale)) { y.scale = (ylim[2] - ylim[1]) / ny}
 
   ## Rescale x and y based on x.factor and y.factor
-  if (is.null(x.factor)) { x.factor = (x.scale/y.scale + 1) / 2}
-  if (is.null(y.factor)) { y.factor = (y.scale/x.scale + 1) / 2}
+  if (is.null(x.factor)) { x.factor = (y.scale/x.scale + 1) / 2}
+  if (is.null(y.factor)) { y.factor = (x.scale/y.scale + 1) / 2}
+
   x = x * x.factor
   x.scale = x.scale * x.factor
   xlim = xlim * x.factor
@@ -165,7 +166,7 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = 
   time.b = Sys.time()
   for (kk in 1:length(field.names)) {
     if (verbose) {message('BUILD.SECTION: Building grid for field ', field.names[kk], '  ', Sys.time(), '.')}
-    grid[[field.names[kk]]] = gridder(grid$x, grid$y, x, y, z[,kk], p, x.scale/x.factor, y.scale/y.factor, uncertainty)
+    grid[[field.names[kk]]] = gridder(grid$x, grid$y, x, y, z[,kk], p, x.scale, y.scale, uncertainty)
   }
 
   time.c = Sys.time()
@@ -210,7 +211,7 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, grid = NULL, weight = 
                 nx = nx, ny = ny,
                 uncertainty = uncertainty,
                 p = p,
-                gridder = gridder
+                gridder = deparse(substitute(gridder))
               ),
               x = x.new / x.factor,
               y = y.new / y.factor,
@@ -376,6 +377,82 @@ gridBin = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
   gz ## Return
 }
 
+
+#' @title Grid via Inverse Distance Weighting Interpolation
+#' @author Thomas Bryce Kelly
+#' @param gx Grid x values to interpolate onto
+#' @param gy Grid y values to interpolate onto
+#' @param x Observations, x values
+#' @param y Observations, y values
+#' @param z Observations, z values
+#' @param p Exponent on the distance function
+#' @export
+gridIDW = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
+
+
+  N = min(max(10, length(x)/10), length(x))
+
+  deltamin = sqrt((xscale/2.0)^2 + (yscale/2.0)^2) * uncertainty
+  out = rep(NA, length(gx))
+
+  for (i in 1:length(gx)) {
+    w = sqrt((x - gx[i])^2 + (y - gy[i])^2 + deltamin)^-p
+
+    k = order(w, decreasing = T)[1:N]
+    out[i] = sum(z[k] * w[k]) / sum(w[k])
+  }
+
+  out
+}
+
+
+#' @title Grid via ODV's Interpolation
+#' @author Thomas Bryce Kelly
+#' @param gx Grid x values to interpolate onto
+#' @param gy Grid y values to interpolate onto
+#' @param x Observations, x values
+#' @param y Observations, y values
+#' @param z Observations, z values
+#' @param p Exponent on the distance function
+#' @inheritParams gridIDW
+#' @export
+gridODV = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
+
+
+  N = min(max(10, length(x)/10), length(x))
+
+  deltamin = sqrt((xscale/2.0)^2 + (yscale/2.0)^2) * uncertainty
+  out = rep(NA, length(gx))
+
+  for (i in 1:length(gx)) {
+    w = exp(-sqrt(((x - gx[i])/xscale/p)^2 + ((y - gy[i])/yscale/p)^2 + deltamin))
+
+    k = order(w, decreasing = T)[1:N]
+    out[i] = sum(z[k] * w[k]) / sum(w[k])
+  }
+
+  out
+}
+
+
+#' @title Grid via Nearest Neighbor Interpolation
+#' @author Thomas Bryce Kelly
+#' @param gx Grid x values to interpolate onto
+#' @param gy Grid y values to interpolate onto
+#' @param x Observations, x values
+#' @param y Observations, y values
+#' @param z Observations, z values
+#' @param p Exponent on the distance function
+#' @inheritParams gridIDW
+#' @export
+gridNN = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
+  out = rep(NA, length(gx))
+
+  for (i in 1:length(gx)) {
+    out[i] = z[which.min(abs(x - gx[i])/xscale + abs(y - gy[i])/yscale)]
+  }
+  out
+}
 
 #' @title Grid via Natural Neighbor Interpolation
 #' @author Thomas Bryce Kelly
@@ -702,15 +779,6 @@ plot.section = function(section, field = NULL, xlim = NULL, ylim = NULL, xlab = 
   image(x = x, y = y, z = z, col = get.pal(N, pal = pal, rev = rev), ylab = ylab, xlab = xlab,
         xlim = xlim, ylim = ylim, zlim = zlim)
 
-
-  ## Add Title text
-  if (log) {
-    st = paste0(main, '   zlim: (', round(base^zlim[1], 3), ', ', round(base^zlim[2],3), ')')
-  } else {
-    st = paste0(main, '   zlim: (', round(zlim[1], 3), ', ', round(zlim[2],3), ')')
-  }
-  mtext(st, line = 0.25, adj = 1, cex = 0.7)
-
   # Plot points that are out of range when a color is given
   if (!is.na(col.low) & col.low != '') {
     zz = z
@@ -725,23 +793,25 @@ plot.section = function(section, field = NULL, xlim = NULL, ylim = NULL, xlab = 
   }
 
   if (mark.points) {
-    if (include.data) {
-      points(x = section$data$x, y = section$data$y, pch = include.pch, cex = include.cex, col = 'black',
-             bg = make.pal(x = section$data$z, pal = pal, n = N, min = zlim[1], max = zlim[2], rev = rev))
-    } else {
-      points(x = section$data$x, y = section$data$y, pch = 20, cex = include.cex) ## Add black points
-    }
+    points(x = section$data$x, y = section$data$y, pch = 20, cex = include.cex) ## Add black points
+  }
+  if (include.data) {
+    col = make.pal(section$data[,field], pal = pal, n = N, min = zlim[1], max = zlim[2], rev = rev)
+    points(x = section$data$x, y = section$data$y, pch = include.pch,
+           cex = include.cex, col = col, bg = col)
   }
 
-  ## Include Data
-  # plot data points using the same color palette as the gridded data fields.
-  if (include.data & !mark.points) {
-    points(x = section$data$x, y = section$data$y, pch = include.pch, cex = include.cex,
-           col = make.pal(x = section$data$z, pal = pal, n = n, min = zlim[1], max = zlim[2], rev = rev),
-           bg = make.pal(x = section$data$z, pal = pal, n = n, min = zlim[1], max = zlim[2], rev = rev))
+  ## Add Title text
+  if (log) {
+    st = paste0(main, '   zlim: (', round(base^zlim[1], 3), ', ', round(base^zlim[2],3), ')')
+  } else {
+    st = paste0(main, '   zlim: (', round(zlim[1], 3), ', ', round(zlim[2],3), ')')
   }
+  mtext(st, line = 0.25, adj = 1, cex = 0.7)
+
   box() ## make sure plotting didn't cover bounding box
 }
+
 
 #' @title Get Section Bathymetry
 #' @author Thomas Bryce Kelly
@@ -819,8 +889,3 @@ add.section.inlay = function(section) {
   add.map.points(section$section.lon, section$section.lat, pch = 20, cex = 0.2, col = 'red')
   par(plt = par.old$plt)
 }
-
-
-
-#' @useDynLib TheSource
-NULL
