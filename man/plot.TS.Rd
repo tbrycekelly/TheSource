@@ -5,8 +5,8 @@
 \title{Make TS Plot}
 \usage{
 plot.TS(
-  x,
-  y,
+  S,
+  T,
   xlim = c(25, 36),
   ylim = c(-5, 15),
   levels = seq(0, 40, by = 2),
@@ -15,14 +15,14 @@ plot.TS(
   labels = NULL,
   freezing.line = T,
   freezing.col = "#00000030",
-  col = "grey",
+  col.contour = "grey",
   lwd = 1,
   lty = 1,
   xlab = "Practical Salinity",
   ylab = "Potential Temperature",
   pch = 1,
-  col.pch = "black",
-  cex.pch = 1,
+  col = "black",
+  cex = 1,
   main = NULL
 )
 }
