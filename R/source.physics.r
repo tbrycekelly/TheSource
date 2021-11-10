@@ -593,20 +593,33 @@ calc.k.reuer = function(time, wtime, wspeed, mld, SST, teeter.mod = TRUE, verbos
 #' @title Make TS Plot
 #' @export
 #' @author Thomas Bryce Kelly
-plot.TS = function(x, y, xlim = c(25,36), ylim = c(-5, 15), levels = seq(0, 40, by = 2),
-                   cex.lab = 1, drawlabels = TRUE, labels = NULL, freezing.line = T, freezing.col = '#00000030',
-                   col = 'grey', lwd = 1, lty = 1, xlab = 'Practical Salinity', ylab = 'Potential Temperature',
-                   pch = 1, col.pch = 'black', cex.pch = 1, main = NULL) {
+plot.TS = function(S, T,
+                   xlim = c(25,36),
+                   ylim = c(-5, 15),
+                   levels = seq(0, 40, by = 2),
+                   cex.lab = 1,
+                   drawlabels = TRUE,
+                   labels = NULL,
+                   freezing.line = T,
+                   freezing.col = '#00000030',
+                   col.contour = 'grey',
+                   lwd = 1, lty = 1,
+                   xlab = 'Practical Salinity',
+                   ylab = 'Potential Temperature',
+                   pch = 1,
+                   col = 'black',
+                   cex = 1,
+                   main = NULL) {
 
-  T = seq(ylim[1], ylim[2], length.out = 100)
-  S = seq(xlim[1], xlim[2], length.out = 100)
-  grid = expand.grid(S = S, T = T)
+  TT = seq(ylim[1], ylim[2], length.out = 100)
+  SS = seq(xlim[1], xlim[2], length.out = 100)
+  grid = expand.grid(S = SS, T = TT)
   sigma = calc.sigma.theta(S = grid$S, T = grid$T, P = 0, P.ref = 0)
 
-  contour(x = S, y = T, z = matrix(sigma, nrow = length(S)), levels = levels, lwd = lwd, lty = lty, col = col,
+  contour(x = SS, y = TT, z = matrix(sigma, nrow = length(S)), levels = levels, lwd = lwd, lty = lty, col = col.contour,
           xaxs = 'i', yaxs = 'i', xlab = xlab, ylab = ylab, main = main, xlim = xlim, ylim = ylim,
           labcex = cex.lab, drawlabels = drawlabels, labels = labels)
-  points(x, y, pch = pch, col = col.pch, cex = cex.pch)
+  points(S, T, pch = pch, col = col, cex = cex)
 
   if (freezing.line) {
     x = seq(xlim[1], xlim[2], length.out = 1000)
@@ -630,6 +643,7 @@ plot.TS = function(x, y, xlim = c(25,36), ylim = c(-5, 15), levels = seq(0, 40, 
 conv.einstein.to.watt = function(x, verbose = T) {
     x * 6.02e23 / 2.77e18
 }
+
 
 #' @description (6.02e23 quanta/Ein) / (86,400 seconds/day * 2.77e18 quanta/s/W)
 #' @title Convert Light Units

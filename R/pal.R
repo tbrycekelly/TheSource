@@ -1,21 +1,3 @@
-## Set of useful R functions for general use in plotting, analyzing and
-## converting.
-##
-## Author: Thomas Bryce Kelly (tbk14 at fsu.edu)
-## http://about.tkelly.org/
-##
-## Dept of Earth, Ocean & Atmospherical Sciences
-## Florida State University
-##
-## Center for Ocean & Atmospheric Prediction Studies
-## Florida State University
-##
-## National High Magnetic Field Laboratory
-## Florida State University
-
-
-
-
 #' @title Get Pal
 #' @author Thomas Bryce Kelly
 #' @description A helper function to retrieve a vector of colors derived from a given palette generating function.
@@ -111,17 +93,19 @@ make.qual.pal = function(x, pal = 'greyscale', rev = FALSE) {
 #' @description Add a color bar to any graphical device such as a plot or map. The color bar can be based on any color palette function and be placed either vertically or horizontally.
 #' @keywords Plotting
 #' @export
-add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'greyscale', rev = FALSE, units = '',
-                        col.high = '', col.low = '', log = FALSE, base = 10, x.pos = NULL, width = NULL,
-                        y.pos = NULL, height = NULL, cex = 1, cex.units = 1, n = 255, horizontal = FALSE, col.lab = 'black', col.tck = 'darkgrey') {
+add.colorbar = function(min, max, labels = NULL, ticks = NULL, labels.at = NULL, pal = 'greyscale', rev = FALSE,
+                        units = '', col.high = '', col.low = '', log = FALSE, base = 10, x.pos = NULL, width = NULL,
+                        y.pos = NULL, height = NULL, cex = 1, cex.units = 1, n = 255, horizontal = FALSE,
+                        col.lab = 'black', col.tck = 'darkgrey') {
 
   ## Setup
   par.original = par()
+  for (p in c('cin', 'cra', 'csi', 'cxy', 'din', 'page', 'new')) { par.original[[p]] = NULL}
 
   ## Default Spacing
   # width
   if (is.null(width) & !horizontal) {
-    width = min(c(0.95 - par('plt')[2], 0.05))
+    width = min(c(1 - par('plt')[2], 0.05))
   }
   if (is.null(width) & horizontal) {
     width = par('plt')[2] - par('plt')[1]
@@ -129,7 +113,7 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'greyscale'
 
   #height
   if (is.null(height) & horizontal) {
-    height = min(c(0.95 - par('plt')[4], 0.05))
+    height = min(c(1 - par('plt')[4], 0.05))
   }
   if (is.null(height) & !horizontal) {
     height = par('plt')[4] - par('plt')[3]
@@ -140,12 +124,12 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'greyscale'
     x.pos = 0.5
   }
   if (is.null(x.pos) & !horizontal) {
-    x.pos = par('plt')[2] + width/2
+    x.pos = par('plt')[2] - width/2
   }
 
   #y.pos
   if (is.null(y.pos) & horizontal) {
-    y.pos = par('plt')[4] + height/2
+    y.pos = par('plt')[4] - height/2
   }
   if (is.null(y.pos) & !horizontal) {
     y.pos = 0.5
@@ -158,19 +142,29 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, pal = 'greyscale'
 
 
   ## Determine axis labels and tick marks
-  if(!is.null(labels)) {
-    labels = labels[labels >= min & labels <= max]
+  if (is.null(labels.at)) {
+    labels.at = labels
   } else {
-    labels = pretty(c(min, max), n = 6)
-    labels[labels < min] = min
-    labels[labels > max] = max
+    if (length(labels.at) != length(labels)) {
+      stop('Length of label positions and label text are unequal!')
+    }
+  }
+  if(!is.null(labels.at)) {
+    labels = labels[labels.at >= min & labels.at <= max]
+    labels.at = labels.at[labels.at >= min & labels.at <= max]
+  } else {
+    labels.at = pretty(c(min, max), n = 6)
+    labels.at[labels.at < min] = min
+    labels.at[labels.at > max] = max
+    labels = labels.at
   }
   if (log) {
-    delta = (log(labels, base) - log(min, base)) / (log(max, base) - log(min, base))
+    delta = (log(labels.at, base) - log(min, base)) / (log(max, base) - log(min, base))
   } else {
-    delta = (labels - min)/(max - min)
+    delta = (labels.at - min)/(max - min)
   }
 
+  # Ticks
   if (!is.null(ticks)) {
     ticks = ticks[ticks >= min & ticks <= max]
     if (log) {

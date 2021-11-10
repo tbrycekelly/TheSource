@@ -33,6 +33,12 @@ load.roms.physics = function(path, verbose = T) {
                             'uice', 'vice', 'zeta', 'ocean_time'),
                     verbose = verbose)
 
+    model$meta = list(
+        path = path,
+        time = Sys.time(),
+        Source.version = packageVersion('TheSource'),
+        R.version = R.version.string
+    )
     ## Return
     model
 }
@@ -53,6 +59,13 @@ load.roms.grid = function(path, verbose = T) {
                             'y_psi', 'y_rho', 'y_u', 'y_v',
                             'Vtransform', 'Vstretching'),
                     verbose =  verbose)
+
+    model$meta = list(
+        path = path,
+        time = Sys.time(),
+        Source.version = packageVersion('TheSource'),
+        R.version = R.version.string
+    )
     ## Return
     model
 }
@@ -70,6 +83,13 @@ load.roms.time = function(path, verbose = T) {
                             'nAVG', 'ndefAVG', 'ndefHIS', 'ndtfast',
                             'nHIS', 'nRST', 'ntimes', 'ntsAVG', 'ocean_time'),
                     verbose =  verbose)
+
+    model$meta = list(
+        path = path,
+        time = Sys.time(),
+        Source.version = packageVersion('TheSource'),
+        R.version = R.version.string
+    )
     ## Return
     model
 }

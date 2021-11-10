@@ -217,6 +217,11 @@ load.frrf = function(input.dir, file.names = NULL, verbose = T) {
                                                                                  Datetime = datetime, File = paste0(input.dir, file.name))
         }
     }
+
+    result$meta = list(
+        Source.version = packageVersion('TheSource'),
+        R.version = R.version.string
+    )
     ## Return
     result
 }

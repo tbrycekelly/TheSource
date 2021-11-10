@@ -1,21 +1,3 @@
-## Set of useful R functions for general use in plotting, analyzing and
-## converting.
-##
-## Author: Thomas Bryce Kelly (tbk14 at fsu.edu)
-## http://about.tkelly.org/
-##
-## Dept of Earth, Ocean & Atmospherical Sciences
-## Florida State University
-##
-## Center for Ocean & Atmospheric Prediction Studies
-## Florida State University
-##
-## National High Magnetic Field Laboratory
-## Florida State University
-
-
-
-
 ##############################
 ## Plotting ################
 ##############################

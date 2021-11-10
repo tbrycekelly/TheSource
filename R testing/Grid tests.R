@@ -42,19 +42,24 @@ s12 = build.section(x2, y2, z, gridder = gridNN)
 }
 
 
-plot(NULL, NULL, xlim = c(0,6), ylim = c(0,100), xaxt = 'n')
-add.log.axis(1)
-
-for (i in 1:2) {
+times = data.frame(i = 0, t = 0)
+for (i in 6) {
+  message(i)
   N = 10^i
 
   x = runif(N)
   y = runif(N)
   z = runif(N) + x - y
 
-  a = microbenchmark(build.section(x, y, z, gridder = gridODV, verbose = F))
-  add.violin(i, a$time/1e6, col = 'grey', side = 2)
+  a = microbenchmark(build.section(x, y, z, gridder = gridODV, verbose = F), times = 20)
 
+  temp = data.frame(i = i, t = as.numeric(a$time))
+  times = rbind(times, temp)
 }
+times = times[-1,]
 
-
+plot(NULL, NULL, xlim = c(1,6), ylim = c(0,7), xaxt = 'n', ylab = 'Calculations/s', xlab = 'N', yaxt = 'n')
+add.log.axis(1)
+add.log.axis(2)
+add.violin(times$i, 10^times$i/times$t*1e12, col = 'grey', side = 2, scale = 0.03)
+add.boxplot.box(times$i, log10(10^times$i/times$t*1e12), col = 'grey')

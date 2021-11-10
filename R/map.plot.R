@@ -37,16 +37,16 @@
 #' @author Thomas Bryce Kelly
 #' @export
 make.map = function (coast = NULL,
-                    lon.min = -180,
-                    lon.max = 180,
-                    lat.min = -80,
-                    lat.max = 80,
-                    p = NULL,
-                    land.col = 'lightgray',
-                    grid = TRUE,
-                    dlon = 15,
-                    dlat = 15,
-                    draw.axis = T) {
+                     lon.min = -180,
+                     lon.max = 180,
+                     lat.min = -80,
+                     lat.max = 80,
+                     p = NULL,
+                     land.col = 'lightgray',
+                     grid = TRUE,
+                     dlon = 15,
+                     dlat = 15,
+                     draw.axis = T) {
 
   if (is.null(coast)) { coast = 'coastlineWorld' }
 
@@ -75,132 +75,14 @@ make.map = function (coast = NULL,
 
   list(coast = coast, lon.min = lon.min, lon.max = lon.max,
        lat.min = lat.min, lat.max = lat.max, p = p, land.col = land.col,
-       grid.dlon = dlon, grid.dlat = dlat, grid = grid)
+       grid.dlon = dlon, grid.dlat = dlat, grid = grid,
+       meta = list(
+         Source.version = packageVersion('TheSource'),
+         R.version = R.version.string
+       ))
 }
 
 
-
-#' @title Load Coastline Data
-#' @description Low res to high res: coastlineWorld, coastlineWorldCoarse, coastlinewWorldMedium, coastlineWorldFine
-#' @author Laura Whitmore
-#' @author Thomas Bryce Kelly
-#' @param cost a string referring to a coastline data object such as those provided by the OCE package.
-#' @import oce
-#' @import ocedata
-get.coast = function(coast = 'coastlineWorld') {
-  library(ocedata)
-  library(oce)
-  do.call('data', list(coast))
-}
-
-
-#' @title Make Map Projection
-#' @author Thomas Bryce Kelly
-#' @param projection A string or number corresponding to a base projection (e.g. 1 = 'merc')
-#' @param lat the primary latitude for the projection, may or may not be applicable based on projection
-#' @param lon same as lat for longitude
-#' @param h The viewing height in meters (used only for some projections)
-#' @param dlat The distance to the secondary latitude (in degrees). Only applicable to some projections
-#' @export
-make.proj = function(projection = NULL, lat = NULL, lon = NULL, h = NULL, dlat = 10) {
-  if (is.null(projection)) { projection = 'merc' }
-  projections = c('merc', 'aea', 'eck3', 'eck4', 'eqc', 'geos', 'lonlat', 'mill', 'natearth', 'nsper', 'stere')
-  projection.list = c('1) merc', '2) aea', '3) eck3', '4) eck4', '5) eqc', '6) geos', '7) lonlat', '8) mill', '9) natearth', '10) nsper', '11) stere')
-
-  if (is.numeric(projection)) {
-    projection = projections[projection]
-  }
-  if (!projection %in% projections) {
-    stop('Invalid projection type, please provide one of the following:', paste(projection.list, collapse = ', '))
-  }
-
-  if (projection == 'geos' & is.null(h)) { h = 1e8 }
-  if (projection == 'nsper' & is.null(h)) { h = 1e8 }
-
-  # Default
-  if (is.null(lat)) { lat = 0 }
-  if (is.null(lon)) { lon = 0 }
-  if (is.null(h)) { h = 1e8 }
-
-  paste0('+proj=', projection, ' +lon_0=', lon, ' +lat_0=', lat, ' +lat_1=', lat, ' +lat_2=', lat + dlat, ' +h=', h)
-}
-
-
-#' @title Get Bathymetry
-#' @description Get the bathymetry you want from NOAA (marmap)
-#' @param map a map object as returned by make.map()
-#' @param res the resolution of the bathymetery to be requested. Value is in arc minutes. Smaller values will take longer to download and to plot.
-#' @param override a flag to override the default longitude bounds used in order to facilitate high latitude map making.
-#' @param keep a flag used to determine if the bathymetry data should be saved to enable offline reuse later.
-#' @import marmap
-#' @author Laura Whitmore
-#' @author Thomas Bryce Kelly
-#' @export
-get.bathy = function(map, res = 25, override = FALSE, keep = FALSE) {
-
-  if (override) {
-    lon.min = -180
-    lon.max = 180
-  } else {
-    lon.min = max(-180, map$lon.min - (map$lon.max - map$lon.min)/1.5)
-    lon.max = min(180, map$lon.max + (map$lon.max - map$lon.min)/1.5)
-  }
-
-  lat.min = max(-90, map$lat.min - (map$lat.max - map$lat.min)/1.5)
-  lat.max = min(90, map$lat.max + (map$lat.max - map$lat.min)/1.5)
-
-  ##Load Bathymetry (getNOAA.bathy is marmaps)
-  bathy = getNOAA.bathy(lon1 = lon.min, lon2 = lon.max,
-                        lat1 = lat.min, lat2 = lat.max,
-                        resolution = res, keep = keep)
-
-  ##Convert bathy
-  bathyLon = as.numeric(rownames(bathy))
-  bathyLat = as.numeric(colnames(bathy))
-  bathyZ = as.numeric(bathy)
-  dim(bathyZ) = dim(bathy)
-
-  ## return
-  list(Lon = bathyLon, Lat = bathyLat, Z = bathyZ, res = res)
-}
-
-
-#' @title Add Map Bathymetry
-#' @description add bathymetry contours
-#' @author Thomas Bryce Kelly
-#' @param map a map object as returned by make.map()
-#' @param bathy a bathymetry dataframe as produced by get.bathy()
-#' @param bathy.levels a vector of elevations for which to draw contours. NB: depths are negative elevation.
-#' @param bathy.col the color of the lines to be drawn
-#' @param bathy.lwd the weight of the lines
-#' @param bathy.lty the type of line to be drawn
-#' @param drawlabels boolean value to draw labels (default: TRUE)
-#' @export
-add.map.bathy = function(map, bathy,
-                         levels = c(-100, -1000, -2500),
-                         bathy.col = 'darkgrey',
-                         bathy.lwd = 1,
-                         bathy.lty = 1,
-                         drawlabels = TRUE,
-                         cex.lab = 1,
-                         bathy.levels = NULL){
-
-  if (!is.null(bathy.levels)) {
-    warning('Option bathy.levels is depreciated, please use levels argument instead.')
-    levels = bathy.levels
-  }
-
-  ## add bathy contours (oce)
-  oce::mapContour(longitude = bathy$Lon,
-               latitude = bathy$Lat,
-               z = bathy$Z,
-               levels = levels,
-               lwd = bathy.lwd,
-               lty = bathy.lty,
-               col = bathy.col,
-               drawlabels = drawlabels,
-               labcex = cex.lab)
-}
 
 #' @title Add Map Points
 #' @author Laura Whitmore
@@ -228,44 +110,6 @@ add.map.points = function(lon = NULL, lat = NULL, col = 'black', cex = 1, pch = 
     }
   }
   oce::mapPoints(c(lon, stn.lon), c(lat, stn.lat), col = col, cex = cex, pch = pch, ...)
-}
-
-
-#' @title Bilinear Interpolation of a Grid
-#' @author Thomas Bryce Kelly
-#' @export
-bilinearInterp = function(x, y, gx, gy, z) {
-  z.out = rep(0, length(x))
-
-  for (i in 1:length(x)) {
-    x1 = max(0, which(gx <= x[i]))
-    x2 = x1 + 1
-    y1 = max(0, which(gy <= y[i]))
-    y2 = y1 + 1
-
-    wx1 = (gx[x2] - x[i]) / (gx[2] - gx[1])
-    wy1 = (gy[y2] - y[i]) / (gy[2] - gy[1])
-
-
-    if (x1 == 0) {
-      x1 = 1
-      wx1 = 1
-    }
-    if (y1 == 0) {
-      y1 = 1
-      wy1 = 1
-    }
-    if(x1 == length(gx)) {
-      x2 = x1
-      wx1 = 1
-    }
-    if(y1 == length(gy)) {
-      y2 = y1
-      wy1 = 1
-    }
-    z.out[i] = wy1 * (wx1 * z[x1, y1] + (1 - wx1) * z[x2,y1]) + (1 - wy1) * (wx1 * z[x1, y2] + (1 - wx1) * z[x2,y2])
-  }
-  z.out
 }
 
 #' @title Add Map Layer
@@ -328,14 +172,14 @@ add.map.layer = function(lon, lat, z, zlim = NULL, pal = 'greyscale', col.na = N
   col = col[(n.low + 1):(n - n.high)]
 
   if (n.low + n.high > n / 2) {
-      warning('Color scale exceeds data by >50%, colors may not reflect quantitative values.')
+    warning('Color scale exceeds data by >50%, colors may not reflect quantitative values.')
   }
 
   if (verbose) { print(paste('n.low:', n.low)); print(paste('n.high:', n.high)); print(paste('cols:', (n.low + 1), ':', (n - n.high))); }
 
   if (length(!is.na(z.good)) > 0) {
     oce::mapImage(lon, lat, z.good, zlim = range(z.good, z.good + 1e-12, na.rm = TRUE), missingColor = col.na,
-               col = col, filledContour = filled)
+                  col = col, filledContour = filled)
   }
 
   if (!is.na(col.low) & any(z < zlim[1], na.rm = TRUE)) {
@@ -365,7 +209,7 @@ add.map.layer = function(lon, lat, z, zlim = NULL, pal = 'greyscale', col.na = N
     st = paste0(
       'zaxis: (', round(min(z.good, na.rm = TRUE), 3), ', ', round(max(z.good, na.rm = TRUE), 3),
       ')   zlim: (', round(zlim[1], 3), ', ', round(zlim[2], 3), ')'
-      )
+    )
     mtext(st, line = 0.25, adj = 1, cex = 0.7)
   }
 }
@@ -458,8 +302,8 @@ add.map.contour = function(x, y, z, col = 'black', levels = NULL, n = 3, labels 
   z = matrix(z, nrow = length(unique(x)))
 
   oce::mapContour(unique(x), unique(y), z, levels = levels, drawlabels = labels,
-             underlay = 'interrupt', lwd = lwd, lty = lty,
-             col = col)
+                  underlay = 'interrupt', lwd = lwd, lty = lty,
+                  col = col)
 }
 
 #' @title Add Map Polygon
@@ -516,106 +360,4 @@ replot.map = function(map = map) {
 }
 
 
-#' @title Make an Arctic Map
-#' @author Laura Whitmore
-#' @description An example map of the Arctic -- basemap only. For a full test map call test.map.arctic()
-#' @inheritParams make.map
-#' @export
-make.map.arctic = function(coast = 'coastlineWorld', lon.min = -180, lon.max = 180, lat.min = 60, lat.max = 90,
-                           p = make.proj('stere', lat = 90), dlat = 15, dlon = 60, land.col = 'lightgray', grid = TRUE) {
-
-  make.map(coast = coast, lon.min = lon.min, lon.max = lon.max, lat.min = lat.min, lat.max = lat.max,
-                 p = p, land.col = land.col, grid = grid, dlon = dlon, dlat = dlat)
-}
-
-#' @title Make Map (NGA)
-#' @author Thomas Bryce Kelly
-#' @description An example map of the NGA -- basemap only.
-#' @inheritParams make.map
-#' @export
-make.map.nga = function(coast = 'coastlineWorldFine', lon.min = -153, lon.max = -150, lat.min = 56, lat.max = 60.5,
-                           p = make.proj('stere', lat = 60, lon = -150), dlat = 3, dlon = 3, land.col = '#333333', grid = TRUE) {
-
-  make.map(coast = coast, lon.min = lon.min, lon.max = lon.max, lat.min = lat.min, lat.max = lat.max,
-           p = p, land.col = land.col, grid = grid, dlon = dlon, dlat = dlat)
-}
-
-#' @title Make Map (CCE)
-#' @author Thomas Bryce Kelly
-#' @description An example map of the CCE study region.
-#' @inheritParams make.map
-#' @import oce
-#' @import marmap
-#' @export
-make.map.cce = function (coast = "coastlineWorldFine",
-                         lon.min = -126,
-                         lon.max = -119,
-                         lat.min = 31,
-                         lat.max = 36,
-                         p = make.proj(projection = 'merc', lat = 35, lon = -122, dlat = 3),
-                         land.col = '#252525',
-                         grid = TRUE,
-                         dlon = 3,
-                         dlat = 3) {
-
-  make.map(coast = coast, p = p,
-           lat.min = lat.min, lat.max = lat.max, lon.min = lon.min, lon.max = lon.max,
-           dlat = dlat, dlon = dlon, grid = grid, land.col = land.col)
-}
-
-
-##############
-#### tests ###
-##############
-#' @title Test Map of the Arctic
-#' @author Laura Whitmore
-#' @export
-test.map.arctic = function() {
-    ##run as is - default settings for Arctic, coastlineWorld
-    map = make.map.arctic()
-
-    ## Add bathy
-    add.map.bathy.shade(map, bathy.arctic, zlim = c(-6e3, -20), filled = FALSE)
-    add.map.bathy(map, bathy.arctic)
-
-    map
-}
-
-#' @title Test Map of Mississippi
-#' @author Laura Whitmore
-#' @export
-test.map.mississippi = function() {
-    ## test for Mississippi Sound region
-    map = make.map(coast = "coastlineWorldFine",
-                   p = "+proj=merc",
-                   lat.min = 27,
-                   lat.max = 31,
-                   lon.min = -93,
-                   lon.max = -84,
-                   dlat = 5,
-                   dlon = 5)
-
-    add.map.bathy.shade(map, bathy.gom, zlim = c(-3e3, 10), filled = TRUE)
-    add.map.bathy(map, bathy.gom,
-                  bathy.levels = c(-10, -50, -100, -1000, -3000),
-                  bathy.lwd = c(0.8, 0.8, 1.2, 0.8, 0.8))
-    map
-}
-
-#' @title Test Map of California
-#' @author Thomas Bryce Kelly
-#' @import oce
-#' @import ocedata
-#' @export
-test.map.california = function(coast = "coastlineWorldFine", p = "+proj=merc",
-                               lat.min = 31, lat.max = 36, lon.min = -126, lon.max = -119,
-                               dlat = 5, dlon = 5, grid = T) {
-    ## test for California Current
-    map = make.map(coast = coast, p = p,
-             lat.min = lat.min, lat.max = lat.max, lon.min = lon.min, lon.max = lon.max,
-             dlat = dlat, dlon = dlon, grid = grid)
-    add.map.bathy.shade(map, bathy.pacific, refinement = 0)
-    add.map.bathy(map, bathy.pacific)
-    map
-}
 
