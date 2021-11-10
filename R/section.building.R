@@ -17,7 +17,7 @@
 #' @param nx The number of splits to make in the x direction (defaults to 50). Used only if x.scale is not set.
 #' @param ny The number of splits to make in the y direction (defaults to 50). Used only if y.scale is not set.
 #' @param proj A gdal projection string such as from make.proj() function. Used to redistribute grid over non-euclidean surfaces like maps.
-build.section = function(x, y, z, lat = NULL, lon = NULL, griddder = NULL, grid = NULL, weight = NULL,
+build.section = function(x, y, z, lat = NULL, lon = NULL, gridder = NULL, grid = NULL, weight = NULL,
                          xlim = NULL, ylim = NULL,
                          x.factor = NULL, y.factor = NULL,
                          x.scale = NULL, y.scale = NULL,
