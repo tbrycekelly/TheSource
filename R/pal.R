@@ -100,7 +100,7 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, labels.at = NULL,
 
   ## Setup
   par.original = par()
-  for (p in c('cin', 'cra', 'csi', 'cxy', 'din', 'page', 'new')) { par.original[[p]] = NULL}
+  for (p in c('cin', 'cra', 'csi', 'cxy', 'din', 'page')) { par.original[[p]] = NULL}
 
   ## Default Spacing
   # width
