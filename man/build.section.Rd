@@ -10,7 +10,7 @@ build.section(
   z,
   lat = NULL,
   lon = NULL,
-  griddder = NULL,
+  gridder = NULL,
   grid = NULL,
   weight = NULL,
   xlim = NULL,
@@ -35,6 +35,8 @@ build.section(
 
 \item{z}{signal to be gridded (e.g. T, S, ...)}
 
+\item{gridder}{A function to perform gridding, options gridIDW (default: inverse distance), gridNN (nearest neighbor), gridNNI (natural neighbor) or gridKrige (Krigging)}
+
 \item{xlim}{Limits of the gridding. These are the bounds of the new x-y grid. Default: NULL will set it based on the data + 10%.}
 
 \item{ylim}{Limits of the gridding. These are the bounds of the new x-y grid. Default: NULL will set it based on the data + 10%.}
@@ -56,8 +58,6 @@ build.section(
 \item{proj}{A gdal projection string such as from make.proj() function. Used to redistribute grid over non-euclidean surfaces like maps.}
 
 \item{field.name}{Sets the name of the new interpolated field. By default the name is 'z1'}
-
-\item{gridder}{A function to perform gridding, options gridIDW (default: inverse distance), gridNN (nearest neighbor), gridNNI (natural neighbor) or gridKrige (Krigging)}
 }
 \description{
 Build Section

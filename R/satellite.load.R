@@ -3,17 +3,17 @@
 #' @description read
 #' @export
 ## Read nc file and do preliminary parsing/conversion
-read.satellite = function(file = NULL, entry = 1,
-                          verbose = F, lon = NULL, lat = NULL) {
+read.satellite = function(file = NULL, verbose = F, lon = NULL, lat = NULL) {
 
   sate = list()
 
   ## Load and trim satellite data products
   for (i in 1:length(file)) {
     if (verbose) { message(Sys.time(), ': Loading satellite file: ', file[i]) }
-    sate[[i]] = load.satellite(file = file[i], entry = entry, verbose = verbose)
+    sate[[i]] = load.satellite(file = file[i], verbose = verbose)
+
     if (!is.null(lon) | !is.null(lat)) {
-      sate[[i]] = trim.satellite(sate[[i]], lon = lon, lat = lat)
+      sate[[i]] = trim.satellite(sate[[i]], lon = lon, lat = lat, verbose = verbose)
     }
   }
 
@@ -30,49 +30,53 @@ read.satellite = function(file = NULL, entry = 1,
       if (any(sate[[i]]$lat != sate[[1]]$lat)) { message('  Latitudes do not match in files: ', file[1], ' and ', file[i], '. Code will likely fail now.') }
 
       ## lat check
-      if (length(sate[[i]]$field) != length(sate[[1]]$field)) { message('  Number of entries do not match in files: ', file[1], ' and ', file[i], '. Code will likely fail now.') }
+      if (length(sate[[i]]$field[[1]]) != length(sate[[1]]$field[[1]])) { message('  Number of entries do not match in files: ', file[1], ' and ', file[i], '. Code will likely fail now.') }
     }
   }
   if (verbose) { message(' Calculating field statistics...') }
 
   ## Calculate average field
   if (length(file) > 1) {
-    n = matrix(0, nrow = nrow(sate[[1]]$field), ncol = ncol(sate[[1]]$field))
-    res = matrix(0, nrow = nrow(sate[[1]]$field), ncol = ncol(sate[[1]]$field))
-    times = list(start = 0, mid = 0, end = 0)
+    for (k in 1:sate[[1]]$meta$n.fields) {
+      n = matrix(0, nrow = nrow(sate[[1]]$field[[k]]), ncol = ncol(sate[[1]]$field[[k]]))
+      res = matrix(0, nrow = nrow(sate[[1]]$field[[k]]), ncol = ncol(sate[[1]]$field[[k]]))
+      times = list(start = 0, mid = 0, end = 0)
 
-    ## Add together all fields
-    for (i in 1:length(sate)) {
-      temp = sate[[i]]$field
-      n = n + !is.na(temp)
-      temp[is.na(temp)] = 0
-      res = res + temp
+      ## Add together all fields
+      for (i in 1:length(sate)) {
+        temp = sate[[i]]$field[[k]]
+        n = n + !is.na(temp)
+        temp[is.na(temp)] = 0
+        res = res + temp
 
-      times$start = times$start + as.numeric(sate[[i]]$times$start)
-      times$mid = times$mid + as.numeric(sate[[i]]$times$mid)
-      times$end = times$end + as.numeric(sate[[i]]$times$end)
-      sate[[1]]$file = c(sate[[1]]$file, sate[[i]]$file)
+        times$start = times$start + as.numeric(sate[[i]]$times$start)
+        times$mid = times$mid + as.numeric(sate[[i]]$times$mid)
+        times$end = times$end + as.numeric(sate[[i]]$times$end)
+        sate[[1]]$file = c(sate[[1]]$file, sate[[i]]$file)
+      }
+
+      ## Calculate mean field value
+      res = res / n
+      res[!is.finite(res)] = NA
+      sate[[1]]$field[[k]] = res
     }
-
-    ## Calculate mean field value
-    res = res / n
-    res[!is.finite(res)] = NA
-    sate[[1]]$field = res
-
     ## Update times and filenames
     sate[[1]]$file = 'composite file'
     sate[[1]]$times$start = conv.time.unix(times$start / length(sate))
     sate[[1]]$times$mid = conv.time.unix(times$mid / length(sate))
     sate[[1]]$times$end = conv.time.unix(times$end / length(sate))
+
   }
 
   ## Update metadata
-  meta = list(min = min(as.numeric(sate[[1]]$field), na.rm = T),
-              max = max(as.numeric(sate[[1]]$field), na.rm = T),
-              mean = mean(as.numeric(sate[[1]]$field), na.rm = T),
-              median = median(as.numeric(sate[[1]]$field), na.rm = T),
-              n.na = sum(is.na(as.numeric(sate[[1]]$field))),
-              n.fields = length(sate))
+  meta = list(min = min(as.numeric(sate[[1]]$field[[1]]), na.rm = T),
+              max = max(as.numeric(sate[[1]]$field[[1]]), na.rm = T),
+              mean = mean(as.numeric(sate[[1]]$field[[1]]), na.rm = T),
+              median = median(as.numeric(sate[[1]]$field[[1]]), na.rm = T),
+              n.na = length(as.numeric(sate[[1]]$field[[1]])),
+              n.na = sum(is.na(as.numeric(sate[[1]]$field[[1]]))),
+              n.fields = sate[[1]]$meta$n.fields)
+
   sate[[1]]$meta = meta
 
   ## Return
@@ -84,7 +88,81 @@ read.satellite = function(file = NULL, entry = 1,
 #' @author Thomas Bryce Kelly
 #' @description read
 ## Read nc file and do preliminary parsing/conversion
-load.satellite = function(file, entry = 1, verbose = T) {
+load.satellite = function(file, verbose = T) {
+
+  ## Load data
+  data = load.nc(file = file, verbose = verbose)
+  dimnames = names(data)
+  sizes = sapply(data, function(x) {max(cumprod(c(1,dim(x))), na.rm = T)})
+
+  ## Determine primary field by size
+  l = which.max(sizes)
+  field.size = dim(data[[l]])
+  l = which(sizes == sizes[l])
+  x = data[l] ## list
+
+  ## Get Lat/lon if possible
+  lat = NULL; lon = NULL
+  if ('lat' %in% dimnames) { lat = data[['lat']] }
+  if ('latitude' %in% dimnames) { lat = data[['latitude']] }
+  if ('LAT' %in% dimnames) { lat = data[['LAT']] }
+  if ('LATITUDE' %in% dimnames) { lat = data[['LATITUDE']] }
+  if ('Lat' %in% dimnames) { lat = data[['Lat']] }
+  if ('Latitude' %in% dimnames) { lat = data[['Latitude']] }
+
+  if ('lon' %in% dimnames) { lon = data[['lon']] }
+  if ('LON' %in% dimnames) { lon = data[['LON']] }
+  if ('LONGITUDE' %in% dimnames) { lon = data[['LONGITUDE']] }
+  if ('longitude' %in% dimnames) { lon = data[['longitude']] }
+  if ('Lon' %in% dimnames) { lon = data[['Lon']] }
+  if ('Longitude' %in% dimnames) { lon = data[['Longitude']] }
+
+  ## time to guess lat and lon
+  if (is.null(lat) & is.null(lon)) {
+
+    ## Standard NASA 4km grid
+    if (4320 %in% field.size) {
+      lat = seq(90, -90, length.out = dim(x)[2])
+      lon = seq(-180, 180, length.out = dim(x)[1])
+    }
+    if (540 %in% field.size) {  # Standard 4k
+      lat = seq(45, 30.03597, length.out = field.size[2])
+      lon = seq(-140, -115.5454, length.out = field.size[1])
+    }
+  }
+
+  meta = list(min = min(as.numeric(x[[1]]), na.rm = T),
+              max = max(as.numeric(x[[1]]), na.rm = T),
+              mean = mean(as.numeric(x[[1]]), na.rm = T),
+              median = median(as.numeric(x[[1]]), na.rm = T),
+              n = length(as.numeric(x[[1]])),
+              n.na = sum(is.na(as.numeric(x[[1]]))),
+              n.fields = length(l),
+              meta = list(
+                time = Sys.time(),
+                Source.version = packageVersion('TheSource'),
+                R.version = R.version.string))
+
+  times = NULL
+  if (is.null(times)) { times = get.satellite.times(file, verbose = verbose) }
+
+  ## Return
+  list(field = x,
+       file = file,
+       grid = function() {expand.grid(lon = lon, lat = lat)},
+       lon = lon,
+       lat = lat,
+       times = times,
+       meta = meta)
+}
+
+
+
+#' @title Read Satellite Data
+#' @author Thomas Bryce Kelly
+#' @description read
+## Read nc file and do preliminary parsing/conversion
+load.satellite.old = function(file, entry = 1, verbose = T) {
 
   nc.file = ncdf4::nc_open(file)
 
@@ -154,13 +232,13 @@ load.satellite = function(file, entry = 1, verbose = T) {
 #' @param lon a vector of length two indicating the limits desired. By default it is set to the range in longitude values in the satellite object.
 #' @param lat same as above but for latitude
 #'
-trim.satellite = function(satellite, lon = NULL, lat = NULL) {
+trim.satellite = function(satellite, lon = NULL, lat = NULL, verbose = T) {
   grid = expand.grid(lon = satellite$lon, lat = satellite$lat)
 
   if (is.null(lon)) {lon = range(satellite$lon)}
   if (is.null(lat)) {lat = range(satellite$lat)}
 
-  ## Replace lat and lon
+  ## Replace lat and lonD
   satellite$lat = satellite$lat[satellite$lat >= lat[1] & satellite$lat <= lat[2]]
   satellite$lon = satellite$lon[satellite$lon >= lon[1] & satellite$lon <= lon[2]]
 
@@ -168,7 +246,14 @@ trim.satellite = function(satellite, lon = NULL, lat = NULL) {
   l = which(grid$lon >= lon[1] & grid$lon <= lon[2] &
               grid$lat >= lat[1] & grid$lat <= lat[2])
 
-  satellite$field = matrix(satellite$field[l], ncol = length(satellite$lat), nrow = length(satellite$lon))
+  if (class(satellite$field) == 'list') {
+    if (verbose) { message(' List')}
+    for (i in 1:length(satellite$field)) {
+      satellite$field[[i]] = matrix(as.numeric(satellite$field[[i]])[l], ncol = length(satellite$lat), nrow = length(satellite$lon))
+    }
+  } else {
+    satellite$field = matrix(satellite$field[l], ncol = length(satellite$lat), nrow = length(satellite$lon))
+  }
   satellite$grid = expand.grid(lon = satellite$lon, lat = satellite$lat)
 
   ## Return
@@ -258,8 +343,14 @@ load.nc = function(file, var = NULL, test = F, verbose = T) {
   file = ncdf4::nc_open(file)
   if (verbose) { message(' File openned.')}
 
-  all.var = c(names(file$var), names(file$dim))
+  all.var = names(file$var)
+  for (name in names(file$dim)) {
+    if (file$dim[[name]]$dimvarid$id > 0) {
+      all.var = c(all.var, name)
+    }
+  }
   all.var = all.var[all.var != 'nv']
+
 
   if (is.null(var)) {
     var = all.var

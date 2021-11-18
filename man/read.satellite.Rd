@@ -4,7 +4,7 @@
 \alias{read.satellite}
 \title{Read Satellite Data}
 \usage{
-read.satellite(file = NULL, entry = 1, verbose = F, lon = NULL, lat = NULL)
+read.satellite(file = NULL, verbose = F, lon = NULL, lat = NULL)
 }
 \description{
 read

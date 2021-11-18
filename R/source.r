@@ -287,6 +287,8 @@ integrate.trapezoid = function(x, y, xlim = NULL) {
 #' data.frame(a = c(1:5), b = c('a':'e'))
 data.frame = function(...) {
   x = list(...)
+  if (length(x) < 1) { return(base::data.frame()) }
+
   a = rep(NA, length(x))
 
   for (i in 1:length(x)) { a[i] = length(x[[i]]) }
@@ -297,6 +299,11 @@ data.frame = function(...) {
   base::data.frame(...)
 }
 
+#' @title Expand Grid
+#' @export
+expand.grid = function(...) {
+  base::expand.grid(..., KEEP.OUT.ATTRS = F, stringsAsFactors = F)
+}
 
 #' @title Is Inside Polygon
 #' @description Useful to determine if a set of coordinates lies inside or outside a closed polygon. Currently works for
