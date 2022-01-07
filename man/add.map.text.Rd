@@ -4,7 +4,17 @@
 \alias{add.map.text}
 \title{Add Map Text}
 \usage{
-add.map.text(lon, lat, text, col = "black", cex = 1, adj = NULL, pos = NULL)
+add.map.text(
+  map,
+  lon,
+  lat,
+  text,
+  col = "black",
+  cex = 1,
+  adj = NULL,
+  pos = NULL,
+  ...
+)
 }
 \arguments{
 \item{lon}{longitude position of the text or a vector of positions}

@@ -4,7 +4,7 @@
 \alias{redraw.map}
 \title{Redraw Map}
 \usage{
-redraw.map(map, coast = NULL, land.col = NULL, grid = NULL)
+redraw.map(map)
 }
 \arguments{
 \item{map}{a map object as returned by make.map()}

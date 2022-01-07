@@ -27,9 +27,6 @@
 #' @param tz The timezone of the epoch used to save the numeric type, almost \emph{ALWAYS} GMT.
 #' @param rev Whether or not the operation should be reversed. This is a loseless operation.
 #' @author Thomas Bryce Kelly
-#' @examples
-#' conv.time.excel(42550)
-#' conv.time.excel(conv.time.excel(42550), rev = T)
 #' @export
 conv.time.excel = function (x, tz = "GMT", rev = FALSE) {
   if (rev) {
@@ -47,8 +44,6 @@ conv.time.excel = function (x, tz = "GMT", rev = FALSE) {
 #' @description Typical examples of unix timestamps include any POSIX object that has been coerced into a numeric.
 #' @param x The numeric value that will be converted.
 #' @param tz The timezone of the epoch used for the timestamp, almost always GMT.
-#' @example
-#' conv.time.unix(as.numeric(Sys.time()))
 #' @export
 conv.time.unix = function(x, tz = 'GMT') {
   if (any(is.POSIXct(x))) { return(x) }
@@ -58,8 +53,6 @@ conv.time.unix = function(x, tz = 'GMT') {
 
 #' @title Convert Time Matlab
 #' @param x The numeric timestamp that will be converted.
-#' @example
-#' conv.time.matlab(720000)
 #' @export
 conv.time.matlab = function (x, tz = "GMT") {
   if (any(is.POSIXct(x))) { return(x) }
@@ -76,8 +69,6 @@ conv.time.matlab = function (x, tz = "GMT") {
 #' @param minute Minute (0-59)
 #' @param second Second (0-59)
 #' @param tz System available timezone
-#' @example
-#' make.time(2020, 4, 28)
 #' @export
 make.time = function (year = NULL, month = 1, day = 1, hour = 0, minute = 0, second = 0, tz = 'GMT') {
   if (is.null(year)) {return(Sys.time())}
@@ -172,8 +163,6 @@ which.closest.time = function(x, y) {
 #' @author Thomas Bryce Kelly
 #' @description A helper function to determine if an object or a vector of objects is POSIX.
 #' @keywords Time Helper
-#' @example
-#' is.POSIXct('a') # FALSE
 #' @export
 is.POSIXct = function(x) {inherits(x, "POSIXct")}
 
@@ -182,8 +171,6 @@ is.POSIXct = function(x) {inherits(x, "POSIXct")}
 #' @author Thomas Bryce Kelly
 #' @description Find the indicies of the unique entries.
 #' @param x A vector of entries.
-#' @example
-#' which.unique(c('a', 1:3, 1))
 #' @export
 which.unique = function(x) {
   which(!duplicated(x))
@@ -195,8 +182,6 @@ which.unique = function(x) {
 #' @description Filter a vector of entries with fall between a set of bounds (i.e. on a closed interval).
 #' @param x A vector of any type with strict ordering (i.e. where '>' or '<' are valid operators).
 #' @param bounds A vector of two entries, where bounds[1] is the lower bound and bounds[2] is the upper.
-#' @example
-#' is.within(5, c(0,10))
 #' @export
 is.within = function(x, bounds) {
   if (length(bounds) != 2) { stop('Bounds requires two values, an upper and a lower value.')}
@@ -219,8 +204,6 @@ which.within = function(x, bounds) {
 #' @description A simple extension to the base is.nan() function to permit operation on data.frames.
 #' @param x object to test for NAN
 #' @author Christian Fender
-#' @example
-#' is.nan(5)
 #' @export
 is.nan = function(x) {
   if (class(x) == 'data.frame') {
@@ -283,8 +266,6 @@ integrate.trapezoid = function(x, y, xlim = NULL) {
 #' @description A helpful wrapper to the base data.frame function which provides column indexes upon mismatched lengths.
 #' @export
 #' @author Thomas Bryce Kelly
-#' @example
-#' data.frame(a = c(1:5), b = c('a':'e'))
 data.frame = function(...) {
   x = list(...)
   if (length(x) < 1) { return(base::data.frame()) }
@@ -443,7 +424,42 @@ TheSource.update = function() {
 #' @author Thomas Bryce Kelly
 #' @export
 TheSource.version = function() {
-  '0.3.3'
+  '0.5.1'
+}
+
+
+make.broken.axis = function(side = 1, true.range = c(0, 6), left.range = c(0,1), right.range = c(5,10)) {
+  if (length(left.range) != 2 | length(right.range) != 2 | length(true.range) != 2) { stop('Ranges must be length 2!')}
+  if (left.range[2] < left.range[1]) { decreasing = T} else {decreasing = F}
+  if (right.range[2] < right.range[1] & !decreasing) { stop('Both ranges much be decreasing or increasing!')}
+  if (right.range[1] < right.range[2] & decreasing) { stop('Both ranges much be decreasing or increasing!')}
+
+  list(side = side,
+       true.range = true.range,
+       left.range = left.range,
+       right.range = right.range,
+       f.left = diff(left.range) / (diff(left.range) + diff(right.range)),
+       f.right = diff(right.range) / (diff(left.range) + diff(right.range)),
+       decreasing = decreasing)
+}
+
+
+add.broken.axis = function(broken, ...) {
+  pretty.left = pretty(broken$left.range)
+  pretty.right = pretty(broken$right.range)
+  if (broken$decreasing) {
+    pretty.left = pretty.left[pretty.left > broken$left.range[2]]
+    pretty.right = pretty.right[pretty.right < broken$right.range[1]]
+  } else {
+    pretty.left = pretty.left[pretty.left < broken$left.range[2]]
+    pretty.right = pretty.right[pretty.right > broken$right.range[1]]
+  }
+
+
+  width = diff(broken$true.range)
+  axis(side = broken$side, labels = pretty.left, at = width * broken$f.left * (pretty.left - broken$left.range[1])/(diff(broken$left.range)), ...)
+  axis(side = broken$side, labels = pretty.right, at = width * broken$f.left + broken$f.right * (pretty.right - broken$right.range[1])/(diff(broken$right.range)), ...)
+
 }
 
 

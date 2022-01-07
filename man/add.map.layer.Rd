@@ -5,6 +5,7 @@
 \title{Add Map Layer}
 \usage{
 add.map.layer(
+  map,
   lon,
   lat,
   z,
@@ -12,13 +13,12 @@ add.map.layer(
   pal = "greyscale",
   col.na = NA,
   n = 255,
-  refinement = NA,
-  col.low = NA,
-  col.high = NA,
-  rev = FALSE,
-  filled = FALSE,
-  indicate = TRUE,
-  verbose = FALSE
+  trim = T,
+  col.low = "",
+  col.high = "",
+  rev = F,
+  indicate = T,
+  verbose = T
 )
 }
 \arguments{

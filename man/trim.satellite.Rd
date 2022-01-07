@@ -4,7 +4,7 @@
 \alias{trim.satellite}
 \title{Tirm Satellite Field}
 \usage{
-trim.satellite(satellite, lon = NULL, lat = NULL)
+trim.satellite(satellite, lon = NULL, lat = NULL, verbose = T)
 }
 \arguments{
 \item{satellite}{a satellite object as returned from read.satellite()}

@@ -138,6 +138,12 @@ load.satellite = function(file, verbose = T) {
               n = length(as.numeric(x[[1]])),
               n.na = sum(is.na(as.numeric(x[[1]]))),
               n.fields = length(l),
+              trim = list(
+                x = -1,
+                y = -1,
+                z = -1,
+                t = -1
+              ),
               meta = list(
                 time = Sys.time(),
                 Source.version = packageVersion('TheSource'),
@@ -233,21 +239,38 @@ load.satellite.old = function(file, entry = 1, verbose = T) {
 #' @param lat same as above but for latitude
 #'
 trim.satellite = function(satellite, lon = NULL, lat = NULL, verbose = T) {
-  grid = expand.grid(lon = satellite$lon, lat = satellite$lat)
+  prior = object.size(satellite)
 
+  satellite$lon = satellite$lon %% 360
   if (is.null(lon)) {lon = range(satellite$lon)}
   if (is.null(lat)) {lat = range(satellite$lat)}
 
+  anti = lon[2] < lon[1]
+  lon = lon %% 360
+  grid = expand.grid(lon = satellite$lon, lat = satellite$lat)
+
+  if (verbose) { message('Trimming satellite domain... \n\tAntimeridian:\t', anti,
+                         '\n\tLon:\t\t', paste(round(lon, 2), collapse = '\t'),
+                         '\n\tLat:\t\t', paste(round(lat, 2), collapse = '\t')) }
+
+
   ## Replace lat and lonD
   satellite$lat = satellite$lat[satellite$lat >= lat[1] & satellite$lat <= lat[2]]
-  satellite$lon = satellite$lon[satellite$lon >= lon[1] & satellite$lon <= lon[2]]
+
+  if (anti) {
+    satellite$lon = satellite$lon[satellite$lon >= lon[1] | satellite$lon <= lon[2]]
+    l = which(grid$lon >= lon[1] | grid$lon <= lon[2]  &
+                grid$lat >= lat[1] & grid$lat <= lat[2])
+  } else {
+    satellite$lon = satellite$lon[satellite$lon >= lon[1] & satellite$lon <= lon[2]]
+    l = which(grid$lon >= lon[1] & grid$lon <= lon[2] &
+                grid$lat >= lat[1] & grid$lat <= lat[2])
+  }
+
 
   ## Replace field
-  l = which(grid$lon >= lon[1] & grid$lon <= lon[2] &
-              grid$lat >= lat[1] & grid$lat <= lat[2])
 
   if (class(satellite$field) == 'list') {
-    if (verbose) { message(' List')}
     for (i in 1:length(satellite$field)) {
       satellite$field[[i]] = matrix(as.numeric(satellite$field[[i]])[l], ncol = length(satellite$lat), nrow = length(satellite$lon))
     }
@@ -256,28 +279,12 @@ trim.satellite = function(satellite, lon = NULL, lat = NULL, verbose = T) {
   }
   satellite$grid = expand.grid(lon = satellite$lon, lat = satellite$lat)
 
+  if (verbose) { message(' Saved ', round(100 * (1 - object.size(satellite) / prior)), '%.') }
+
   ## Return
   satellite
 }
 
-
-load.sss = function(file, lon = NULL, lat = NULL) {
-  ss = load.nc(file)
-  ss$sss = ss$sss * ss$sss_qc ## Apply quality control
-
-  if (!is.null(lon)) {
-    l = which(ss$lon >= lon[1] & ss$lon <= lon[2])
-    ss$sss = ss$sss[l,]
-  }
-  if (!is.null(lat)) {
-    l = which(ss$lat >= lat[1] & ss$lat <= lat[2])
-    ss$sss = ss$sss[,l]
-  }
-  ss$grid = expand.grid(lon = ss$lon, lat = ss$lat)
-
-  ## Return
-  list(lon = ss$lon, lat = ss$lat, time = ss$time, field = ss$sss)
-}
 
 ###########################
 ###### TIME SECTION #######

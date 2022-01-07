@@ -5,11 +5,6 @@
 #' @param x The observed x values
 #' @param y The observed y values
 #' @param n The number of jackknife models to generate.
-#' @example
-#' data(cars)
-#' model = regress.jackknife(cars$dist, cars$speed)
-#' plot(cars$dist, cars$speed)
-#' add.boot.conf(model, new.x = c(0:130))
 #' @export
 regress.jackknife = function(x, y, sx = NA, sy = NA) {
   if (any(!is.na(sx)) | any(!is.na(sy))) {
@@ -65,11 +60,6 @@ regress.jackknife = function(x, y, sx = NA, sy = NA) {
 #' @param x The observed x values
 #' @param y The observed y values
 #' @param n The number of jackknife models to generate.
-#' @example
-#' data(cars)
-#' model = regress.resample(cars$dist, cars$speed)
-#' plot(cars$dist, cars$speed)
-#' add.boot.conf(model)
 #' @export
 regress.resample = function(x, y, sx = NA, sy = NA, n = 1e3) {
   if (any(!is.na(sx)) | any(!is.na(sy))) {
@@ -118,11 +108,6 @@ regress.resample = function(x, y, sx = NA, sy = NA, n = 1e3) {
 #' @param x The observed x values
 #' @param y The observed y values
 #' @param n The number of jackknife models to generate.
-#' @example
-#' data(cars)
-#' model = regress.jackknife(cars$dist, cars$speed)
-#' plot(cars$dist, cars$speed)
-#' add.boot.conf(model, new.x = c(0:130))
 #' @export
 regress.jackknife.2 = function(x, y, sx = NA, sy = NA, n = 1000) {
   if (any(!is.na(sx)) | any(!is.na(sy))) {

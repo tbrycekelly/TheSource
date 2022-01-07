@@ -5,6 +5,7 @@
 \title{Add Map Polygon}
 \usage{
 add.map.polygon(
+  map,
   lon,
   lat,
   col = "#00000020",

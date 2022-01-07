@@ -5,15 +5,19 @@
 \title{Add Map Contours}
 \usage{
 add.map.contour(
-  x,
-  y,
+  map,
+  lon,
+  lat,
   z,
+  trim = T,
   col = "black",
   levels = NULL,
+  zlim = NULL,
   n = 3,
   labels = TRUE,
   lty = 1,
-  lwd = 1
+  lwd = 1,
+  verbose = T
 )
 }
 \description{

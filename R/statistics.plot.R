@@ -8,6 +8,7 @@ add.boot.trendline = function(model, col = 'black', lty = 2, lwd = 1, ...) {
   abline(a = median(model$models$b), b = median(model$models$m), col = col, lty = lty, lwd = lwd, ...)
 }
 
+
 #' @title Add Bootstrapped Trendline
 #' @author Thomas Bryce Kelly
 #' @description Add the maximum likelihood trendline to a figured based on a bootstrap estimation.
@@ -82,6 +83,7 @@ add.boot.conf = function(model, x = NULL, col = '#55555540', conf = c(0.025, 0.9
     add.boot.trendline(model, ...)
   }
 }
+
 
 #' @title Add Bootstrapped Confidence Intervals
 #' @author Thomas Bryce Kelly

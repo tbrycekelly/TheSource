@@ -43,6 +43,7 @@ make.proj = function(projection = NULL, lat = NULL, lon = NULL, h = NULL, dlat =
   paste0('+proj=', projection, ' +lon_0=', lon, ' +lat_0=', lat, ' +lat_1=', lat, ' +lat_2=', lat + dlat, ' +h=', h)
 }
 
+
 #' @title Bilinear Interpolation of a Grid
 #' @author Thomas Bryce Kelly
 #' @export
@@ -79,3 +80,111 @@ bilinearInterp = function(x, y, gx, gy, z) {
   }
   z.out
 }
+
+
+#' @title Interpolate from fractional index onto grid
+#' @author Thomas Bryce Kelly
+#' @export
+grid.interp = function(grid, i, j) {
+  val = rep(NA, length(i))
+
+  x = round(i)
+  y = round(j)
+  dx = i - x
+  dy = j - y
+
+  for (k in 1:length(i)) {
+    val[k] = (1 - abs(dy[k])) * ((1 - abs(dx[k])) * grid[cbind(x[k], y[k])] + abs(dx[k]) * grid[cbind(x[k] + sign(dx[k]), y[k])]) +
+      abs(dy[k]) * ((1 - abs(dx[k])) * grid[cbind(x[k], y[k] + sign(dy[k]))] + abs(dx[k]) * grid[cbind(x[k] + sign(dx[k]), y[k] + sign(dy[k]))])
+  }
+
+  ## Return
+  val
+}
+
+
+#' @title Calculate extended grid
+#' @author Thomas Bryce Kelly
+#' @export
+calc.vertex = function(lon, lat) {
+
+  ## Diffs
+  dlon.dx = t(diff(t(lon))) / 2
+  dlon.dy = diff(lon) / 2
+  dlat.dx = t(diff(t(lat))) / 2
+  dlat.dy = diff(lat) / 2
+
+  ## Vertex
+  vertex.lon = matrix(NA, nrow = dim(lon)[1]+1, ncol = dim(lon)[2]+1)
+  vertex.lat = matrix(NA, nrow = dim(lat)[1]+1, ncol = dim(lat)[2]+1)
+
+
+  ## Field
+  for (i in 2:(dim(vertex.lon)[1] - 1)) {
+    for (j in 2:(dim(vertex.lon)[2] - 1)) {
+      ii = max(i-1, 1)
+      jj = max(j-1, 1)
+
+      vertex.lon[i,j] = lon[ii,jj] + dlon.dx[ii,jj] + dlon.dy[ii,jj]
+      vertex.lat[i,j] = lat[ii,jj] + dlat.dx[ii,jj] + dlat.dy[ii,jj]
+
+    }
+  }
+
+
+  ## Fill in perimeter
+  # i = 1
+  for (j in 2:(dim(vertex.lon)[2] - 1)) {
+    jj = max(j-1, 1)
+
+    vertex.lon[1,j] = lon[1,jj] + dlon.dx[1,jj] - dlon.dy[1,jj]
+    vertex.lat[1,j] = lat[1,jj] + dlat.dx[1,jj] - dlat.dy[1,jj]
+  }
+
+  # j = 1
+  for (i in 2:(dim(vertex.lon)[1] - 1)) {
+    ii = max(i-1, 1)
+
+    vertex.lon[i,1] = lon[ii,1] - dlon.dx[ii,1] + dlon.dy[ii,1]
+    vertex.lat[i,1] = lat[ii,1] - dlat.dx[ii,1] + dlat.dy[ii,1]
+  }
+
+  # j = dim(vertex.lon)[2]
+  for (i in 1:(dim(vertex.lon)[1] - 1)) {
+    ii = max(i-1, 1)
+    j = dim(vertex.lon)[2]
+
+    vertex.lon[i,j] = lon[ii,j-1] + dlon.dx[ii,j-2] + dlon.dy[ii,j-1]
+    vertex.lat[i,j] = lat[ii,j-1] + dlat.dx[ii,j-2] + dlat.dy[ii,j-1]
+  }
+
+  # i = dim(vertex.lon)[2]
+  for (j in 1:(dim(vertex.lon)[2] - 1)) {
+    jj = max(j-1, 1)
+    i = dim(vertex.lon)[1]
+
+    vertex.lon[i,j] = lon[i-1,jj] + dlon.dx[i-1,jj] + dlon.dy[i-2,jj]
+    vertex.lat[i,j] = lat[i-1,jj] + dlat.dx[i-1,jj] + dlat.dy[i-2,jj]
+  }
+
+  ## Fill in corners
+  ## both = 1
+  vertex.lon[1,1] = lon[1,1] - dlon.dx[1,1] - dlon.dy[1,1]
+  vertex.lat[1,1] = lat[1,1] - dlat.dx[1,1] - dlat.dy[1,1]
+
+  i = dim(vertex.lon)[1]
+  vertex.lon[i,1] = lon[i-1,1] - dlon.dx[i-1,1] + dlon.dy[i-2,1]
+  vertex.lat[i,1] = lat[i-1,1] - dlat.dx[i-1,1] + dlat.dy[i-2,1]
+
+  i = dim(vertex.lon)[1]
+  j = dim(vertex.lon)[2]
+  vertex.lon[i,j] = lon[i-1,j-1] + dlon.dx[i-1,j-2] + dlon.dy[i-2,j-1]
+  vertex.lat[i,j] = lat[i-1,j-1] + dlat.dx[i-1,j-2] + dlat.dy[i-2,j-1]
+
+  j = dim(vertex.lon)[2]
+  vertex.lon[1,j] = lon[1,j-1] + dlon.dx[1,j-2] - dlon.dy[1,j-1]
+  vertex.lat[1,j] = lat[1,j-1] + dlat.dx[1,j-2] - dlat.dy[1,j-1]
+
+  list(lon = vertex.lon, lat = vertex.lat)
+}
+

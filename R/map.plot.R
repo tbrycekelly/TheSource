@@ -39,49 +39,168 @@
 make.map = function (coast = NULL,
                      lon.min = -180,
                      lon.max = 180,
-                     lat.min = -80,
+                     lat.min = -60,
                      lat.max = 80,
                      p = NULL,
                      land.col = 'lightgray',
-                     grid = TRUE,
-                     dlon = 15,
-                     dlat = 15,
-                     draw.axis = T) {
+                     draw.grid = T,
+                     draw.axis = T,
+                     dlon = 20,
+                     dlat = 20,
+                     verbose = T) {
+
+  ## Apply Defaults
+  if (all(is.null(c(lon.min, lon.max, lat.min, lat.max)))) {
+    lon.min = -180
+    lon.max = 180
+    lat.min = -60
+    lat.max = 80
+  } else if (any(is.null(c(lon.min, lon.max, lat.min, lat.max)))) {
+    stop('All lon/lat bounds must be provided!')
+  }
 
   if (is.null(coast)) { coast = 'coastlineWorld' }
 
-  if (is.null(p)) { p = make.proj(projection = 'mill', lat = mean(c(lat.max, lat.min)),
-                                  lon = mean(c(lon.min, lon.max)))}
+  if (is.null(p)) {
+    p = make.proj(projection = 1,
+                  lat = mean(c(lat.max, lat.min)),
+                  lon = mean(c(lon.min, lon.max)))
+  }
 
+  ## Parse projection info (might be helpful?)
   lon0 = as.numeric(strsplit(strsplit(paste(p, ''), 'lon_0=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
+  lat0 = as.numeric(strsplit(strsplit(paste(p, ''), 'lat_0=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
+  proj = strsplit(strsplit(paste(p, ''), 'proj=')[[1]][2], '\\s+')[[1]][1] ## retreive the lon0 value from the projection
+  h = as.numeric(strsplit(strsplit(paste(p, ''), 'h=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
 
-  ## get coastlines
-  get.coast(coast = coast)
-  lons = seq(-180, 180, by = dlon)
-  lats = seq(-90, 90, by = dlat)
+  ## Start Coastline
+  do.call('data', list(coast))
+  coastline = eval(parse(text = coast))@data
+  coastline$latitude = coastline$latitude * 0.999999 ## condense latitudes slightly to avoid potential issues at +-90 degrees
 
-  ## make the base plot (oce)
-  oce::mapPlot(coastlineCut(eval(parse(text = coast)), lon_0 = lon0),
-               projection = p,
-               col = land.col,
-               longitudelim = c(lon.min, lon.max),
-               latitudelim = c(lat.min, lat.max),
-               grid = c(dlon, dlat),
-               axes = draw.axis,
-               lonlabels = lons,
-               latlabels = lats)
+  if (!is.na(lat0) & lat0 > 80) {
+    k = coastline$latitude > 0
+    coastline$longitude = coastline$longitude[k]
+    coastline$latitude = coastline$latitude[k]
+  }
+  if (!is.na(lat0) & lat0 < -80) {
+    k = coastline$latitude < 0
+    coastline$longitude = coastline$longitude[k]
+    coastline$latitude = coastline$latitude[k]
+  }
+
+  ## Project coastline
+  coastline = rgdal::project(cbind(coastline$longitude, coastline$latitude), proj = p)
+  coastline[!is.finite(coastline[,1]) | !is.finite(coastline[,2]),] = c(NA, NA)
+
+  ## add breaks when distance between coastline points are large
+  l = which(sqrt(diff(coastline[,1])^2 + diff(coastline[,2])^2) > 6e6) # 6000 km between points
+  coastline[l,] = c(NA, NA)
+
+  ## Split at NA's for each polygon.
+  coast.lon = split(coastline[!is.na(coastline[,1]),1], cumsum(is.na(coastline[,1]))[!is.na(coastline[,1])])
+  coast.lat = split(coastline[!is.na(coastline[,1]),2], cumsum(is.na(coastline[,2]))[!is.na(coastline[,2])])
+
+  ## Determine lat/lon axis details
+  lons = seq(lon.min, lon.max, by = dlon)
+  lats = seq(lat.min, lat.max, by = dlat)
+  lims = expand.grid(lon = lons, lats = lats)
+
+  lon.axis = rgdal::project(cbind(lons, rep(lat.min, length(lons))), proj = p)[,1]
+  lat.axis = rgdal::project(cbind(rep(lon.min, length(lats)), lats), proj = p)[,2]
+  lims = rgdal::project(cbind(lims$lon, lims$lat), proj = p)
+
+  ## Setup map object
+  map = list(coastline = list(coast = coast, lon = coast.lon, lat = coast.lat),
+             lon.min = lon.min,
+             lon.max = lon.max,
+             lat.min = lat.min,
+             lat.max = lat.max,
+             p = p,
+             land.col = land.col,
+             grid = list(draw.grid = draw.grid,
+                         lon.axis = list(dlon = dlon, label = lons, projection = lon.axis),
+                         lat.axis = list(dlat = dlat, label = lats, projection = lat.axis)),
+             meta = list(
+               Source.version = packageVersion('TheSource'),
+               R.version = R.version.string,
+               Sys.time = Sys.time()
+             ))
+
+  ## Start plotting
+  # Calculate projections of plotting area for plot limits
+  field = expand.grid(lon = seq(lon.min, lon.max, length.out = 10),
+                      lat = seq(lat.min, lat.max, length.out = 10))
+  field = rgdal::project(cbind(field$lon, field$lat), proj = p)
+
+  ## make plot
+  plot(NULL,
+       NULL,
+       xlim = range(field[,1]),
+       ylim = range(field[,2]),
+       xaxt = 'n', yaxt = 'n',
+       xlab = '', ylab = '',
+       xaxs = 'i', yaxs = 'i')
+
+  ## Add coastlines
+  for (i in 1:length(coast.lon)) {
+    polygon(coast.lon[[i]], coast.lat[[i]], col = land.col)
+  }
+
+  if (draw.grid) {
+    for (i in lons) {
+      #add.map.line(lon = rep(i, length(lats)), lat = lats * 0.999, p = p, col = 'dark grey')
+      add.map.line(map, lon = c(i,i), lat = c(-80, 80), col = 'dark grey')
+    }
+    for (i in lats) {
+      #add.map.line(lon = lons * 0.999, lat = rep(i, length(lons)), p = p, col = 'dark grey')
+      add.map.line(map, lon = c(-180,180), lat = c(i,i), col = 'dark grey')
+    }
+  }
 
   box()
 
-  list(coast = coast, lon.min = lon.min, lon.max = lon.max,
-       lat.min = lat.min, lat.max = lat.max, p = p, land.col = land.col,
-       grid.dlon = dlon, grid.dlat = dlat, grid = grid,
-       meta = list(
-         Source.version = packageVersion('TheSource'),
-         R.version = R.version.string
-       ))
+  if (draw.axis) {
+    ## Add axis
+    axis(1, at = lon.axis, labels = lons)
+    axis(2, at = lat.axis, labels = lats, las = 1)
+  }
+
+  map
 }
 
+
+#' @title Add Map Line
+#' @author Thomas Bryce Kelly
+#' @param lon a set of longitudes to draw a line between
+#' @param lat a set of latitudes to draw a lien between
+#' @param col the color of the line to be drawn
+#' @param lty the type of line to be drawn
+#' @param lty the type of line to be drawn
+#' @param lwd the width of the line to be drawn
+#' @export
+add.map.line = function(map,
+                        lon,
+                        lat,
+                        col = 'black',
+                        lty = 1,
+                        lwd = 1,
+                        greatCircle = T) {
+
+  if (greatCircle) {
+    lons = approx(1:length(lon), lon, xout = seq(1, length(lon), length.out = max(length(lon), 5e3)))$y
+    lats = approx(1:length(lat), lat, xout = seq(1, length(lat), length.out = max(length(lon), 5e3)))$y
+  } else {
+    lons = lon
+    lats = lat
+  }
+
+  ## project
+  xy = rgdal::project(cbind(lons, lats), proj = map$p)
+
+  ## Plot
+  lines(xy[,1], xy[,2], col = col, lty = lty, lwd = lwd)
+}
 
 
 #' @title Add Map Points
@@ -97,20 +216,256 @@ make.map = function (coast = NULL,
 #' @param ... optional arguments passed to points().
 #' @import oce
 #' @export
-add.map.points = function(lon = NULL, lat = NULL, col = 'black', cex = 1, pch = 16,
-                          stn.lon = NULL, stn.lat = NULL, override = F, ...){
+add.map.points = function(map,
+                          lon,
+                          lat,
+                          col = 'black',
+                          cex = 1,
+                          pch = 16, ...){
 
-  if (!is.null(stn.lon)) { warning('stn.lon option depreciated. Recommend using lon instead.')}
-  if (!is.null(stn.lat)) { warning('stn.lat option depreciated. Recommend using lat instead.')}
+  xy = rgdal::project(cbind(lon, lat), proj = map$p)
+  points(xy[,1], xy[,2], col = col, cex = cex, pch = pch, ...)
+}
 
-  if (interactive() & length(lon) > 1e5 & !override) {
-    input = readline(prompt = 'Large number of points, contnue? (y/n)')
-    if (input != 'y' & input != 'Y') {
-      return()
+
+#' @title Add Map Text
+#' @author Thomas Bryce Kelly
+#' @author Laura Whitmore
+#' @import oce
+#' @param lon longitude position of the text or a vector of positions
+#' @param lat latitude position of the text or a vector of positions
+#' @param text a string or vector of strings for the text to be written
+#' @param col text color
+#' @param cex size of the text to be written
+#' @param adj	one or two values in [0, 1] which specify the x (and optionally y) adjustment of the labels.
+#' @param pos a position specifier for the text. If specified this overrides any adj value given. Values of 1, 2, 3 and 4, respectively indicate positions below, to the left of, above and to the right of the specified coordinates.
+#' @export
+add.map.text = function(map,
+                        lon,
+                        lat,
+                        text,
+                        col = 'black',
+                        cex = 1,
+                        adj = NULL,
+                        pos = NULL,
+                        ...){
+
+  xy = rgdal::project(cbind(lon, lat), proj = map$p)
+  text(xy[,1], xy[,2], text, col = col, cex = cex, adj = adj, pos = pos, ...)
+}
+
+
+#' @title Add Map Polygon
+#' @author Laura Whitmore
+#' @export
+add.map.polygon = function(map,
+                           lon,
+                           lat,
+                           col = "#00000020",
+                           lty = 1,
+                           lwd = 1,
+                           border = NULL,
+                           density = NULL,
+                           angle = 45,
+                           fillOddEven = FALSE) {
+
+  ## Project and plot normally
+  xy = rgdal::project(cbind(lon, lat), proj = map$p)
+  polygon(xy[,1], xy[,2], col = col, lty = lty, lwd = lwd, border = border, density = density, angle = angle, fillOddEven = fillOddEven)
+}
+
+
+#########################################3
+############ Compound Functions ##########
+##########################################
+
+
+#' @title Add Map Scalebar
+#' @author Thomas Bryce Kelly
+#' @export
+add.map.scale = function(pos = 1,
+                         scale = NULL,
+                         verbose = T) {
+  usr = par('usr')
+
+  if (is.null(scale)) {
+    scale = (usr[2] - usr[1]) * 0.001 #km
+    scale = 10^(round(log10(scale)-1))
+  }
+
+  sign = 1
+  if (pos == 1) {
+    x.origin = 0.95 * (usr[2] - usr[1]) + usr[1]
+    y.origin = 0.05 * (usr[4] - usr[3]) + usr[3]
+  } else if (pos == 2) {
+    x.origin = 0.05 * (usr[2] - usr[1]) + usr[1]
+    y.origin = 0.05 * (usr[4] - usr[3]) + usr[3]
+    sign = -1
+  } else if (pos == 3) {
+    x.origin = 0.05 * (usr[2] - usr[1]) + usr[1]
+    y.origin = 0.925 * (usr[4] - usr[3]) + usr[3]
+    sign = -1
+  } else if (pos == 4) {
+    x.origin = 0.95 * (usr[2] - usr[1]) + usr[1]
+    y.origin = 0.925 * (usr[4] - usr[3]) + usr[3]
+  } else {
+    stop ('pos should be 1, 2, 3, or 4!')
+  }
+
+  lines(x = c(x.origin, x.origin - sign*scale*1e3), y = rep(y.origin,2), lwd = 3)
+  points(x = c(x.origin, x.origin - sign*scale*1e3), y = rep(y.origin,2), pch = '|')
+  text(x.origin - sign*scale*1e3*0.5, y = y.origin, pos = 3, paste0(scale, ' km'))
+}
+
+
+#' @title Add Quiver Lines
+#' @export
+#' @author Thomas Bryce Kelly
+add.map.quiver = function(map,
+                          lon,
+                          lat,
+                          u,
+                          v,
+                          zscale = 1,
+                          col = 'black',
+                          lwd = 1,
+                          verbose = T) {
+
+  ## Add points
+  add.map.points(map, lon, lat, pch = 20, cex = 0.5, col = col)
+
+  ## Add arrows
+  for (i in 1:length(lon)) {
+    add.map.line(map, c(lon[i], lon[i] + u[i] * zscale), c(lat[i], lat[i] + v[i] * zscale), col = col, lwd = lwd)
+  }
+}
+
+
+#' @title Add Map Contours
+#' @export
+#' @author Thomas Bryce Kelly
+add.map.contour = function(map,
+                           lon,
+                           lat,
+                           z,
+                           trim = T,
+                           col = 'black',
+                           levels = NULL,
+                           zlim = NULL,
+                           n = 3,
+                           labels = TRUE,
+                           lty = 1,
+                           lwd = 1,
+                           verbose = T) {
+
+  if (verbose) { message('Add Map Contours:')}
+  lon = lon %% 360
+  map$lon.min = map$lon.min %% 360
+  map$lon.max = map$lon.max %% 360
+  lon = as.array(lon)
+  lat = as.array(lat)
+  z = as.array(z)
+
+  if (is.null(zlim)) {
+    zlim = range(z, na.rm = T)
+  }
+
+  ## Set default values
+  if (is.null(levels)) {
+    levels = pretty.default(zlim, n = n + 2)[-c(1, n+2)]
+    if (verbose) { message(' Levels: ', paste(levels, collapse = ', '))}
+  }
+
+  n = length(levels)
+  if (length(col) != n) { col = rep(col, n) }
+  if (length(lty) != n) { lty = rep(lty, n) }
+  if (length(lwd) != n) { lwd = rep(lwd, n) }
+
+  ## make sure everything is a full grid
+  if(is.na(dim(lon)[2]) & is.na(dim(lat)[2])) {
+
+    if (length(z) == length(lon) * length(lat)) {
+      z = array(z, dim = c(length(lon), length(lat)))
+      lon = matrix(lon, nrow = dim(z)[1], ncol = dim(z)[2])
+      lat = matrix(lat, nrow = dim(z)[1], ncol = dim(z)[2], byrow = T)
+    } else {
+      z = array(z, dim = c(length(unique(lon)), length(unique(lat))))
+      lon = matrix(unique(lon), nrow = dim(z)[1], ncol = dim(z)[2])
+      lat = matrix(unique(lat), nrow = dim(z)[1], ncol = dim(z)[2], byrow = T)
     }
   }
-  oce::mapPoints(c(lon, stn.lon), c(lat, stn.lat), col = col, cex = cex, pch = pch, ...)
+
+  ## Trim
+  if (trim) {
+    nz = length(z)
+
+    if (verbose) { message(' Starting domain trimming... ', appendLF = F)}
+    corners = expand.grid(lon = c(par('usr')[1], par('usr')[2]),
+                          lat = c(par('usr')[3], par('usr')[4]))
+    corners = rgdal::project(cbind(corners$lon, corners$lat), proj = map$p, inv = T)
+
+    field = expand.grid(lon = seq(par('usr')[1], par('usr')[2], length.out = 360),
+                        lat = seq(par('usr')[3], par('usr')[4], length.out = 10))
+    field = rgdal::project(cbind(field$lon, field$lat), proj = map$p, inv = T)
+    field[,1] = field[,1] %% 360
+
+    field.lon = range(field[,1], na.rm = T)
+    field.lat = range(field[,2], na.rm = T)
+
+    ## Trim longitude
+    if (corners[1,1] > corners[2,1]) { ## antimeridian
+      if (verbose) { message(' antimeridian... ', appendLF = F)}
+      k = apply(lon, 1, function(x) {any(x > field.lon[1] & x < field.lon[2])})
+      z = z[k,]
+      lon = lon[k,]
+      lat = lat[k,]
+    } else {
+      if (verbose) { message(' longitude... ', appendLF = F)}
+      k = apply(lon, 1, function(x) {any(x < field.lon[2] & x > field.lon[1])})
+      z = z[k,]
+      lon = lon[k,]
+      lat = lat[k,]
+    }
+
+    ## Trim latitude
+    if (verbose) { message(' latitude... ', appendLF = F) }
+    k = apply(lat, 2, function(x) {any(x > field.lat[1] & x < field.lat[2])})
+    z = z[,k]
+    lon = lon[,k]
+    lat = lat[,k]
+
+    if (verbose) { message(' complete, n = ', length(z), ' (', 100*round(1 - n/nz, digits = 3), ' %)')}
+  }
+
+
+  ## Calculate contors and plot
+  contour = contourLines(x = c(1:dim(z)[1]),
+                         y = c(1:dim(z)[2]),
+                         z = z,
+                         levels = levels)
+
+  if (verbose) { message(' Starting plotting... ', appendLF = F) }
+  for (i in 1:length(contour)) {
+    n = which(contour[[i]]$level == levels)
+
+    if (length(contour[[i]]$x) > 5) {
+      xx = grid.interp(lon, contour[[i]]$x, contour[[i]]$y)
+      yy = grid.interp(lat, contour[[i]]$x, contour[[i]]$y)
+
+      add.map.line(map,
+                   xx,
+                   yy,
+                   col = col[n],
+                   lty = lty[n],
+                   lwd = lwd[n],
+                   greatCircle = F)
+    }
+  }
+
+  redraw.map(map)
+  if (verbose) { message(' done.') }
 }
+
 
 #' @title Add Map Layer
 #' @description  Add a image layer to the map!
@@ -124,91 +479,131 @@ add.map.points = function(lon = NULL, lat = NULL, col = 'black', cex = 1, pch = 
 #' @param n the number of distinct colors to request from the palette function.
 #' @param refinement the level of bilinear refinement to apply to the image grid
 #' @export
-add.map.layer = function(lon, lat, z, zlim = NULL, pal = 'greyscale', col.na = NA, n = 255, refinement = NA,
-                         col.low = NA, col.high = NA, rev = FALSE, filled = FALSE, indicate = TRUE, verbose = FALSE) {
+add.map.layer = function(map,
+                         lon,
+                         lat,
+                         z,
+                         zlim = NULL,
+                         pal = 'greyscale',
+                         col.na = NA,
+                         n = 255,
+                         trim = T,
+                         col.low = '',
+                         col.high = '',
+                         rev = F,
+                         indicate = T,
+                         verbose = T) {
 
+  ## Misc corrections
   lon = lon %% 360
-  if(is.null(ncol(lon)) & is.null(ncol(lat))) {
-    nn = length(unique(lon))
-    mm = length(unique(lat))
+  map$lon.min = map$lon.min %% 360
+  map$lon.max = map$lon.max %% 360
+  lon = as.array(lon)
+  lat = as.array(lat)
+  z = as.array(z)
 
-    if (length(z) == nn * mm) {
-      lat = unique(lat)
-      lon = unique(lon)
-      z = matrix(z, nrow = nn, ncol = mm)
+  if (is.na(dim(lon)[2])) {
+    if (verbose) { message(' Established Grid.') }
+    if (length(z) == length(lon) * length(lat)) {
+      z = array(z, dim = c(length(lon), length(lat)))
+      lon = matrix(lon, nrow = dim(z)[1], ncol = dim(z)[2])
+      lat = matrix(lat, nrow = dim(z)[1], ncol = dim(z)[2], byrow = T)
     } else {
-      stop('Cannot transform data into matrix. Number of rows and columns do not match length of z.')
+      z = array(z, dim = c(length(unique(lon)), length(unique(lat))))
+      lon = matrix(unique(lon), nrow = dim(z)[1], ncol = dim(z)[2])
+      lat = matrix(unique(lat), nrow = dim(z)[1], ncol = dim(z)[2], byrow = T)
     }
+  }
+
+  ## Order
+  l = order(lon[,round(dim(lon)[2]/2)])
+  lon = lon[l,]
+  lat = lat[l,]
+  z = z[l,]
+
+  nz = length(z)
+
+  ## Trim
+  if (trim) {
+
+    if (verbose) { message(' Starting domain trimming... ', appendLF = F)}
+    corners = expand.grid(lon = c(par('usr')[1], par('usr')[2]),
+                          lat = c(par('usr')[3], par('usr')[4]))
+    corners = rgdal::project(cbind(corners$lon, corners$lat), proj = map$p, inv = T)
+
+    field = expand.grid(lon = seq(par('usr')[1], par('usr')[2], length.out = 180),
+                        lat = seq(par('usr')[3], par('usr')[4], length.out = 50))
+    field = rgdal::project(cbind(field$lon, field$lat), proj = map$p, inv = T)
+    field[,1] = field[,1] %% 360
+
+    field.lon = range(field[,1], na.rm = T)
+    field.lat = range(field[,2], na.rm = T)
+
+    ## Trim longitude
+    if (corners[1,1] > corners[2,1]) { ## antimeridian
+      if (verbose) { message(' antimeridian... ', appendLF = F)}
+      k = apply(lon, 1, function(x) {any(x > field.lon[1] & x < field.lon[2])})
+    } else {
+      if (verbose) { message(' longitude... ', appendLF = F)}
+      k = apply(lon, 1, function(x) {any(x < field.lon[2] & x > field.lon[1])})
+    }
+
+    if (sum(k) > 2) {
+      z = z[k,]
+      lon = lon[k,]
+      lat = lat[k,]
+    }
+
+    ## Trim latitude
+    if (verbose) { message(' latitude... ', appendLF = F) }
+    k = apply(lat, 2, function(x) {any(x > field.lat[1] & x < field.lat[2])})
+    if (sum(k) > 2) {
+      z = z[,k]
+      lon = lon[,k]
+      lat = lat[,k]
+    }
+    if (verbose) { message(' complete, n = ', length(z), ' (', 100 - round(100 * length(z) / nz), '% trimmed)')}
   }
 
   if (is.null(zlim)) { zlim = range(pretty(as.numeric(z), na.rm = TRUE)) }
 
-  if (!is.na(refinement) & refinement > 0) {
-    for (i in 1:refinement) {
-      lat.old = lat
-      lon.old = lon
-      lat = seq(lat[1], lat[length(lat)], length.out = length(lat) * 2)
-      lon = seq(lon[1], lon[length(lon)], length.out = length(lon) * 2)
-
-      grid = expand.grid(lon = lon, lat = lat)
-      z = bilinearInterp(grid$lon * sign(lon[2] - lon[1]), grid$lat * sign(lat[2] - lat[1]), lon.old * sign(lon[2] - lon[1]), lat.old * sign(lat[2] - lat[1]), z)
-      z = matrix(z, nrow = length(lon), ncol = length(lat))
-    }
-  }
-
-  z.good = z
-  z.good[z < zlim[1]] = zlim[1]
-  z.good[z > zlim[2]] = zlim[2]
-  z.good[is.infinite(z.good)] = NA
-
   ## Color scale
-  z.min = min(as.numeric(z.good), na.rm = TRUE)
-  z.max = max(as.numeric(z.good), na.rm = TRUE)
+  col = make.pal(z, pal = pal, rev = rev, n = n, min = zlim[1], max = zlim[2])
+  col = array(col, dim = dim(lon))
 
-  n.low = round((z.min - zlim[1]) / (zlim[2] - zlim[1]) * n)
-  n.high = round((zlim[2] - z.max) / (zlim[2] - zlim[1]) * n)
-  col = get.pal(n, pal = pal)
-  if (rev) {col = rev(col)}
-  col = col[(n.low + 1):(n - n.high)]
+  ## Apply out of range colors if provided:
+  if (is.na(col.low)) { col[z < zlim[1]] = NA }
+  if (is.na(col.high)) { col[z > zlim[2]] = NA}
 
-  if (n.low + n.high > n / 2) {
-    warning('Color scale exceeds data by >50%, colors may not reflect quantitative values.')
-  }
 
-  if (verbose) { print(paste('n.low:', n.low)); print(paste('n.high:', n.high)); print(paste('cols:', (n.low + 1), ':', (n - n.high))); }
+  ## Project and Plot
+  vertex = calc.vertex(lon, lat)
+  xy = rgdal::project(cbind(as.numeric(vertex$lon), as.numeric(vertex$lat)), p = map$p)
+  xy = list(x = array(xy[,1], dim = dim(vertex$lon)),
+            y = array(xy[,2], dim = dim(vertex$lon)))
 
-  if (length(!is.na(z.good)) > 0) {
-    oce::mapImage(lon, lat, z.good, zlim = range(z.good, z.good + 1e-12, na.rm = TRUE), missingColor = col.na,
-                  col = col, filledContour = filled)
-  }
+  ## Order to ensure plotting works correctly
+  #l = order(xy$x[,round(dim(vertex$lon)[2] / 2)])
+  #xy$x = xy$x[l,]
+  #xy$y = xy$y[l,]
+  #col = col[l[l <= dim(col)[1]],]
 
-  if (!is.na(col.low) & any(z < zlim[1], na.rm = TRUE)) {
-    z.low = z
-    z.low[z >= zlim[1]] = NA
-    z.low.lim = range(z.low, na.rm = TRUE)
-
-    if (col.low != '') {
-      oce::mapImage(lon, lat, z.low, zlim = z.low.lim, breaks = 1, col = rep(col.low, 2))
-    } else {
-      oce::mapImage(lon, lat, z.low, zlim = z.low.lim, breaks = 1, col = get.pal(n, pal = pal, rev = rev)[1:2])
+  if (verbose) { message(' Starting plotting... ', appendLF = F) }
+  for (i in 1:dim(col)[1]) {
+    for (j in 1:dim(col)[2]) {
+      polygon(x = c(xy$x[i,j], xy$x[i,j+1], xy$x[i+1,j+1], xy$x[i+1,j]),
+              y = c(xy$y[i,j], xy$y[i,j+1], xy$y[i+1,j+1], xy$y[i+1,j]),
+              col = col[i,j], border = NA)
     }
   }
+  if (verbose) { message(' complete.') }
 
-  if (!is.na(col.high) & any(z > zlim[2], na.rm = TRUE)) {
-    z.high = z
-    z.high[z <= zlim[2]] = NA
-
-    if (col.high != '') {
-      oce::mapImage(lon, lat, z.high, zlim = range(z.high, na.rm = TRUE), breaks = 1, col = rep(col.high, 2))
-    } else {
-      oce::mapImage(lon, lat, z.high, zlim = range(z.high, na.rm = TRUE), breaks = 1, col = get.pal(n, pal = pal, rev = rev)[(n-1):n])
-    }
-  }
+  ## Extras
+  if (verbose) { message(' Final stats: \tN.low: ', sum(z < zlim[1]), '\tN.high: ', sum(z > zlim[2]), '\tN: ', length(z)) }
 
   if (indicate) {
-    st = paste0(
-      'zaxis: (', round(min(z.good, na.rm = TRUE), 3), ', ', round(max(z.good, na.rm = TRUE), 3),
-      ')   zlim: (', round(zlim[1], 3), ', ', round(zlim[2], 3), ')'
+    st = paste0('Data range: (', round(min(z, na.rm = TRUE), 3), ', ', round(max(z, na.rm = TRUE), 3),
+                ')   Z range: (', round(zlim[1], 3), ', ', round(zlim[2], 3), ')'
     )
     mtext(st, line = 0.25, adj = 1, cex = 0.7)
   }
@@ -228,90 +623,42 @@ add.map.layer = function(lon, lat, z, zlim = NULL, pal = 'greyscale', col.na = N
 #' @param col.high same as \emph{col.low} but for data that is out of range above the zlim.
 #' @param refinement the level of bilinear refinement to apply to the image grid
 #' @export
-add.map.bathy.shade = function(map, bathy, pal = 'greyscale', n = 255, zlim = NULL, rev = FALSE, filled = TRUE, col.low = NA, col.high = NA, refinement = 1) {
-  bathy$Z[bathy$Z > 0] = 0
-  add.map.layer(lon = bathy$Lon, lat = bathy$Lat, z = bathy$Z, pal = pal, rev = rev, filled = filled, refinement = refinement,
-                zlim = zlim, col.low = col.low, col.high = col.high, indicate = FALSE, n = n)
+add.map.bathy = function(map,
+                         bathy,
+                         subsample = NULL,
+                         trim = T,
+                         zlim = NULL,
+                         pal = 'greyscale',
+                         n = 255,
+                         rev = FALSE,
+                         col.low = '',
+                         col.high = '',
+                         verbose = T) {
 
-  if (filled == TRUE) {
-    ## Hack to keep anti-aliasing at bay
-    add.map.layer(lon = bathy$Lon, lat = bathy$Lat, z = bathy$Z, pal = pal, rev = rev, filled = filled, refinement = refinement,
-                  zlim = zlim, col.low = col.low, col.high = col.high, indicate = FALSE, n = n)
-    add.map.layer(lon = bathy$Lon, lat = bathy$Lat, z = bathy$Z, pal = pal, rev = rev, filled = filled, refinement = refinement,
-                  zlim = zlim, col.low = col.low, col.high = col.high, indicate = FALSE, n = n)
+  ## Subsample if requested
+  if (!is.null(subsample)) {
+    k = seq(1, length(bathy$Lon), by = subsample)
+    l = seq(1, length(bathy$Lat), by = subsample)
+    bathy$Lon = bathy$Lon[k]
+    bathy$Lat = bathy$Lat[l]
+    bathy$Z = bathy$Z[k,l]
   }
+
+  add.map.layer(map,
+                lon = bathy$Lon,
+                lat = bathy$Lat,
+                z = bathy$Z,
+                pal = pal,
+                rev = rev,
+                zlim = zlim,
+                col.low = col.low,
+                col.high = col.high,
+                indicate = FALSE,
+                n = n,
+                trim = trim,
+                verbose = verbose)
+
   redraw.map(map)
-}
-
-
-#' @title Add Map Text
-#' @author Thomas Bryce Kelly
-#' @author Laura Whitmore
-#' @import oce
-#' @param lon longitude position of the text or a vector of positions
-#' @param lat latitude position of the text or a vector of positions
-#' @param text a string or vector of strings for the text to be written
-#' @param col text color
-#' @param cex size of the text to be written
-#' @param adj	one or two values in [0, 1] which specify the x (and optionally y) adjustment of the labels.
-#' @param pos a position specifier for the text. If specified this overrides any adj value given. Values of 1, 2, 3 and 4, respectively indicate positions below, to the left of, above and to the right of the specified coordinates.
-#' @export
-add.map.text = function(lon, lat, text, col = 'black', cex = 1, adj = NULL, pos = NULL){
-  oce::mapText(longitude = lon, latitude = lat, labels = text, col = col, cex = cex, adj = adj, pos = pos)
-}
-
-
-#' @title Add Map Line
-#' @author Thomas Bryce Kelly
-#' @param lon a set of longitudes to draw a line between
-#' @param lat a set of latitudes to draw a lien between
-#' @param col the color of the line to be drawn
-#' @param lty the type of line to be drawn
-#' @param lty the type of line to be drawn
-#' @param lwd the width of the line to be drawn
-#' @export
-add.map.line = function(lon, lat, col = 'black', lty = 1, lwd = 1, greatCircle = T) {
-  oce::mapLines(longitude = lon, latitude = lat, col = col, lty = lty, lwd = lwd, greatCircle = greatCircle)
-}
-
-
-#' @title Add Quiver Lines
-#' @export
-#' @author Thomas Bryce Kelly
-add.map.quiver = function(lon, lat, u, v, zscale = 1, col = 'black', lwd = 1) {
-  add.map.points(lon, lat, pch = 20, cex = 0.5, col = col)
-  for (i in 1:length(lon)) {
-    add.map.line(c(lon[i], lon[i] + u[i] * zscale), c(lat[i], lat[i] + v[i] * zscale), col = col, lwd = lwd)
-  }
-}
-
-#' @export
-add.map.scale = function(x) {
-  oce::mapScalebar(x)
-}
-
-
-#' @title Add Map Contours
-#' @export
-#' @author Thomas Bryce Kelly
-add.map.contour = function(x, y, z, col = 'black', levels = NULL, n = 3, labels = TRUE, lty = 1, lwd = 1) {
-
-  if (is.null(levels)) {
-    levels = pretty.default(z, n = n)
-  }
-  z = matrix(z, nrow = length(unique(x)))
-
-  oce::mapContour(unique(x), unique(y), z, levels = levels, drawlabels = labels,
-                  underlay = 'interrupt', lwd = lwd, lty = lty,
-                  col = col)
-}
-
-#' @title Add Map Polygon
-#' @author Laura Whitmore
-#' @export
-add.map.polygon = function (lon, lat, col = "#00000020", lty = 1, lwd = 1, border = NULL, density = NULL, angle = 45, fillOddEven = FALSE) {
-  oce::mapPolygon(longitude = lon, latitude = lat, col = col, density = density, angle = angle,
-                  lty = lty, lwd = lwd, border = border, fillOddEven = fillOddEven)
 }
 
 
@@ -319,45 +666,43 @@ add.map.polygon = function (lon, lat, col = "#00000020", lty = 1, lwd = 1, borde
 #' @author Thomas Bryce Kelly
 #' @param map a map object as returned by make.map()
 #' @export
-redraw.map = function(map,
-                      coast = NULL,
-                      land.col = NULL,
-                      grid = NULL) {
+redraw.map = function(map) {
 
-  if (!is.null(coast)) { map$coast = coast}
-  if (!is.null(land.col)) { map$land.col = land.col}
-  if (!is.null(grid)) { map$grid = grid}
-  if (!is.null(coast)) { map$coast = coast}
-  if (!is.null(coast)) { map$coast = coast}
+  for (i in 1:length(map$coastline$lon)) {
+    polygon(map$coastline$lon[[i]], map$coastline$lat[[i]], col = map$land.col)
+  }
 
 
-  mapPolygon(eval(parse(text = map$coast)), col = map$land.col)
+  if (map$grid$draw.grid) {
+    for (i in map$grid$lon.axis$label) {
+      #add.map.line(lon = rep(i, length(lats)), lat = lats * 0.999, p = p, col = 'dark grey')
+      add.map.line(map, lon = c(i,i), lat = c(-80, 80), col = 'dark grey')
+    }
+    for (i in map$grid$lat.axis$label) {
+      #add.map.line(lon = lons * 0.999, lat = rep(i, length(lons)), p = p, col = 'dark grey')
+      add.map.line(map, lon = c(-180,180), lat = c(i,i), col = 'dark grey')
+    }
+  }
 
-  lons = seq(-180, 180, by = map$grid.dlon)
-  lats = seq(-90, 90, by = map$grid.dlat)
-  if (map$grid) { mapGrid(longitude = lons, latitude = lats) }
   box()
-  #oce::mapAxis(1, longitude = lons) ## Is this needed?
-  #oce::mapAxis(2, latitude = lats) ## Is this needed?
 }
+
 
 #' @title Replot Map
 #' @author Thomas Bryce Kelly
 #' @param map a map object as returned by make.map()
 #' @export
-replot.map = function(map = map) {
-  make.map(coast = map$coast,
+replot.map = function(map) {
+  make.map(coast = map$coastline$coast,
            lon.min = map$lon.min,
            lon.max = map$lon.max,
            lat.min = map$lat.min,
            lat.max = map$lat.max,
            p = map$p,
            land.col = map$land.col,
-           grid = map$grid,
-           dlon = map$grid.dlon,
-           dlat = map$grid.dlat)
-  NULL
+           draw.grid = map$grid$draw.grid,
+           dlon = map$grid$lon.axis$dlon,
+           dlat = map$grid$lat.axis$dlat)
+
+  invisible(NULL)
 }
-
-
-

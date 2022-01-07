@@ -4,17 +4,7 @@
 \alias{add.map.points}
 \title{Add Map Points}
 \usage{
-add.map.points(
-  lon = NULL,
-  lat = NULL,
-  col = "black",
-  cex = 1,
-  pch = 16,
-  stn.lon = NULL,
-  stn.lat = NULL,
-  override = F,
-  ...
-)
+add.map.points(map, lon, lat, col = "black", cex = 1, pch = 16, ...)
 }
 \arguments{
 \item{lon}{the longitudes of the points to be drawn}
@@ -27,11 +17,11 @@ add.map.points(
 
 \item{pch}{the point character to be used}
 
+\item{...}{optional arguments passed to points().}
+
 \item{stn.lon}{(depreciated) the longitudes of the points to be drawn}
 
 \item{stn.lat}{(depreciated) the latitude of the points to be drawn}
-
-\item{...}{optional arguments passed to points().}
 }
 \description{
 Add station points to a map

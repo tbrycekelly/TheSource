@@ -11,10 +11,10 @@ make.map.arctic(
   lat.min = 60,
   lat.max = 90,
   p = make.proj("stere", lat = 90),
-  dlat = 15,
+  dlat = 10,
   dlon = 60,
   land.col = "lightgray",
-  grid = TRUE
+  draw.grid = TRUE
 )
 }
 \arguments{
@@ -35,8 +35,6 @@ make.map.arctic(
 \item{dlon}{The spacing for the longitude grid (in degrees)}
 
 \item{land.col}{A color string or value for the land polygon}
-
-\item{grid}{Boolean, draw lat/lon grid?}
 }
 \description{
 An example map of the Arctic -- basemap only. For a full test map call test.map.arctic()

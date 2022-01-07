@@ -4,7 +4,7 @@
 \alias{replot.map}
 \title{Replot Map}
 \usage{
-replot.map(map = map)
+replot.map(map)
 }
 \arguments{
 \item{map}{a map object as returned by make.map()}

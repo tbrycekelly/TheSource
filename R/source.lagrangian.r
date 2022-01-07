@@ -314,7 +314,8 @@ load.advection.cmems = function(path, lats = NULL, lons = NULL, get.vel = get.ve
     #### Load variables
     ## Vertical Grid
     z = ncdf4::ncvar_get(file, 'depth')
-    ssh = ncdf4::ncvar_get(file, 'zos')
+    #ssh = ncdf4::ncvar_get(file, 'zos')
+    ssh = 'not implemented yet'
 
     ## Horizontal
     lat = ncdf4::ncvar_get(file, 'latitude')
@@ -343,7 +344,7 @@ load.advection.cmems = function(path, lats = NULL, lons = NULL, get.vel = get.ve
       u = array(u[l,,,], dim = c(length(l), length(lat), length(z), length(time)))
       v = array(v[l,,,], dim = c(length(l), length(lat), length(z), length(time)))
       lon = lon[l]
-      ssh = array(vos[l,,], dim = c(length(l), length(lat), length(time)))
+      #ssh = array(ssh[l,,,], dim = c(length(l), length(lat), length(time), 1))
     }
 
     if (!is.null(lats)) {
@@ -352,11 +353,8 @@ load.advection.cmems = function(path, lats = NULL, lons = NULL, get.vel = get.ve
       u = array(u[,l,,], dim = c(length(lon), length(l), length(z), length(time)))
       v = array(v[,l,,], dim = c(length(lon), length(l), length(z), length(time)))
       lat = lat[l]
-      ssh = array(vos[,l,], dim = c(length(lon), length(l), length(time)))
+      #ssh = array(ssh[,l,,], dim = c(length(lon), length(l), length(time), 1))
     }
-
-    #### Calculated
-    #grid = expand.grid(lon = lon, lat = lat)
 
     if (i == 1) {
       cmems = list(lat = lat, lon = lon, z = -z, ssh = ssh, u = u, v = v, w = array(0, dim = c(length(lon), length(lat), length(z), length(time))),

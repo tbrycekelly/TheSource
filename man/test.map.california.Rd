@@ -13,7 +13,7 @@ test.map.california(
   lon.max = -119,
   dlat = 5,
   dlon = 5,
-  grid = T
+  draw.grid = T
 )
 }
 \description{

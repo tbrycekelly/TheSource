@@ -315,7 +315,7 @@ parameter.anneal = function (n, cost, ..., bounds, progression = NULL, max.iter 
 #' @param splits The number of subdivisions to perform for each dimension (so grid size is n x splits ^ dimensionality)
 #' @param progression The size of the new search-space to interrogate. A value between 1 and splits/2. Default value (NULL) will yeield a progression of max(1, splits/4), good for most problems.
 #' @export
-parameter.descent = function(cost, guess = NULL, ..., bounds = NULL, max.iter = 100, progression = NULL, step = 1, tol = 1e-8, verbose = T) {
+parameter.descent = function(cost, guess = NULL, ..., bounds = NULL, max.iter = 100, progression = NULL, step = NULL, tol = 1e-8, verbose = T) {
 
   if (verbose){
     message('Starting Parameter Descent')
@@ -343,8 +343,13 @@ parameter.descent = function(cost, guess = NULL, ..., bounds = NULL, max.iter = 
     b[1,] = 0 ## default is to start at origin.
   }
 
+  if (is.null(step)) {
+    step = 0.01
+    if (verbose) { message(' No Step provided, defaulting to ', step) }
+  }
+
   for (i in 1:dim) {
-    b[i+1,] = b[1] + step / dim
+    b[i+1,] = b[1,] + step / dim
     b[i+1,i] = b[1,i] + step ##
   }
 
@@ -412,6 +417,7 @@ parameter.descent = function(cost, guess = NULL, ..., bounds = NULL, max.iter = 
         break
       }
     }
+
   }
   res = list(min = simplex[which.min(simplex$cost),], simplex = simplex, history = history[!is.na(history$cost),])
 

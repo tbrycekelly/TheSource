@@ -11,7 +11,7 @@ parameter.descent(
   bounds = NULL,
   max.iter = 100,
   progression = NULL,
-  step = 1,
+  step = NULL,
   tol = 1e-08,
   verbose = T
 )

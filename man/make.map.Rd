@@ -8,14 +8,15 @@ make.map(
   coast = NULL,
   lon.min = -180,
   lon.max = 180,
-  lat.min = -80,
+  lat.min = -60,
   lat.max = 80,
   p = NULL,
   land.col = "lightgray",
-  grid = TRUE,
-  dlon = 15,
-  dlat = 15,
-  draw.axis = T
+  draw.grid = T,
+  draw.axis = T,
+  dlon = 20,
+  dlat = 20,
+  verbose = T
 )
 }
 \arguments{
@@ -33,11 +34,11 @@ make.map(
 
 \item{land.col}{A color string or value for the land polygon}
 
-\item{grid}{Boolean, draw lat/lon grid?}
-
 \item{dlon}{The spacing for the longitude grid (in degrees)}
 
 \item{dlat}{The spacing for the latitude grid (in degrees)}
+
+\item{grid}{Boolean, draw lat/lon grid?}
 }
 \description{
 Default settings are for Arctic, lowest resolution coastline.

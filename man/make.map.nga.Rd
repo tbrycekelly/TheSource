@@ -6,15 +6,15 @@
 \usage{
 make.map.nga(
   coast = "coastlineWorldFine",
-  lon.min = -153,
-  lon.max = -150,
+  lon.min = -154,
+  lon.max = -149,
   lat.min = 56,
-  lat.max = 60.5,
-  p = make.proj("stere", lat = 60, lon = -150),
+  lat.max = 61,
+  p = make.proj("stere", lat = 60, lon = -151),
   dlat = 3,
   dlon = 3,
   land.col = "#333333",
-  grid = TRUE
+  draw.grid = TRUE
 )
 }
 \arguments{
@@ -35,8 +35,6 @@ make.map.nga(
 \item{dlon}{The spacing for the longitude grid (in degrees)}
 
 \item{land.col}{A color string or value for the land polygon}
-
-\item{grid}{Boolean, draw lat/lon grid?}
 }
 \description{
 An example map of the NGA -- basemap only.

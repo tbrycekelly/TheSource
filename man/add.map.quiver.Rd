@@ -4,7 +4,17 @@
 \alias{add.map.quiver}
 \title{Add Quiver Lines}
 \usage{
-add.map.quiver(lon, lat, u, v, zscale = 1, col = "black", lwd = 1)
+add.map.quiver(
+  map,
+  lon,
+  lat,
+  u,
+  v,
+  zscale = 1,
+  col = "black",
+  lwd = 1,
+  verbose = T
+)
 }
 \description{
 Add Quiver Lines

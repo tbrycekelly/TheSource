@@ -180,7 +180,7 @@ calc.rho = function(S = 30, T = 15, P = 0, verbose = T) {
 }
 
 
-#' @titel Calculate Seawater Compressibility (module)
+#' @title Calculate Seawater Compressibility (module)
 #' @author Thomas Bryce Kelly
 #' @param P Pressure in bar
 #' @references https://link.springer.com/content/pdf/bbm%3A978-3-319-18908-6%2F1.pdf
