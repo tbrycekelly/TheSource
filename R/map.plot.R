@@ -78,20 +78,12 @@ make.map = function (coast = NULL,
   coastline = eval(parse(text = coast))@data
   coastline$latitude = coastline$latitude * 0.999999 ## condense latitudes slightly to avoid potential issues at +-90 degrees
 
-  if (!is.na(lat0) & lat0 > 80) {
-    k = coastline$latitude > 0
-    coastline$longitude = coastline$longitude[k]
-    coastline$latitude = coastline$latitude[k]
-  }
-  if (!is.na(lat0) & lat0 < -80) {
-    k = coastline$latitude < 0
-    coastline$longitude = coastline$longitude[k]
-    coastline$latitude = coastline$latitude[k]
-  }
 
   ## Project coastline
   coastline = rgdal::project(cbind(coastline$longitude, coastline$latitude), proj = p)
   coastline[!is.finite(coastline[,1]) | !is.finite(coastline[,2]),] = c(NA, NA)
+  k = which(!is.na(coastline[,1]))
+  coastline[k[coastline[k,1] > 2e7 | coastline[k,1] < -2e7 | coastline[k,2] > 2e7  | coastline[k,2] < -2e7],] = c(NA, NA)
 
   ## add breaks when distance between coastline points are large
   l = which(sqrt(diff(coastline[,1])^2 + diff(coastline[,2])^2) > 6e6) # 6000 km between points
@@ -102,8 +94,14 @@ make.map = function (coast = NULL,
   coast.lat = split(coastline[!is.na(coastline[,1]),2], cumsum(is.na(coastline[,2]))[!is.na(coastline[,2])])
 
   ## Determine lat/lon axis details
-  lons = seq(lon.min, lon.max, by = dlon)
-  lats = seq(lat.min, lat.max, by = dlat)
+  lons = seq(lon.min - 5*dlon, lon.max + 5*dlon, by = dlon)
+  lats = seq(lat.min - 5*dlat, lat.max + 5*dlon, by = dlat)
+  if (lon.min < 0) {
+    lons = lons[lons >= -180 & lons <= 180]
+  } else {
+    lons = lons[lons >= 0 & lons <= 360]
+  }
+  lats = lats[lats >= -90 & lats <= 90]
   lims = expand.grid(lon = lons, lats = lats)
 
   lon.axis = rgdal::project(cbind(lons, rep(lat.min, length(lons))), proj = p)[,1]
@@ -415,13 +413,13 @@ add.map.contour = function(map,
     ## Trim longitude
     if (corners[1,1] > corners[2,1]) { ## antimeridian
       if (verbose) { message(' antimeridian... ', appendLF = F)}
-      k = apply(lon, 1, function(x) {any(x > field.lon[1] & x < field.lon[2])})
+      k = apply(lon, 1, function(x) {any(x >= field.lon[1] & x <= field.lon[2])})
       z = z[k,]
       lon = lon[k,]
       lat = lat[k,]
     } else {
       if (verbose) { message(' longitude... ', appendLF = F)}
-      k = apply(lon, 1, function(x) {any(x < field.lon[2] & x > field.lon[1])})
+      k = apply(lon, 1, function(x) {any(x <= field.lon[2] & x >= field.lon[1])})
       z = z[k,]
       lon = lon[k,]
       lat = lat[k,]
@@ -429,7 +427,7 @@ add.map.contour = function(map,
 
     ## Trim latitude
     if (verbose) { message(' latitude... ', appendLF = F) }
-    k = apply(lat, 2, function(x) {any(x > field.lat[1] & x < field.lat[2])})
+    k = apply(lat, 2, function(x) {any(x >= field.lat[1] & x <= field.lat[2])})
     z = z[,k]
     lon = lon[,k]
     lat = lat[,k]
@@ -542,10 +540,10 @@ add.map.layer = function(map,
     ## Trim longitude
     if (corners[1,1] > corners[2,1]) { ## antimeridian
       if (verbose) { message(' antimeridian... ', appendLF = F)}
-      k = apply(lon, 1, function(x) {any(x > field.lon[1] & x < field.lon[2])})
+      k = apply(lon, 1, function(x) {any(x >= field.lon[1] & x <= field.lon[2])})
     } else {
       if (verbose) { message(' longitude... ', appendLF = F)}
-      k = apply(lon, 1, function(x) {any(x < field.lon[2] & x > field.lon[1])})
+      k = apply(lon, 1, function(x) {any(x <= field.lon[2] & x >= field.lon[1])})
     }
 
     if (sum(k) > 2) {
@@ -556,7 +554,7 @@ add.map.layer = function(map,
 
     ## Trim latitude
     if (verbose) { message(' latitude... ', appendLF = F) }
-    k = apply(lat, 2, function(x) {any(x > field.lat[1] & x < field.lat[2])})
+    k = apply(lat, 2, function(x) {any(x >= field.lat[1] & x <= field.lat[2])})
     if (sum(k) > 2) {
       z = z[,k]
       lon = lon[,k]

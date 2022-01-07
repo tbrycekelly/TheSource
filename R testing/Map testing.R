@@ -10,7 +10,7 @@ map = make.map.arctic(p = make.proj('stere', lat = 75, lon = 181, h = 1e8))
 
 map = make.map('coastlineWorldMedium', lon.min = -190, lon.max = -140, lat.min = 50, p = make.proj('stere', lat = 60, lon = 180), dlat = 10, dlon = 20)
 add.map.bathy(map, bathy.arctic, zlim = c(-1e3, 0), pal = 'ocean.haline', trim = T)
-add.map.bathy(map, bathy.global, zlim = c(-1e3, 0), pal = 'ocean.haline', trim = T)
+add.map.bathy(map, bathy.global, zlim = c(-1e3, 0), pal = 'ocean.haline', trim = T, subsample = 5)
 
 
 map = test.map.arctic()
@@ -19,8 +19,6 @@ map = test.map.mississippi()
 
 
 map = make.map.nga(dlon = 1, dlat = 1)
-add.map.layer(map, lon = sst$lon, lat = sst$lat, z = exp(sst$field/2), pal = 'cubicl')
-add.map.contour(map, sst$lon, sst$lat, sst$field, levels = 4)
 
 
 map = make.map('coastlineWorldMedium',
