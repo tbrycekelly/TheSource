@@ -45,7 +45,7 @@ make.map = function (coast = NULL,
                      land.col = 'lightgray',
                      draw.grid = T,
                      draw.axis = T,
-                     dlon = 20,
+                     dlon = 60,
                      dlat = 20,
                      verbose = T) {
 
@@ -83,10 +83,10 @@ make.map = function (coast = NULL,
   coastline = rgdal::project(cbind(coastline$longitude, coastline$latitude), proj = p)
   coastline[!is.finite(coastline[,1]) | !is.finite(coastline[,2]),] = c(NA, NA)
   k = which(!is.na(coastline[,1]))
-  coastline[k[coastline[k,1] > 2e7 | coastline[k,1] < -2e7 | coastline[k,2] > 2e7  | coastline[k,2] < -2e7],] = c(NA, NA)
+  coastline[k[coastline[k,1] > 5e7 | coastline[k,1] < -5e7 | coastline[k,2] > 5e7  | coastline[k,2] < -5e7],] = c(NA, NA)
 
   ## add breaks when distance between coastline points are large
-  l = which(sqrt(diff(coastline[,1])^2 + diff(coastline[,2])^2) > 6e6) # 6000 km between points
+  l = which(sqrt(diff(coastline[,1])^2 + diff(coastline[,2])^2) > 1e7) # 6000 km between points
   coastline[l,] = c(NA, NA)
 
   ## Split at NA's for each polygon.
@@ -156,13 +156,8 @@ make.map = function (coast = NULL,
     }
   }
 
+  if (draw.axis) { add.map.axis(map, sides = c(1,2)) }
   box()
-
-  if (draw.axis) {
-    ## Add axis
-    axis(1, at = lon.axis, labels = lons)
-    axis(2, at = lat.axis, labels = lats, las = 1)
-  }
 
   map
 }
@@ -186,8 +181,8 @@ add.map.line = function(map,
                         greatCircle = T) {
 
   if (greatCircle) {
-    lons = approx(1:length(lon), lon, xout = seq(1, length(lon), length.out = max(length(lon), 5e3)))$y
-    lats = approx(1:length(lat), lat, xout = seq(1, length(lat), length.out = max(length(lon), 5e3)))$y
+    lons = approx(1:length(lon), lon, xout = seq(1, length(lon), length.out = max(length(lon), 2e3)))$y
+    lats = approx(1:length(lat), lat, xout = seq(1, length(lat), length.out = max(length(lon), 2e3)))$y
   } else {
     lons = lon
     lats = lat
@@ -198,6 +193,33 @@ add.map.line = function(map,
 
   ## Plot
   lines(xy[,1], xy[,2], col = col, lty = lty, lwd = lwd)
+}
+
+
+#' @title Add Map Line
+#' @author Thomas Bryce Kelly
+#' @param lon a set of longitudes to draw a line between
+#' @param lat a set of latitudes to draw a lien between
+#' @param col the color of the line to be drawn
+#' @param lty the type of line to be drawn
+#' @param lty the type of line to be drawn
+#' @param lwd the width of the line to be drawn
+#' @export
+get.map.line = function(map,
+                        lon,
+                        lat,
+                        greatCircle = T) {
+
+  if (greatCircle) {
+    lons = approx(1:length(lon), lon, xout = seq(1, length(lon), length.out = max(length(lon), 5e4)))$y
+    lats = approx(1:length(lat), lat, xout = seq(1, length(lat), length.out = max(length(lon), 5e4)))$y
+  } else {
+    lons = lon
+    lats = lat
+  }
+
+  ## project
+  rgdal::project(cbind(lons, lats), proj = map$p)
 }
 
 
@@ -270,6 +292,99 @@ add.map.polygon = function(map,
   ## Project and plot normally
   xy = rgdal::project(cbind(lon, lat), proj = map$p)
   polygon(xy[,1], xy[,2], col = col, lty = lty, lwd = lwd, border = border, density = density, angle = angle, fillOddEven = fillOddEven)
+}
+
+
+#' @title Add Axis Label to Map
+#' @author Thomas Bryce Kelly
+#' @export
+add.map.axis.label = function(map, temp, label, sides) {
+  usr = par('usr')
+  dx = 2e-2 * (usr[2] - usr[1])
+  dy = 2e-2 * (usr[4] - usr[3])
+
+  ## bottom
+  if (1 %in% sides & any(temp[,1] > usr[1] & temp[,1] < usr[2] & temp[,2] > usr[3]) & any(temp[,1] > usr[1] & temp[,1] < usr[2] & temp[,2] <= usr[3])) {
+    if (min(abs(temp[,2] - usr[3])) < dx) {
+
+      ## Check angle
+      k = which.min((temp[-nrow(temp),2] - usr[3])^2)
+      dd = abs(diff(temp)[k,])
+      if (dd[1]/dd[2] < 2 * dy / dx) {
+        axis(1, at = temp[which.min((temp[,2] - usr[3])^2),1], labels = label)
+      }
+    }
+  }
+
+  ## top
+  if (3 %in% sides & any(temp[,1] > usr[1] & temp[,1] < usr[2] & temp[,2] < usr[4]) & any(temp[,1] > usr[1] & temp[,1] < usr[2] & temp[,2] >= usr[4])) {
+    if (min(abs(temp[,2] - usr[4])) < dx) {
+
+      ## Check angle
+      k = which.min((temp[-nrow(temp),2] - usr[4])^2)
+      dd = abs(diff(temp)[k,])
+      if (dd[1]/dd[2] < 2 * dy / dx) {
+        axis(3, at = temp[which.min((temp[,2] - usr[4])^2),1], labels = label)
+      }
+    }
+  }
+
+  ## Left
+  if (2 %in% sides & any(temp[,2] > usr[3] & temp[,2] < usr[4] & temp[,1] > usr[1]) & any(temp[,2] > usr[3] & temp[,2] < usr[4] & temp[,1] <= usr[1])) {
+    if (min(abs(temp[,1] - usr[1])) < dy) {
+
+      ## Check angle
+      k = which.min((temp[-nrow(temp),1] - usr[1])^2)
+      dd = abs(diff(temp)[k,])
+      if (dd[2]/dd[1] < 2 * dx / dy) {
+        axis(2, at = temp[which.min((temp[,1] - usr[1])^2),2], labels = label, las = 2)
+      }
+    }
+  }
+
+  ## Right
+  if (4 %in% sides & any(temp[,2] > usr[3] & temp[,2] < usr[4] & temp[,1] < usr[2]) & any(temp[,2] > usr[3] & temp[,2] < usr[4] & temp[,1] >= usr[2])) {
+    if (min(abs(temp[,1] - usr[2])) < dy) {
+
+      ## Check angle
+      k = which.min((temp[-nrow(temp),1] - usr[2])^2)
+      dd = abs(diff(temp)[k,])
+      if (dd[2]/dd[1] < 2 * dx / dy) {
+        axis(4, at = temp[which.min((temp[,1] - usr[2])^2),2], labels = label, las = 2)
+      }
+    }
+  }
+}
+
+
+
+#' @title Add Axis to Map
+#' @export
+add.map.axis = function(map, lons = NULL, lats = NULL, sides = c(1:4)) {
+
+  if (is.null(lons)) { lons = map$grid$lon.axis$label }
+  if (is.null(lats)) { lats = map$grid$lat.axis$label }
+
+  ## Add lon axes
+  for (ll in lons) {
+    temp = get.map.line(map, lon = rep(ll, 2), lat = c(-90,90))
+    temp = temp[is.finite(temp[,1]) & is.finite(temp[,2]),]
+    s = 'E'
+    if (ll < 0 | ll %% 360 >= 180) { s = 'W'; ll = -ll }
+
+    add.map.axis.label(map, temp, label = paste0(ll, s), sides = sides)
+  }
+
+
+  ## Add lats
+  for (ll in lats) {
+    temp = get.map.line(map, lon = c(-180, 180), lat = rep(ll, 2))
+    temp = temp[is.finite(temp[,1]) & is.finite(temp[,2]),]
+    s = 'N'
+    if (ll < 0) { s = 'S'; ll = -ll }
+
+    add.map.axis.label(map, temp, label = paste0(ll, s), sides = sides)
+  }
 }
 
 

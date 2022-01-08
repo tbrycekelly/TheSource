@@ -1,7 +1,7 @@
 library(TheSource)
 
 plot.new()
-map = make.map.arctic()
+map = make.map.arctic(dlon = 20, dlat = 10)
 map = make.map.cce()
 map = make.map.nga()
 map = make.map()
@@ -34,7 +34,6 @@ add.map.bathy(map, bathy.global)
 
 map = make.map(land.col = 'black', lat.max = 75, draw.grid = F, dlon = 60)
 add.map.bathy(map, bathy.global, subsample = 4)
-
 
 
 

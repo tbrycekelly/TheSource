@@ -14,7 +14,7 @@ make.map(
   land.col = "lightgray",
   draw.grid = T,
   draw.axis = T,
-  dlon = 20,
+  dlon = 60,
   dlat = 20,
   verbose = T
 )
