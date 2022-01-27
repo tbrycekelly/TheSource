@@ -238,6 +238,7 @@ build.section.parallel = function(x, y, z, lat = NULL, lon = NULL,
                                   uncertainty = 1e-12, p = 3, gridder = NULL,
                                   field.names = NULL, nx = 50, ny = 50, verbose = T) {
 
+  if (verbose) {message('Starting gridding...')}
   z = data.matrix(z)
   ## Remove NAs
   l = !is.na(x) & !is.na(y) & !apply(z, 1, function(x) {any(is.na(x))})
@@ -247,15 +248,14 @@ build.section.parallel = function(x, y, z, lat = NULL, lon = NULL,
   if (!is.null(lat)) {lat = lat[l]}
   if (!is.null(lon)) {lon = lon[l]}
   if (is.null(gridder)) {
-    gridder = gridIDW
-    message('No gridder specified, defaulting to gridIDW. Other options: gridNN, gridNNI and gridKrige.')
+    gridder = gridODV
+    message(' No gridder specified, defaulting to gridIDW. Other options: gridNN, gridNNI and gridKrige.')
   }
 
-
-  if (uncertainty == 0) { warning('Uncertainty of zero may produce NAs!') }
+  if (uncertainty == 0) { message(' Uncertainty of zero may produce NAs!') }
   if (is.null(field.names)) {
     field.names = paste0('z', 1:ncol(z))
-    warning('No field.names provided, gridded data will be called ', paste0('z', 1:ncol(z), collapse = ','))
+    message(' No field.names provided, gridded data will be called ', paste0('z', 1:ncol(z), collapse = ','))
   }
 
   ## Set default limits (+10% buffer)

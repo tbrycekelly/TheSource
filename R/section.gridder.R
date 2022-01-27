@@ -65,7 +65,7 @@ gridIDW = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
 gridODV = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
 
 
-  N = min(max(10, length(x)/10), length(x))
+  N = min(max(10, log(length(x), 1.4)), length(x))
 
   deltamin = sqrt((xscale/2.0)^2 + (yscale/2.0)^2) * uncertainty
   out = rep(NA, length(gx))
@@ -171,3 +171,5 @@ gridKrig = function(gx, gy, x, y, z, p, xscale, yscale, uncertainty) {
   ## Return
   krige$krige_output$var1.pred
 }
+
+

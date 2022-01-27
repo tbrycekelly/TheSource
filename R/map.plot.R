@@ -449,7 +449,7 @@ add.map.quiver = function(map,
 
   ## Add arrows
   for (i in 1:length(lon)) {
-    add.map.line(map, c(lon[i], lon[i] + u[i] * zscale), c(lat[i], lat[i] + v[i] * zscale), col = col, lwd = lwd)
+    add.map.line(map, c(lon[i], lon[i] + u[i] * zscale), c(lat[i], lat[i] + v[i] * zscale), col = col, lwd = lwd, greatCircle = F)
   }
 }
 

@@ -168,7 +168,7 @@ add.section.inlay = function(section) {
   par(new = T, plt = c(0.2, 0.33, 0.2, 0.33))
   map = make.map(coast = 'coastlineWorld', lon.min = min(section$section.lon), lon.max = max(section$section.lon),
                  lat.min = min(section$section.lat), lat.max = max(section$section.lat),
-                 dlon = 360, dlat = 360, grid = F,
+                 dlon = 360, dlat = 360, draw.grid = F,
                  p = make.proj(8, lat = mean(section$section.lat), lon = mean(section$section.lon)))
   add.map.points(section$section.lon, section$section.lat, pch = 20, cex = 0.2, col = 'red')
   par(plt = par.old$plt)

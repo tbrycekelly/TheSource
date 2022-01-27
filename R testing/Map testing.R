@@ -1,7 +1,7 @@
 library(TheSource)
 
 plot.new()
-map = make.map.arctic(dlon = 20, dlat = 10)
+map = make.map.arctic()
 map = make.map.cce()
 map = make.map.nga()
 map = make.map()

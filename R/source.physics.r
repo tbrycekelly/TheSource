@@ -25,14 +25,14 @@
 #' @author Thomas Bryce Kelly
 #' @description Calculate Argon solubility in seawater. Should return a value of 13.46 in 10 degree water in 35 PSU water.
 #' @param S Salinity in PSU
-#' @param T Temperature
+#' @param Tmp Temperature
 #' @export
-calc.ArSol = function(S = 35, T = 10, verbose = T) {
+calc.ArSol = function(S = 35, Tmp = 10, verbose = T) {
 
   if (verbose) {message('Calculating Argon solubility in seawater.\n Check value at 35 PSU and 10C = 13.46 [umol kg-1].\n Units: [umol kg-1].')}
 
-  # convert T to scaled temperature
-  Ts = log((298.15 - T) / (273.15 + T))
+  # convert Tmp to scaled temperature
+  Ts = log((298.15 - Tmp) / (273.15 + Tmp))
 
   A.0 = 2.79150
   A.1 = 3.17609
@@ -53,14 +53,14 @@ calc.ArSol = function(S = 35, T = 10, verbose = T) {
 #' @author Thomas Bryce Kelly
 #' @description Calculate the N2 solubility in seawater.
 #' @param S Salinity (numeric or a vector) in PSU
-#' @param T Temperature (numeric or a vector) in centigrade
+#' @param Tmp Temperature (numeric or a vector) in centigrade
 #' @export
-calc.N2Sol = function(S = 35, T = 10, verbose = T) {
+calc.N2Sol = function(S = 35, Tmp = 10, verbose = T) {
 
   if (verbose) {message('Calculating N2 solubility in seawater.\n Check value at 35 PSU and 10C = 500.885 [umol kg-1].\n Units: [umol kg-1].')}
 
   # convert T to scaled temperature
-  Ts = log((298.15 - T) / (273.15 + T))
+  Ts = log((298.15 - Tmp) / (273.15 + Tmp))
 
   A.0 = 6.42931
   A.1 = 2.92704
@@ -82,14 +82,14 @@ calc.N2Sol = function(S = 35, T = 10, verbose = T) {
 #' @description Calculates the Neon solubility in seawater based on salinity and temperature
 #' @references Hamme & Emerseon 2004 (Table 4)
 #' @param S Salinity in PSU
-#' @param T Temperature in centigrade
+#' @param Tmp Temperature in centigrade
 #' @export
-calc.NeSol = function(S = 35, T = 10, verbose = T) {
+calc.NeSol = function(S = 35, Tmp = 10, verbose = T) {
 
   if (verbose) {message('Calculating Neon solubility in seawater.\n Check value at 35 PSU and 10C = 7.34121e-3 [umol kg-1].\n Units: [umol kg-1].\n Reference: Hamme and Emerseon (2004, Table 4)')}
 
   # convert T to scaled temperature
-  Ts = log((298.15 - T) / (273.15 + T))
+  Ts = log((298.15 - Tmp) / (273.15 + Tmp))
 
   ## Coefficients for Ar from Hamme & Emerseon 2004 (Table 4)
   A.0 = 2.18156
@@ -110,14 +110,14 @@ calc.NeSol = function(S = 35, T = 10, verbose = T) {
 #' @title Calcualte O2 Solubility
 #' @author Thomas Bryce Kelly
 #' @param S Salinity in PSU
-#' @param T Temperature in centigrade
+#' @param Tmp Temperature in centigrade
 #' @export
-calc.O2sol = function(S = 35, T = 10, verbose = T) { ## umol Kg-1
+calc.O2sol = function(S = 35, Tmp = 10, verbose = T) { ## umol Kg-1
 
   if (verbose) {message('Calculating O2 solubility in seawater.\n Check value at 35 PSU and 10C = 274.61 [umol kg-1].\n Units: [umol kg-1].\n Reference: Garcia and Gordon 9Table 1) for the fit to Benson and Krause (1984)')}
 
   # convert T to scaled temperature
-  Ts = log((298.15 - T) / (273.15 + T))
+  Ts = log((298.15 - Tmp) / (273.15 + Tmp))
 
     # constants from Table 1 of Garcia & Gordon for the fit to Benson and Krause (1984)
     A.0 = 5.80871
@@ -137,7 +137,7 @@ calc.O2sol = function(S = 35, T = 10, verbose = T) { ## umol Kg-1
     A.calc = A.0 + A.1*Ts + A.2*Ts^2 + A.3*Ts^3 + A.4*Ts^4 + A.5*Ts^5
     B.calc = B.0 + B.1*Ts + B.2*Ts^2 + B.3*Ts^3
 
-    if (verbose) { message(Sys.time(), ': Calculating O2 Solubility (umol O2 kg-1) with check value (S=35, T=10) of 274.61') }
+    if (verbose) { message(Sys.time(), ': Calculating O2 Solubility (umol O2 kg-1) with check value (S=35, Tmp=10) of 274.61') }
 
     ## (umol / kg)
     exp(A.calc + S * B.calc + C.0 * S^2)
@@ -147,36 +147,36 @@ calc.O2sol = function(S = 35, T = 10, verbose = T) { ## umol Kg-1
 #' @title Calculate Density
 #' @author Thomas Bryce Kelly
 #' @param S Salinity in PSU
-#' @param T Temperature in centigrade, provide potential temperature for potential density.
+#' @param Tmp Temperature in centigrade, provide potential temperature for potential density.
 #' @param p Pressure in db, set p=0 for potential density
 #' @references Massel 2015
 #' @export
-calc.rho = function(S = 30, T = 15, P = 0, verbose = T) {
+calc.rho = function(S = 30, Tmp = 15, P = 0, verbose = T) {
     a.0 = 999.842594
     a.1 = 6.793953e-2
     a.2 = -9.095290e-3
     a.3 = 1.001685e-4
     a.4 = -1.120083e-6
     a.5 = 6.536332e-9
-    rho.smow = a.0 + a.1*T + a.2*T^2 + a.3*T^3 + a.4*T^4 + a.5*T^5
+    rho.smow = a.0 + a.1*Tmp + a.2*Tmp^2 + a.3*Tmp^3 + a.4*Tmp^4 + a.5*Tmp^5
 
     b.0 = 8.2449e-1
     b.1 = -4.0899e-3
     b.2 = 7.6438e-5
     b.3 = -8.2467e-7
     b.4 = 5.3875e-9
-    B.1 = b.0 + b.1*T + b.2*T^2 + b.3*T^3 + b.4*T^4
+    B.1 = b.0 + b.1*Tmp + b.2*Tmp^2 + b.3*Tmp^3 + b.4*Tmp^4
 
     c.0 = -5.7246e-3
     c.1 = 1.0227e-4
     c.2 = -1.6546e-6
     d.0 = 4.8314e-4
-    C.1 = c.0 + c.1*T + c.2*T^2
+    C.1 = c.0 + c.1*Tmp + c.2*Tmp^2
 
-    if (verbose) { message('Calculating seawater density based on in situ T, S and pressure.\n For potential density set p = 0 regardless of in situ pressure and provide potential temperature.\n Units: [kg m-3] \n Paramterization given in Massel 2015.') }
+    if (verbose) { message('Calculating seawater density based on in situ Tmp, S and pressure.\n For potential density set p = 0 regardless of in situ pressure and provide potential temperature.\n Units: [kg m-3] \n Paramterization given in Massel 2015.') }
 
     rho = rho.smow + B.1 * S + C.1 * S^1.5 + d.0 * S^2
-    rho / (1 - 0.1 * P / calc.seawater.compressibility(S, T, P/10, verbose = verbose))
+    rho / (1 - 0.1 * P / calc.seawater.compressibility(S, Tmp, P/10, verbose = verbose))
 }
 
 
@@ -184,27 +184,27 @@ calc.rho = function(S = 30, T = 15, P = 0, verbose = T) {
 #' @author Thomas Bryce Kelly
 #' @param P Pressure in bar
 #' @references https://link.springer.com/content/pdf/bbm%3A978-3-319-18908-6%2F1.pdf
-calc.seawater.compressibility = function(S = 8, T = 10, P = 10, verbose = T) {
+calc.seawater.compressibility = function(S = 8, Tmp = 10, P = 10, verbose = T) {
   e0 = 19652.210000
   e1 = 148.420600
   e2 = -2.327105
   e3 = 1.360477e-2
   e4 = -5.155288e-5
 
-  Kw = e0 + e1 * T + e2 * T^2 + e3 * T^3 + e4 * T^4
+  Kw = e0 + e1 * Tmp + e2 * Tmp^2 + e3 * Tmp^3 + e4 * Tmp^4
 
   f0 = 54.674600
   f1 = -0.603459
   f2 = 1.099870e-2
   f3 = -6.167000e-5
 
-  F1 = f0 + f1 * T + f2 * T^2 + f3 * T^3
+  F1 = f0 + f1 * Tmp + f2 * Tmp^2 + f3 * Tmp^3
 
   g0 = 7.9440e-2
   g1 = 1.6483e-2
   g2 = -5.3009e-4
 
-  G1 = g0 + g1 * T + g2 * T^2
+  G1 = g0 + g1 * Tmp + g2 * Tmp^2
 
   ## Calculate module at surface
   K0 = Kw + F1 * S + G1 * S^1.5
@@ -219,8 +219,8 @@ calc.seawater.compressibility = function(S = 8, T = 10, P = 10, verbose = T) {
   i2 = -1.6078e-6
   j0 = 1.91075e-4
 
-  Aw = h0 + h1 * T + h2 * T^2 + h3 * T^3
-  A1 = Aw + (i0 + i1 * T + i2 * T^2) * S + j0 * S^1.5
+  Aw = h0 + h1 * Tmp + h2 * Tmp^2 + h3 * Tmp^3
+  A1 = Aw + (i0 + i1 * Tmp + i2 * Tmp^2) * S + j0 * S^1.5
 
   k0 = 8.50935e-5
   k1 = -6.12293e-6
@@ -230,8 +230,8 @@ calc.seawater.compressibility = function(S = 8, T = 10, P = 10, verbose = T) {
   m1 = 2.0816e-8
   m2 = 9.1697e-10
 
-  Bw = k0 + k1*T + k2*T^2
-  B2 = Bw + (m0 + m1*T + m2*T^2) * S
+  Bw = k0 + k1*Tmp + k2*Tmp^2
+  B2 = Bw + (m0 + m1*Tmp + m2*Tmp^2) * S
 
   ## Module at pressure P
   K = K0 + A1 * P + B2 * P^2
@@ -251,10 +251,11 @@ calc.seawater.compressibility = function(S = 8, T = 10, P = 10, verbose = T) {
 #' @author Thomas Bryce Kelly
 #' @param P Pressure in db
 #' @param S Salinity in PSU
-#' @param T Temperature in centigrade
-calc.adiabatic.temp.grad = function(S, T, P, verbose = T) {
+#' @param Tmp Temperature in centigrade
+calc.adiabatic.temp.grad = function(S, Tmp, P, verbose = T) {
   if (verbose) {message(' calcualting Adiabatic Temperture Gradient.')}
-  T68 = 1.00024 * T
+
+  T68 = 1.00024 * Tmp
 
   a0 =  3.5803e-5
   a1 = 8.5258e-6
@@ -287,16 +288,16 @@ calc.adiabatic.temp.grad = function(S, T, P, verbose = T) {
 #' @title Calculate Potential Temperature
 #' @author Thomas Bryce Kelly
 #' @param S Salinity in PSU
-#' @param T Temperature in centigrade
+#' @param Tmp Temperature in centigrade
 #' @param P Sample pressure in db
 #' @param P.ref Reference pressure, typically 0 db (surface).
 #' @export
-calc.ptemp = function(S, T, P, P.ref, verbose = T) {
+calc.ptemp = function(S, Tmp, P, P.ref, verbose = T) {
     ## Calculates the potential temperature
   if (verbose) {message(' Calculating Potential temperture based on adiabatic temperature gradient between in situ pressure and reference pressure (RK4).')}
     del.P  = P.ref - P
-    del.th = del.P * calc.adiabatic.temp.grad(S, T, P, verbose = verbose)
-    th     = T * 1.00024 + 0.5 * del.th
+    del.th = del.P * calc.adiabatic.temp.grad(S, Tmp, P, verbose = verbose)
+    th     = Tmp * 1.00024 + 0.5 * del.th
     q      = del.th
 
     ## theta2
@@ -321,17 +322,17 @@ calc.ptemp = function(S, T, P, P.ref, verbose = T) {
 #' @author Thomas Bryce Kelly
 #' @description Function to calculate potential density anomaly from T, S and pressure. Comonly called sigma-theta, potential density anomaly is a useful water mass tracer due to conservation of potential density due to adiabatic processes.
 #' @param S Salinity in PSU
-#' @param T Temperature in centigrade
+#' @param Tmp Temperature in centigrade
 #' @param P Sample pressure in db
 #' @param P.ref Reference pressure, typically 0 db (surface).
 #' @examples
-#' calc.sigma.theta(S = 35, T = 8, P = 350)
+#' calc.sigma.theta(S = 35, Tmp = 8, P = 350)
 #' @export
-calc.sigma.theta = function(S, T, P, P.ref = 0, verbose = T) {
+calc.sigma.theta = function(S, Tmp, P, P.ref = 0, verbose = T) {
 
   if (verbose) {message(Sys.time(), ': Calculating sigma_theta from potential density - 1000.')}
     ## Potential density anomaly
-    calc.rho(S = S, T = calc.ptemp(S = S, T = T, P = P, P.ref= P.ref, verbose = verbose), P = P.ref, verbose = verbose) - 1000
+    calc.rho(S = S, Tmp = calc.ptemp(S = S, Tmp = Tmp, P = P, P.ref= P.ref, verbose = verbose), P = P.ref, verbose = verbose) - 1000
 }
 
 
@@ -353,9 +354,9 @@ conv.uM.to.ml = function(x, rev = FALSE, verbose = T) {
 #' @author Thomas Bryce Kelly
 #' @description Convert from conductivity observations to the seawater salinity.
 #' @param C Conductivity in uS cm-1
-#' @param T Temperature in centigrade
+#' @param Tmp Temperature in centigrade
 #' @export
-conv.cond.to.sal = function(C = 10000, T = 10, verbose = T) {
+conv.cond.to.sal = function(C = 10000, Tmp = 10, verbose = T) {
 
   if (verbose) {message(Sys.time(), ': Converting conductivity to salinity.\n Units in: [uS cm-1]\n Units out: [ppt salinity]\n Check Value at 10000 uS cm-1 and 10 C: 8.122 ppt')}
     ## Convert conductivity in uS/cm to ppt salinity.
@@ -380,11 +381,11 @@ conv.cond.to.sal = function(C = 10000, T = 10, verbose = T) {
     c3=-0.00000069698
     c4=0.0000000010031
     r = C / 42914
-    r = r / (c0 + T*(c1 + T*(c2 +T *(c3 +T*c4))))
+    r = r / (c0 + Tmp*(c1 + Tmp*(c2 +Tmp *(c3 +Tmp*c4))))
 
     r2 = r ^ 0.5
     ds = b0 + r2*(b1 + r2*(b2 + r2*(b3 + r2*(b4 + r2*b5))))
-    ds = ds * (T - 15) / (1 + 0.0162*(T - 15))
+    ds = ds * (Tmp - 15) / (1 + 0.0162*(Tmp - 15))
 
     sal = a0 + r2*(a1 + r2*(a2 + r2*(a3 + r2*(a4 + r2*a5)))) + ds
 
@@ -447,14 +448,14 @@ conv.p.to.d = function(p=1e4, latitude = 30, geo.anom = 0, d = NULL, rev = FALSE
 
 #' @title Calculate AOU
 #' @export
-#' @param T temperature
+#' @param Tmp temperature
 #' @param S salinity
 #' @param P pressure
 #' @param oxy oxygen in umol kg-1
-calc.AOU = function(T, S, P, oxy, verbose = T) { #T = Celcius, P = dbar, P, oxy = umol kg-1
+calc.AOU = function(Tmp, S, P, oxy, verbose = T) { #T = Celcius, P = dbar, P, oxy = umol kg-1
   if (verbose) {message('Claculating AOU [umol kg-1] based on O2 saturation state.')}
-  Osat = calc.O2sol(S = S, T = T, verbose = verbose) ##uM
-  Osat = (Osat*1000) / calc.rho(S=S, T=T, P = P, verbose = verbose) #convert to umol kg-1
+  Osat = calc.O2sol(S = S, Tmp = Tmp, verbose = verbose) ##uM
+  Osat = (Osat*1000) / calc.rho(S=S, Tmp=Tmp, P = P, verbose = verbose) #convert to umol kg-1
   Osat - oxy
 }
 
@@ -593,7 +594,7 @@ calc.k.reuer = function(time, wtime, wspeed, mld, SST, teeter.mod = TRUE, verbos
 #' @title Make TS Plot
 #' @export
 #' @author Thomas Bryce Kelly
-plot.TS = function(S, T,
+plot.TS = function(S, Tmp,
                    xlim = c(25,36),
                    ylim = c(-5, 15),
                    levels = seq(0, 40, by = 2),
@@ -613,13 +614,13 @@ plot.TS = function(S, T,
 
   TT = seq(ylim[1], ylim[2], length.out = 100)
   SS = seq(xlim[1], xlim[2], length.out = 100)
-  grid = expand.grid(S = SS, T = TT)
-  sigma = calc.sigma.theta(S = grid$S, T = grid$T, P = 0, P.ref = 0)
+  grid = expand.grid(S = SS, Tmp = TT)
+  sigma = calc.sigma.theta(S = grid$S, Tmp = grid$Tmp, P = 0, P.ref = 0, verbose = F)
 
-  contour(x = SS, y = TT, z = matrix(sigma, nrow = length(S)), levels = levels, lwd = lwd, lty = lty, col = col.contour,
+  contour(x = SS, y = TT, z = matrix(sigma, nrow = 100), levels = levels, lwd = lwd, lty = lty, col = col.contour,
           xaxs = 'i', yaxs = 'i', xlab = xlab, ylab = ylab, main = main, xlim = xlim, ylim = ylim,
           labcex = cex.lab, drawlabels = drawlabels, labels = labels)
-  points(S, T, pch = pch, col = col, cex = cex)
+  points(S, Tmp, pch = pch, col = col, cex = cex)
 
   if (freezing.line) {
     x = seq(xlim[1], xlim[2], length.out = 1000)

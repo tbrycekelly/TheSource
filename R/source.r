@@ -81,7 +81,7 @@ make.time = function (year = NULL, month = 1, day = 1, hour = 0, minute = 0, sec
 #' @param x An object of class POSIX or a vector containing POSIX.
 #' @export
 get.year = function (x) {
-  if (any(!is.POSIXct(x))) {warning('Object(s) passed to get.year is not a POSIX.')}
+  if (any(!is.POSIXct(x))) {message(' Object(s) passed to get.year is not a POSIX.')}
   as.POSIXlt(x)$year + 1900
 }
 
@@ -91,7 +91,7 @@ get.year = function (x) {
 #' @param x An object of class POSIX or a vector containing POSIX.
 #' @export
 get.month = function (x) {
-  if (any(!is.POSIXct(x))) {warning('Object(s) passed to get.month is not a POSIX.')}
+  if (any(!is.POSIXct(x))) {message(' Object(s) passed to get.month is not a POSIX.')}
   as.numeric(format(x, '%m'))
 }
 
@@ -101,7 +101,7 @@ get.month = function (x) {
 #' @param x An object of class POSIX or a vector containing POSIX.
 #' @export
 get.day = function (x) {
-  if (any(!is.POSIXct(x))) {warning('Object(s) passed to get.day is not a POSIX.')}
+  if (any(!is.POSIXct(x))) {message('Object(s) passed to get.day is not a POSIX.')}
   as.numeric(format(x, '%d'))
 }
 
@@ -111,7 +111,7 @@ get.day = function (x) {
 #' @param x An object of class POSIX or a vector containing POSIX.
 #' @export
 get.julian = function (x) {
-  if (any(!is.POSIXct(x))) {warning('Object(s) passed to get.day is not a POSIX.')}
+  if (any(!is.POSIXct(x))) {message('Object(s) passed to get.day is not a POSIX.')}
   as.numeric(difftime(x, make.time(year = get.year(x)), units = 'days'))
 }
 
@@ -121,7 +121,7 @@ get.julian = function (x) {
 #' @param x An object of class POSIX or a vector containing POSIX.
 #' @export
 get.hour = function (x) {
-  if (any(!is.POSIXct(x))) {warning('Object(s) passed to get.hour is not a POSIX.')}
+  if (any(!is.POSIXct(x))) {message('Object(s) passed to get.hour is not a POSIX.')}
   as.POSIXlt(x)$hour
 }
 
@@ -129,7 +129,7 @@ get.hour = function (x) {
 #' @title Get Minutes
 #' @export
 get.minutes = function (x) {
-  if (any(!is.POSIXct(x))) {warning('Object(s) passed to get.minutes is not a POSIX.')}
+  if (any(!is.POSIXct(x))) {message('Object(s) passed to get.minutes is not a POSIX.')}
   as.POSIXlt(x)$min
 }
 
@@ -138,8 +138,37 @@ get.minutes = function (x) {
 #' @keywords Convert Time
 #' @export
 get.seconds = function (x) {
-  if (any(!is.POSIXct(x))) {warning('Object(s) passed to get.seconds is not a POSIX.')}
+  if (any(!is.POSIXct(x))) {message('Object(s) passed to get.seconds is not a POSIX.')}
   as.POSIXlt(x)$sec
+}
+
+
+#' @title System Wait
+#' @description Function to have script wait a predefined time with progress bar option.
+#' @author Thomas Bryce Kelly
+#' @export
+wait = function (sec, progress.bar = T) {
+  if (class(sec) != "numeric") { stop('Seconds must be provided as a number!')}
+  if (sec < 0) { stop('Delay length must be positive!')}
+
+  if (progress.bar) {
+    ## Setup
+    end = as.numeric(Sys.time()) + sec
+    pb = txtProgressBar(as.numeric(Sys.time()), end, style = 3)
+    dt = sec / 101
+    getTxtProgressBar(pb) # Show progress bar
+
+    ## Loop until reached appropriate time.
+    while (T) {
+      Sys.sleep(dt)
+      setTxtProgressBar(pb, as.numeric(Sys.time()))
+      if (Sys.time() > end) {
+        return(message()) # Return a line feed.
+      }
+    }
+  } else {
+    Sys.sleep(sec)
+  }
 }
 
 
@@ -280,11 +309,13 @@ data.frame = function(...) {
   base::data.frame(...)
 }
 
+
 #' @title Expand Grid
 #' @export
 expand.grid = function(...) {
   base::expand.grid(..., KEEP.OUT.ATTRS = F, stringsAsFactors = F)
 }
+
 
 #' @title Is Inside Polygon
 #' @description Useful to determine if a set of coordinates lies inside or outside a closed polygon. Currently works for
@@ -293,11 +324,11 @@ expand.grid = function(...) {
 #' @export
 is.inside = function(pos, box, verbose = FALSE) {
   if (!is.data.frame(pos)) {
-    warning('`pos` does not appear to be a dataframe. Make sure it is. Attempting to fix...')
+    message(' `pos` does not appear to be a dataframe. Make sure it is. Attempting to fix...')
     pos = as.data.frame(matrix(pos, ncol = 2))
   }
   if (!is.data.frame(box)) {
-    warning('`box` does not appear to be a dataframe. Make sure it is. Attempting to fix...')
+    message(' `box` does not appear to be a dataframe. Make sure it is. Attempting to fix...')
     box = as.data.frame(matrix(box, ncol = 2))
   }
 
@@ -403,6 +434,22 @@ sync.dir = function(source, destination, pattern = '*', verbose = T, level = 0, 
 }
 
 
+#' @title Pad a Number with Leading Zeros
+#' @author Thomas Bryce Kelly
+#' @export
+pad.number = function(x, pad = 4) {
+  out = rep(NA, length(x))
+
+  for (i in length(x)) {
+    dn = max(pad - nchar(x[i]), 0)
+    out[i] = paste0(paste0(rep(0, dn), collapse = ''), x[i])
+  }
+
+  ## Return
+  out
+}
+
+
 #' @title Update TheSource
 #' @author Thomas Bryce Kelly
 #' @import devtools
@@ -424,8 +471,12 @@ TheSource.update = function() {
 #' @author Thomas Bryce Kelly
 #' @export
 TheSource.version = function() {
-  '0.5.1'
+  packageVersion('TheSource')
 }
+
+
+
+#### Testing space
 
 
 make.broken.axis = function(side = 1, true.range = c(0, 6), left.range = c(0,1), right.range = c(5,10)) {
@@ -454,7 +505,6 @@ add.broken.axis = function(broken, ...) {
     pretty.left = pretty.left[pretty.left < broken$left.range[2]]
     pretty.right = pretty.right[pretty.right > broken$right.range[1]]
   }
-
 
   width = diff(broken$true.range)
   axis(side = broken$side, labels = pretty.left, at = width * broken$f.left * (pretty.left - broken$left.range[1])/(diff(broken$left.range)), ...)

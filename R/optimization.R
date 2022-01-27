@@ -92,6 +92,7 @@ parameter.search = function(n, cost, grid = NULL, bounds, splits = 10, progressi
   res
 }
 
+
 #' @title Parameter Search for Parallel Processing
 #' @author Thomas Bryce Kelly
 #' @description Implements a recursive grid search routine to solve optimization problems in arbitrary dimensions.

@@ -472,6 +472,6 @@ add.exaggerated.axis = function(side, power = 0.8, at = NULL, labels = NULL, gri
 #' @param power a positive value, typically less than 1, which is the exponent of the transformation (default = 0.8)
 #' @export
 exaggerate = function(x, power = 0.8) {
-  x^power
+  sign(x) * abs(x)^power
 }
 

@@ -140,7 +140,6 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, labels.at = NULL,
   z = matrix(y, nrow = 1, ncol = length(y))
   delta = NULL
 
-
   ## Determine axis labels and tick marks
   if (is.null(labels.at)) {
     labels.at = labels
@@ -232,6 +231,7 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, labels.at = NULL,
 greyscale = function(n, rev = FALSE) {
   grey.colors(n, 0, 1, rev = rev)
 }
+
 
 #' @export
 add.alpha = function(pal) {

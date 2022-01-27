@@ -122,8 +122,8 @@ load.satellite = function(file, verbose = T) {
 
     ## Standard NASA 4km grid
     if (4320 %in% field.size) {
-      lat = seq(90, -90, length.out = dim(x)[2])
-      lon = seq(-180, 180, length.out = dim(x)[1])
+      lat = seq(90, -90, length.out = field.size[2])
+      lon = seq(-180, 180, length.out = field.size[1])
     }
     if (540 %in% field.size) {  # Standard 4k
       lat = seq(45, 30.03597, length.out = field.size[2])
