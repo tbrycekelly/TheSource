@@ -147,11 +147,9 @@ make.map = function (coast = NULL,
 
   if (draw.grid) {
     for (i in lons) {
-      #add.map.line(lon = rep(i, length(lats)), lat = lats * 0.999, p = p, col = 'dark grey')
       add.map.line(map, lon = c(i,i), lat = c(-80, 80), col = 'dark grey')
     }
     for (i in lats) {
-      #add.map.line(lon = lons * 0.999, lat = rep(i, length(lons)), p = p, col = 'dark grey')
       add.map.line(map, lon = c(-180,180), lat = c(i,i), col = 'dark grey')
     }
   }
@@ -529,23 +527,29 @@ add.map.contour = function(map,
     if (corners[1,1] > corners[2,1]) { ## antimeridian
       if (verbose) { message(' antimeridian... ', appendLF = F)}
       k = apply(lon, 1, function(x) {any(x >= field.lon[1] & x <= field.lon[2])})
-      z = z[k,]
-      lon = lon[k,]
-      lat = lat[k,]
+      if (length(k) > 0) {
+        z = z[k,]
+        lon = lon[k,]
+        lat = lat[k,]
+      }
     } else {
       if (verbose) { message(' longitude... ', appendLF = F)}
       k = apply(lon, 1, function(x) {any(x <= field.lon[2] & x >= field.lon[1])})
-      z = z[k,]
-      lon = lon[k,]
-      lat = lat[k,]
+      if (length(k) > 0) {
+        z = z[k,]
+        lon = lon[k,]
+        lat = lat[k,]
+      }
     }
 
     ## Trim latitude
     if (verbose) { message(' latitude... ', appendLF = F) }
     k = apply(lat, 2, function(x) {any(x >= field.lat[1] & x <= field.lat[2])})
-    z = z[,k]
-    lon = lon[,k]
-    lat = lat[,k]
+    if (length(k) > 0) {
+      z = z[,k]
+      lon = lon[,k]
+      lat = lat[,k]
+    }
 
     if (verbose) { message(' complete, n = ', length(z), ' (', 100*round(1 - n/nz, digits = 3), ' %)')}
   }

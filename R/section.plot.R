@@ -21,9 +21,26 @@
 #' @param  main The title text to be included in the top line of the plot. Defaults to the name of the field.
 #' @param  col.low [unimplemented] The color used when plotting out-of-range z values on the low end. Default value of '' indicates to use the minimum value of pal(). A value of NA skips the plotting of these data. Otherwise the color given is used (e.g. col.low = 'blue').
 #' @param  col.high [unimplemented] Same as col.low but for out-of-range high values.
-plot.section = function(section, field = NULL, xlim = NULL, ylim = NULL, xlab = 'x', ylab = 'y', log = FALSE, base = 10,
-                        zlim = NULL, pal = 'greyscale', rev = FALSE, include.data = FALSE, mark.points = FALSE, include.pch = 21,
-                        include.cex = 1, main = NULL, col.low = '', col.high = '', N = 255) {
+plot.section = function(section, field = NULL,
+                        xlim = NULL,
+                        ylim = NULL,
+                        by.lon = F,
+                        by.lat = F,
+                        xlab = 'x',
+                        ylab = 'y',
+                        log = FALSE,
+                        base = 10,
+                        zlim = NULL,
+                        pal = 'greyscale',
+                        rev = F,
+                        include.data = F,
+                        mark.points = F,
+                        include.pch = 21,
+                        include.cex = 1,
+                        main = NULL,
+                        col.low = '',
+                        col.high = '',
+                        N = 255) {
 
   ## Set Defaults
   # Check if values need to set and set them.
@@ -36,6 +53,15 @@ plot.section = function(section, field = NULL, xlim = NULL, ylim = NULL, xlab = 
   x = section$x
   y = section$y
   z = matrix(section$grid[,field], nrow = length(x))
+  if (by.lon) {
+    if (verbose) { message(' Plotting based on longitude.')}
+    x = approx(section$x, section$lon, xout = x, rule = 2)$y
+  }
+  if (by.lat) {
+    if (verbose) { message(' Plotting based on latitude.')}
+    x = approx(section$x, section$lat, xout = x, rule = 2)$y
+  }
+
 
   if (log) {
     z = log(z, base)

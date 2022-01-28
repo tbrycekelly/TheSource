@@ -213,10 +213,14 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, gridder = NULL, grid =
 }
 
 
+
+
+
+########## TESTING NO EXPORT! #############################################################33
+
 #' @title Build Section with Parallel Processing
 #' @author Thomas Bryce Kelly
 #' @keywords Gridding
-#' @export
 #' @param x dimensions (e.g. lat, lon, depth, section distance, time, etc)
 #' @param y dimensions (e.g. lat, lon, depth, section distance, time, etc)
 #' @param z signal to be gridded (e.g. T, S, ...)
