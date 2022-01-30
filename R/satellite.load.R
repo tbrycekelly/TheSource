@@ -122,12 +122,22 @@ load.satellite = function(file, verbose = T) {
 
     ## Standard NASA 4km grid
     if (4320 %in% field.size) {
-      lat = seq(90, -90, length.out = field.size[2])
-      lon = seq(-180, 180, length.out = field.size[1])
-    }
-    if (540 %in% field.size) {  # Standard 4k
+      lat = seq(90, -90, length.out = field.size[2]+1)[-1]
+      lat = lat - diff(lat)[1]
+      lon = seq(-180, 180, length.out = field.size[1]+1)[-1]
+      lon = lon - diff(lon)[1]
+    } else if (540 %in% field.size) {  # Mati Kahru's output grid
       lat = seq(45, 30.03597, length.out = field.size[2])
       lon = seq(-140, -115.5454, length.out = field.size[1])
+    } else if (588 %in% field.size) {  ## mati Kahru's Calcofi Fit
+        lat = seq(37, 29.51349, length.out = field.size[2])
+        lon = seq(-126.125, -116.6828, length.out = field.size[1])
+    } else {
+      if (verbose) { message(' No known grids found, assuming global extent.')}
+      lat = seq(90, -90, length.out = field.size[2]+1)[-1]
+      lat = lat - diff(lat)[1]
+      lon = seq(-180, 180, length.out = field.size[1]+1)[-1]
+      lon = lon - diff(lon)[1]
     }
   }
 

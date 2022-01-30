@@ -25,7 +25,6 @@
 "bathy.arctic"
 
 
-
 #' @title Antarctic Bathymetry
 #'
 #' A Matrix containing elevation data taken from NOAA via marmap.
@@ -54,3 +53,21 @@
 #' @source Sven A Kranz, see Kranz et al. 2020 in JGR: Oceans.
 #' @format a list containing the datastructure returned by TheSource::load.frrf()
 "sample.frrf"
+
+
+#' @title World Coastline Data
+#' This is a coarse resolution coastline, copied from the OCE package, at scale 1:110M, with 10,696 points, suitable for world-scale plots plotted at a small size, e.g. inset diagrams.
+#' @source Downloaded from https://www.naturalearthdata.com, in ne_110m_admin_0_countries.shp in July 2015, with an update on December 16, 2017. Copied from the OCE R package.
+"coastlineWorld"
+
+
+#' @title World Coastline Data (Medium Resolution)
+#' This is a coarse resolution coastline, copied from the OCE package, at scale 1:110M, with 10,696 points, suitable for world-scale plots plotted at a small size, e.g. inset diagrams.
+#' @source Downloaded from https://www.naturalearthdata.com, in ne_110m_admin_0_countries.shp in July 2015, with an update on December 16, 2017. Copied from the OCE R package.
+"coastlineWorldMedium"
+
+
+#' @title World Coastline Data (High Resolution)
+#' This is a coarse resolution coastline, copied from the OCE package, at scale 1:110M, with 10,696 points, suitable for world-scale plots plotted at a small size, e.g. inset diagrams.
+#' @source Downloaded from https://www.naturalearthdata.com, in ne_110m_admin_0_countries.shp in July 2015, with an update on December 16, 2017. Copied from the OCE R package.
+"coastlineWorldFine"

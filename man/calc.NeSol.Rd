@@ -4,12 +4,12 @@
 \alias{calc.NeSol}
 \title{Calculate Neon Solubility}
 \usage{
-calc.NeSol(S = 35, T = 10, verbose = T)
+calc.NeSol(S = 35, Tmp = 10, verbose = T)
 }
 \arguments{
 \item{S}{Salinity in PSU}
 
-\item{T}{Temperature in centigrade}
+\item{Tmp}{Temperature in centigrade}
 }
 \description{
 Calculates the Neon solubility in seawater based on salinity and temperature

@@ -396,7 +396,9 @@ add.map.axis = function(map, lons = NULL, lats = NULL, sides = c(1:4)) {
 #' @export
 add.map.scale = function(pos = 1,
                          scale = NULL,
-                         verbose = T) {
+                         verbose = T,
+                         col = 'black',
+                         cex = 0.1) {
   usr = par('usr')
 
   if (is.null(scale)) {
@@ -423,9 +425,9 @@ add.map.scale = function(pos = 1,
     stop ('pos should be 1, 2, 3, or 4!')
   }
 
-  lines(x = c(x.origin, x.origin - sign*scale*1e3), y = rep(y.origin,2), lwd = 3)
-  points(x = c(x.origin, x.origin - sign*scale*1e3), y = rep(y.origin,2), pch = '|')
-  text(x.origin - sign*scale*1e3*0.5, y = y.origin, pos = 3, paste0(scale, ' km'))
+  lines(x = c(x.origin, x.origin - sign*scale*1e3), y = rep(y.origin,2), lwd = 3*cex, col = col)
+  points(x = c(x.origin, x.origin - sign*scale*1e3), y = rep(y.origin,2), pch = '|', cex = cex, col = col)
+  text(x.origin - sign*scale*1e3*0.5, y = y.origin, pos = 3, paste0(scale, ' km'), col = col, cex = cex)
 }
 
 
@@ -441,6 +443,11 @@ add.map.quiver = function(map,
                           col = 'black',
                           lwd = 1,
                           verbose = T) {
+
+  lon = as.numeric(lon)
+  lat = as.numeric(lat)
+  u = as.numeric(u)
+  v = as.numeric(v)
 
   ## Add points
   add.map.points(map, lon, lat, pch = 20, cex = 0.5, col = col)

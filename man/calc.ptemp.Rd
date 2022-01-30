@@ -4,12 +4,12 @@
 \alias{calc.ptemp}
 \title{Calculate Potential Temperature}
 \usage{
-calc.ptemp(S, T, P, P.ref, verbose = T)
+calc.ptemp(S, Tmp, P, P.ref, verbose = T)
 }
 \arguments{
 \item{S}{Salinity in PSU}
 
-\item{T}{Temperature in centigrade}
+\item{Tmp}{Temperature in centigrade}
 
 \item{P}{Sample pressure in db}
 

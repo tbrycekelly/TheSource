@@ -4,10 +4,10 @@
 \alias{calc.AOU}
 \title{Calculate AOU}
 \usage{
-calc.AOU(T, S, P, oxy, verbose = T)
+calc.AOU(Tmp, S, P, oxy, verbose = T)
 }
 \arguments{
-\item{T}{temperature}
+\item{Tmp}{temperature}
 
 \item{S}{salinity}
 

@@ -4,12 +4,12 @@
 \alias{calc.sigma.theta}
 \title{Calculate Potential Density Anomaly}
 \usage{
-calc.sigma.theta(S, T, P, P.ref = 0, verbose = T)
+calc.sigma.theta(S, Tmp, P, P.ref = 0, verbose = T)
 }
 \arguments{
 \item{S}{Salinity in PSU}
 
-\item{T}{Temperature in centigrade}
+\item{Tmp}{Temperature in centigrade}
 
 \item{P}{Sample pressure in db}
 
@@ -19,7 +19,7 @@ calc.sigma.theta(S, T, P, P.ref = 0, verbose = T)
 Function to calculate potential density anomaly from T, S and pressure. Comonly called sigma-theta, potential density anomaly is a useful water mass tracer due to conservation of potential density due to adiabatic processes.
 }
 \examples{
-calc.sigma.theta(S = 35, T = 8, P = 350)
+calc.sigma.theta(S = 35, Tmp = 8, P = 350)
 }
 \author{
 Thomas Bryce Kelly

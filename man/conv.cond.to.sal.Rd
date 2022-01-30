@@ -4,12 +4,12 @@
 \alias{conv.cond.to.sal}
 \title{Convert Conductivity to Salinity}
 \usage{
-conv.cond.to.sal(C = 10000, T = 10, verbose = T)
+conv.cond.to.sal(C = 10000, Tmp = 10, verbose = T)
 }
 \arguments{
 \item{C}{Conductivity in uS cm-1}
 
-\item{T}{Temperature in centigrade}
+\item{Tmp}{Temperature in centigrade}
 }
 \description{
 Convert from conductivity observations to the seawater salinity.

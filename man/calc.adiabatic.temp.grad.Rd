@@ -4,12 +4,12 @@
 \alias{calc.adiabatic.temp.grad}
 \title{Calculate Adiabatic Temperature Gradient}
 \usage{
-calc.adiabatic.temp.grad(S, T, P, verbose = T)
+calc.adiabatic.temp.grad(S, Tmp, P, verbose = T)
 }
 \arguments{
 \item{S}{Salinity in PSU}
 
-\item{T}{Temperature in centigrade}
+\item{Tmp}{Temperature in centigrade}
 
 \item{P}{Pressure in db}
 }

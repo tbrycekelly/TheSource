@@ -4,12 +4,12 @@
 \alias{calc.ArSol}
 \title{Calculate Argon Solubility}
 \usage{
-calc.ArSol(S = 35, T = 10, verbose = T)
+calc.ArSol(S = 35, Tmp = 10, verbose = T)
 }
 \arguments{
 \item{S}{Salinity in PSU}
 
-\item{T}{Temperature}
+\item{Tmp}{Temperature}
 }
 \description{
 Calculate Argon solubility in seawater. Should return a value of 13.46 in 10 degree water in 35 PSU water.

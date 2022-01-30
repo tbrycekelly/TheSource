@@ -4,12 +4,12 @@
 \alias{calc.N2Sol}
 \title{Calculate N2 Solubility}
 \usage{
-calc.N2Sol(S = 35, T = 10, verbose = T)
+calc.N2Sol(S = 35, Tmp = 10, verbose = T)
 }
 \arguments{
 \item{S}{Salinity (numeric or a vector) in PSU}
 
-\item{T}{Temperature (numeric or a vector) in centigrade}
+\item{Tmp}{Temperature (numeric or a vector) in centigrade}
 }
 \description{
 Calculate the N2 solubility in seawater.

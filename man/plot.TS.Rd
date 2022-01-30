@@ -6,7 +6,7 @@
 \usage{
 plot.TS(
   S,
-  T,
+  Tmp,
   xlim = c(25, 36),
   ylim = c(-5, 15),
   levels = seq(0, 40, by = 2),

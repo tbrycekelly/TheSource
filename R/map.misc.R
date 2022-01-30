@@ -188,3 +188,28 @@ calc.vertex = function(lon, lat) {
   list(lon = vertex.lon, lat = vertex.lat)
 }
 
+
+
+calc.section.dist = function(lon, lat) {
+  if (length(lon) == 1) { lon = rep(lon, length(lat))}
+  if (length(lat) == 1) { lat = rep(lat, length(lon))}
+  if (length(lon) != length(lat)) { stop('Length of lon/lat are not the same!')}
+
+  d = rep(NA, length(lon))
+  l = which(diff(lon) != 0 | diff(lat) != 0)
+
+  d[1:(l[1]-1)] = 0 ## same station
+  if (lenght(l) > 1) {
+    for (i in 2:length(l)) {
+      d[l[i-1]:(l[i]-1)] = calc.dist(lon[c(l[i],l[i]+1)], lat[c(l[i],l[i]+1)])
+    }
+  }
+
+  ## return
+  d
+}
+
+calc.dist = function(lon, lat) {
+  sapply(1:(length(lon)-1), function(x) {abs(lon[x+1] - lon[x])})
+}
+

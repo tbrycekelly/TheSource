@@ -4,7 +4,7 @@
 \alias{calc.seawater.compressibility}
 \title{Calculate Seawater Compressibility (module)}
 \usage{
-calc.seawater.compressibility(S = 8, T = 10, P = 10, verbose = T)
+calc.seawater.compressibility(S = 8, Tmp = 10, P = 10, verbose = T)
 }
 \arguments{
 \item{P}{Pressure in bar}
