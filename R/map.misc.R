@@ -6,8 +6,6 @@
 #' @import oce
 #' @import ocedata
 get.coast = function(coast = 'coastlineWorld') {
-  library(ocedata)
-  library(oce)
   do.call('data', list(coast))
 }
 
@@ -47,7 +45,7 @@ make.proj = function(projection = NULL, lat = NULL, lon = NULL, h = NULL, dlat =
 #' @title Bilinear Interpolation of a Grid
 #' @author Thomas Bryce Kelly
 #' @export
-bilinearInterp = function(x, y, gx, gy, z) {
+interp.bilinear = function(x, y, gx, gy, z) {
   z.out = rep(0, length(x))
 
   for (i in 1:length(x)) {
@@ -103,30 +101,30 @@ grid.interp = function(grid, i, j) {
 }
 
 
-#' @title Calculate extended grid
+#' @title Calcuye extended grid
 #' @author Thomas Bryce Kelly
 #' @export
-calc.vertex = function(lon, lat) {
+calc.vertex = function(x, y) {
 
   ## Diffs
-  dlon.dx = t(diff(t(lon))) / 2
-  dlon.dy = diff(lon) / 2
-  dlat.dx = t(diff(t(lat))) / 2
-  dlat.dy = diff(lat) / 2
+  dx.dx = t(diff(t(x))) / 2
+  dx.dy = diff(x) / 2
+  dy.dx = t(diff(t(y))) / 2
+  dy.dy = diff(y) / 2
 
   ## Vertex
-  vertex.lon = matrix(NA, nrow = dim(lon)[1]+1, ncol = dim(lon)[2]+1)
-  vertex.lat = matrix(NA, nrow = dim(lat)[1]+1, ncol = dim(lat)[2]+1)
+  vertex.x = matrix(NA, nrow = dim(x)[1]+1, ncol = dim(x)[2]+1)
+  vertex.y = matrix(NA, nrow = dim(y)[1]+1, ncol = dim(y)[2]+1)
 
 
   ## Field
-  for (i in 2:(dim(vertex.lon)[1] - 1)) {
-    for (j in 2:(dim(vertex.lon)[2] - 1)) {
+  for (i in 2:(dim(vertex.x)[1] - 1)) {
+    for (j in 2:(dim(vertex.x)[2] - 1)) {
       ii = max(i-1, 1)
       jj = max(j-1, 1)
 
-      vertex.lon[i,j] = lon[ii,jj] + dlon.dx[ii,jj] + dlon.dy[ii,jj]
-      vertex.lat[i,j] = lat[ii,jj] + dlat.dx[ii,jj] + dlat.dy[ii,jj]
+      vertex.x[i,j] = x[ii,jj] + dx.dx[ii,jj] + dx.dy[ii,jj]
+      vertex.y[i,j] = y[ii,jj] + dy.dx[ii,jj] + dy.dy[ii,jj]
 
     }
   }
@@ -134,58 +132,120 @@ calc.vertex = function(lon, lat) {
 
   ## Fill in perimeter
   # i = 1
-  for (j in 2:(dim(vertex.lon)[2] - 1)) {
+  for (j in 2:(dim(vertex.x)[2] - 1)) {
     jj = max(j-1, 1)
 
-    vertex.lon[1,j] = lon[1,jj] + dlon.dx[1,jj] - dlon.dy[1,jj]
-    vertex.lat[1,j] = lat[1,jj] + dlat.dx[1,jj] - dlat.dy[1,jj]
+    vertex.x[1,j] = x[1,jj] + dx.dx[1,jj] - dx.dy[1,jj]
+    vertex.y[1,j] = y[1,jj] + dy.dx[1,jj] - dy.dy[1,jj]
   }
 
   # j = 1
-  for (i in 2:(dim(vertex.lon)[1] - 1)) {
+  for (i in 2:(dim(vertex.x)[1] - 1)) {
     ii = max(i-1, 1)
 
-    vertex.lon[i,1] = lon[ii,1] - dlon.dx[ii,1] + dlon.dy[ii,1]
-    vertex.lat[i,1] = lat[ii,1] - dlat.dx[ii,1] + dlat.dy[ii,1]
+    vertex.x[i,1] = x[ii,1] - dx.dx[ii,1] + dx.dy[ii,1]
+    vertex.y[i,1] = y[ii,1] - dy.dx[ii,1] + dy.dy[ii,1]
   }
 
-  # j = dim(vertex.lon)[2]
-  for (i in 1:(dim(vertex.lon)[1] - 1)) {
+  # j = dim(vertex.x)[2]
+  for (i in 1:(dim(vertex.x)[1] - 1)) {
     ii = max(i-1, 1)
-    j = dim(vertex.lon)[2]
+    j = dim(vertex.x)[2]
 
-    vertex.lon[i,j] = lon[ii,j-1] + dlon.dx[ii,j-2] + dlon.dy[ii,j-1]
-    vertex.lat[i,j] = lat[ii,j-1] + dlat.dx[ii,j-2] + dlat.dy[ii,j-1]
+    vertex.x[i,j] = x[ii,j-1] + dx.dx[ii,j-2] + dx.dy[ii,j-1]
+    vertex.y[i,j] = y[ii,j-1] + dy.dx[ii,j-2] + dy.dy[ii,j-1]
   }
 
-  # i = dim(vertex.lon)[2]
-  for (j in 1:(dim(vertex.lon)[2] - 1)) {
+  # i = dim(vertex.x)[2]
+  for (j in 1:(dim(vertex.x)[2] - 1)) {
     jj = max(j-1, 1)
-    i = dim(vertex.lon)[1]
+    i = dim(vertex.x)[1]
 
-    vertex.lon[i,j] = lon[i-1,jj] + dlon.dx[i-1,jj] + dlon.dy[i-2,jj]
-    vertex.lat[i,j] = lat[i-1,jj] + dlat.dx[i-1,jj] + dlat.dy[i-2,jj]
+    vertex.x[i,j] = x[i-1,jj] + dx.dx[i-1,jj] + dx.dy[i-2,jj]
+    vertex.y[i,j] = y[i-1,jj] + dy.dx[i-1,jj] + dy.dy[i-2,jj]
   }
 
   ## Fill in corners
   ## both = 1
-  vertex.lon[1,1] = lon[1,1] - dlon.dx[1,1] - dlon.dy[1,1]
-  vertex.lat[1,1] = lat[1,1] - dlat.dx[1,1] - dlat.dy[1,1]
+  vertex.x[1,1] = x[1,1] - dx.dx[1,1] - dx.dy[1,1]
+  vertex.y[1,1] = y[1,1] - dy.dx[1,1] - dy.dy[1,1]
 
-  i = dim(vertex.lon)[1]
-  vertex.lon[i,1] = lon[i-1,1] - dlon.dx[i-1,1] + dlon.dy[i-2,1]
-  vertex.lat[i,1] = lat[i-1,1] - dlat.dx[i-1,1] + dlat.dy[i-2,1]
+  i = dim(vertex.x)[1]
+  vertex.x[i,1] = x[i-1,1] - dx.dx[i-1,1] + dx.dy[i-2,1]
+  vertex.y[i,1] = y[i-1,1] - dy.dx[i-1,1] + dy.dy[i-2,1]
 
-  i = dim(vertex.lon)[1]
-  j = dim(vertex.lon)[2]
-  vertex.lon[i,j] = lon[i-1,j-1] + dlon.dx[i-1,j-2] + dlon.dy[i-2,j-1]
-  vertex.lat[i,j] = lat[i-1,j-1] + dlat.dx[i-1,j-2] + dlat.dy[i-2,j-1]
+  i = dim(vertex.x)[1]
+  j = dim(vertex.x)[2]
+  vertex.x[i,j] = x[i-1,j-1] + dx.dx[i-1,j-2] + dx.dy[i-2,j-1]
+  vertex.y[i,j] = y[i-1,j-1] + dy.dx[i-1,j-2] + dy.dy[i-2,j-1]
 
-  j = dim(vertex.lon)[2]
-  vertex.lon[1,j] = lon[1,j-1] + dlon.dx[1,j-2] - dlon.dy[1,j-1]
-  vertex.lat[1,j] = lat[1,j-1] + dlat.dx[1,j-2] - dlat.dy[1,j-1]
+  j = dim(vertex.x)[2]
+  vertex.x[1,j] = x[1,j-1] + dx.dx[1,j-2] - dx.dy[1,j-1]
+  vertex.y[1,j] = y[1,j-1] + dy.dx[1,j-2] - dy.dy[1,j-1]
 
-  list(lon = vertex.lon, lat = vertex.lat)
+  list(x = vertex.x, y = vertex.y)
+}
+
+
+#' @title Calcuye extended grid
+#' @author Thomas Bryce Kelly
+#' @export
+grid.refinement = function(x = NULL, y = NULL, z) {
+  if (is.null(dim(z))) {stop('grid.refinement: z must be an array object of two dimensions.')}
+  dim = dim(z)
+
+  if (is.null(x) & is.null(y)) {
+    x = c(1:dim[1])
+    y = c(1:dim[2])
+  }
+
+  if (is.null(dim(x)) & is.null(dim(y))) {
+    x = array(x, dim = dim)
+    y = t(array(y, dim = rev(dim)))
+  }
+
+  ## Vertex
+  vertex.x = array(0, dim = c(2*dim(x)[1]-1, 2*dim(x)[2]-1))
+  vertex.y = vertex.x
+  vertex.z = vertex.x
+
+  ## fill in known values
+  for (i in 1:dim(x)[1]) {
+    for (j in 1:dim(x)[2]) {
+      vertex.x[2*i-1, 2*j-1] = x[i,j]
+      vertex.y[2*i-1, 2*j-1] = y[i,j]
+      vertex.z[2*i-1, 2*j-1] = z[i,j]
+    }
+  }
+
+  ## Interpolate x
+  for (i in 1:(dim(x)[1]-1)) {
+    for (j in 1:dim(x)[2]) {
+      vertex.x[2*i, 2*j-1] = 0.5 * (x[i,j] + x[i+1,j])
+      vertex.y[2*i, 2*j-1] = 0.5 * (y[i,j] + y[i+1,j])
+      vertex.z[2*i, 2*j-1] = 0.5 * (z[i,j] + z[i+1,j])
+    }
+  }
+
+  ## Interpolate y
+  for (i in 1:dim(x)[1]) {
+    for (j in 1:(dim(x)[2]-1)) {
+      vertex.x[2*i-1, 2*j] = 0.5 * (x[i,j] + x[i,j+1])
+      vertex.y[2*i-1, 2*j] = 0.5 * (y[i,j] + y[i,j+1])
+      vertex.z[2*i-1, 2*j] = 0.5 * (z[i,j] + z[i,j+1])
+    }
+  }
+
+  ## corners
+  for (i in 1:(dim(x)[1]-1)) {
+    for (j in 1:(dim(x)[2]-1)) {
+      vertex.x[2*i, 2*j] = 0.25 * (x[i,j] + x[i,j+1] + x[i+1,j] + x[i+1,j+1])
+      vertex.y[2*i, 2*j] = 0.25 * (y[i,j] + y[i,j+1] + y[i+1,j] + y[i+1,j+1])
+      vertex.z[2*i, 2*j] = 0.25 * (z[i,j] + z[i,j+1] + z[i+1,j] + z[i+1,j+1])
+    }
+  }
+
+  list(x = vertex.x, y = vertex.y, z = vertex.z)
 }
 
 

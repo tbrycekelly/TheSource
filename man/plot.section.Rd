@@ -25,7 +25,9 @@ plot.section(
   main = NULL,
   col.low = "",
   col.high = "",
-  N = 255
+  N = 255,
+  indicate = T,
+  ...
 )
 }
 \arguments{

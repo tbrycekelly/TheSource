@@ -4,7 +4,20 @@
 \alias{gridIDW}
 \title{Grid via Inverse Distance Weighting Interpolation}
 \usage{
-gridIDW(gx, gy, x, y, z, p, xscale, yscale, uncertainty)
+gridIDW(
+  gx,
+  gy,
+  x,
+  y,
+  z,
+  p = 2,
+  xscale = 1,
+  yscale = 1,
+  uncertainty = 0.1,
+  neighborhood = NULL,
+  x.factor = 1,
+  y.factor = 1
+)
 }
 \arguments{
 \item{gx}{Grid x values to interpolate onto}

@@ -4,7 +4,17 @@
 \alias{add.section.inlay}
 \title{Add Map Inlay}
 \usage{
-add.section.inlay(section)
+add.section.inlay(
+  section,
+  p = NULL,
+  side = 1,
+  pch = 20,
+  cex = 1,
+  col = "red",
+  land.col = "black",
+  height = 0.1,
+  width = 0.1
+)
 }
 \description{
 Add Map Inlay

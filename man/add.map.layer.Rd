@@ -13,6 +13,7 @@ add.map.layer(
   pal = "greyscale",
   col.na = NA,
   n = 255,
+  refine = 0,
   trim = T,
   col.low = "",
   col.high = "",

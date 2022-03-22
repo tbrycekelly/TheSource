@@ -1,8 +1,3 @@
-##############################
-## Plotting ################
-##############################
-
-
 #' @title Quiver Plot
 #' @author Thomas Bryce Kelly
 #' @param x x locations for quivers
@@ -16,13 +11,55 @@
 #' @param ... optional arguments passed to plot()
 #' @export
 plot.quiver = function(x, y, u, v, scale = NULL, xlim = NULL, ylim = NULL, col = 'black', ...) {
-  if (is.null(xlim)) { xlim = range(x)}
-  if (is.null(ylim)) { ylim = range(y)}
+  if (is.null(xlim)) { xlim = range(x, na.rm = T)}
+  if (is.null(ylim)) { ylim = range(y, na.rm = T)}
   if (is.null(scale)) { scale = (xlim[2] - xlim[1]) / sqrt(mean(u)^2 + mean(v)^2) / length(u) * 1.5 }
 
   plot(x, y, xlim = xlim, ylim = ylim, xaxs = 'i', yaxs = 'i', pch = 20, cex = 0.8, ...)
   arrows(x0 = x, x1 = x + u * scale, y0 = y, y1 = y + v * scale, length = scale/5, col = col)
 }
+
+
+#' @title Plot strcutured grid
+#' @description Function used to plot grid data (an array) with arbitrary positions, which can be provided as either an array of z values (along with optional palette options) or as an array of colors directly.
+#' @export
+#' @author Thomas Bryce Kelly
+plot.grid = function(x, y, z = NULL, col = NULL, xlim = NULL, ylim = NULL, xlab = 'x', ylab = 'y',
+                     zlim = NULL, pal = 'greyscale', n = 255, rev = F) {
+
+  if (is.null(dim(z)) & is.null(dim(col))) { stop('plot.grid: Either z or col arrays must be provided.')}
+  if (is.null(dim(x)) & is.null(dim(y))) {
+    dim = c(length(x), length(y))
+    x = array(x, dim = dim)
+    y = t(array(y, dim = rev(dim)))
+  }
+
+  ## calculate polygon boundary points
+  vertex = calc.vertex(x, y)
+
+  if (is.null(col)) {
+    if (is.null(zlim)) { zlim = range(z, na.rm = T)}
+    col = make.pal(z, pal = pal, n = n, rev = rev, min = zlim[1], max = zlim[2])
+  }
+
+  if (is.null(xlim)) { xlim = range(vertex$x, na.rm = T)}
+  if (is.null(ylim)) { ylim = range(vertex$y, na.rm = T)}
+
+  dim(col) = dim(x) # in case of vector colors
+
+  ## Start plot
+  plot(NULL, NULL, xlim = xlim, ylim = ylim, xlab = xlab, ylab = ylab, xaxs = 'i', yaxs = 'i')
+
+  for (i in 1:dim(col)[1]) {
+    for (j in 1:dim(col)[2]) {
+      polygon(x = c(vertex$x[i,j], vertex$x[i,j+1], vertex$x[i+1,j+1], vertex$x[i+1,j]),
+              y = c(vertex$y[i,j], vertex$y[i,j+1], vertex$y[i+1,j+1], vertex$y[i+1,j]),
+              col = col[i,j], border = NA)
+    }
+  }
+  box()
+}
+
 
 
 #' @title Plot Boxplot
@@ -39,7 +76,7 @@ plot.quiver = function(x, y, u, v, scale = NULL, xlim = NULL, ylim = NULL, col =
 #' @param ... Optional arguemnts passed to plot()
 #' @export
 plot.boxplot = function(n = 10, ylim = c(0,1), at = NULL, main = NULL,
-                        labels = NULL, ylab = NULL, xlab = NULL, ...) {
+                        labels = NULL, ylab = 'x', xlab = 'y', ...) {
 
   plot(NULL, NULL, xlim = c(1-1, n+1), xaxs='i', ylim = ylim, yaxs = 'i', ylab = ylab, xlab = xlab, xaxt = 'n', main = main, ...)
   if(is.null(labels)) { labels = c(1:n)}
@@ -161,25 +198,15 @@ add.violin = function(x, y, side = 1, col = 'grey', scale = 1, border = NA, ...)
 #' @description A helper function for adding shaded regions to figures (such as in timeseries).
 #' @keywords Plotting
 #' @export
-add.shade = function(x, col = 'grey', border = NA) {
-  rect(xleft = x[1], ybottom = -1e6, xright = x[2], ytop = 1e6, col = col, border = border)
-}
+add.shade = function(x, side = 1, col = 'grey', border = NA) {
+  usr = par('usr')
 
-
-#' @title Add Nighttime
-#' @author Thomas Bryce Kelly
-#' @keywords Light
-#' @export
-add.night = function(time, par, col = '#00000020') {
-  l = diff(par < 20)
-
-  k = which(l != 0)
-  if (l[k[1]] > 0) { start = 1 } else { start = 2 }
-
-  for (i in seq(start, length(k), by = 2)) {
-    #rect(time[k[i]], -1e6, time[k[i+1]], 1e6, col = col, border = NA)
-    polygon(x = c(time[k[i]], time[k[i+1]],time[k[i+1]],time[k[i]]), y = c(-1e6,-1e6,1e6,1e6), col = col, border = NA)
+  if (side == 1 | side == 3) {
+    rect(xleft = x[1], ybottom = usr[3], xright = x[2], ytop = usr[4], col = col, border = border)
+  } else {
+    rect(xleft = usr[1], ybottom = x[1], xright = usr[2], ytop = x[2], col = col, border = border)
   }
+  box()
 }
 
 
@@ -239,37 +266,50 @@ add.barplot.bar = function(data, sd = NULL, x = 1, width = 0.6, col = NULL, pal 
 #' @author Thomas Bryce Kelly
 #' @export
 #' @inheritParams image
-plot.image = function(x = NULL, y = NULL, z, xlab = NULL, ylab = NULL,
+plot.image = function(x = NULL, y = NULL, z = NULL, col = NULL, xlab = NULL, ylab = NULL,
                       xlim = NULL, ylim = NULL, zlim = NULL,
                       pal = 'greyscale', n = 255, rev = F, ...) {
-  if (is.null(x)) {x = c(1:dim(z)[1])}
-  if (is.null(y)) {y = c(1:dim(z)[2])}
-  if (is.null(xlim)) {xlim = range(x)}
-  if (is.null(ylim)) {ylim = range(y)}
-  if (is.null(zlim)) {zlim = range(z)}
+  if (is.null(z) & (is.null(x)) | is.null(y)) { stop('plot.image: if z is not given then x and y are required, along with col.')}
+  if (is.null(z) & is.null(col)) { stop('plot.image: Either z or col arrays are required.')}
+  if (!is.null(z) & !is.null(col)) { message('plot.image: Both z and col arrays are provieded. Ignoring z.')}
 
-  if (is.null(xlab)) {xlab = deparse(substitute(x))}
-  if (is.null(ylab)) {ylab = deparse(substitute(y))}
-
-  xx = unique(x)
-  yy = unique(y)
-
-  if (length(z) != length(xx) * length(yy)) {
-    warning('Z must have length equal to the grid generated from the unique values of x and y (i.e. z = f(x,y)).')
+  if (is.null(col)) {
+    if (is.null(x)) {x = c(1:dim(z)[1])}
+    if (is.null(y)) {y = c(1:dim(z)[2])}
+    if (is.null(zlim)) {zlim = range(z, na.rm = T)}
   }
 
-  ## If data was not originally a matrix format.
-  if (length(xx) != length(x) | length(yy) != length(y)) {
-    z = as.numeric(z) ## Force into vector
-    grid = expand.grid(x = xx, y = yy)
-    grid$z = NA
+  if (is.null(xlim)) {xlim = range(x, na.rm = T)}
+  if (is.null(ylim)) {ylim = range(y, na.rm = T)}
 
-    for (i in 1:length(z)) {
-      grid$z[i] = z[x == grid$x[i] & y == grid$y[i]]
+  if (is.null(xlab) & !is.null(x)) {xlab = deparse(substitute(x))} else {xlab = 'x'}
+  if (is.null(ylab) & !is.null(y)) {ylab = deparse(substitute(y))} else {ylab = 'x'}
+
+  if (is.null(col)) {
+    xx = unique(x)
+    yy = unique(y)
+
+    if (length(z) != length(xx) * length(yy)) {
+      warning('Z must have length equal to the grid generated from the unique values of x and y (i.e. z = f(x,y)).')
     }
-    z = matrix(grid$z, nrow = length(xx), ncol = length(yy))
+
+    ## If data was not originally a matrix format.
+    if (length(xx) != length(x) | length(yy) != length(y)) {
+      z = as.numeric(z) ## Force into vector
+      grid = expand.grid(x = xx, y = yy)
+      grid$z = NA
+
+      for (i in 1:length(z)) {
+        grid$z[i] = z[x == grid$x[i] & y == grid$y[i]]
+      }
+      z = matrix(grid$z, nrow = length(xx), ncol = length(yy))
+    }
+    col = get.pal(n = n, pal = pal, rev = rev)
+  } else {
+    xx = x
+    yy = y
   }
-  col = get.pal(n = n, pal = pal, rev = rev)
+
   image.default(x = xx[order(xx)], y = yy[order(yy)], z = z[order(xx), order(yy)], zlim = zlim, xlim = xlim, ylim = ylim,
                 col = col, xlab = xlab, ylab = ylab, ...)
 }

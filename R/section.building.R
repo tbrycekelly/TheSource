@@ -21,7 +21,7 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, gridder = NULL, grid =
                          xlim = NULL, ylim = NULL,
                          x.factor = NULL, y.factor = NULL,
                          x.scale = NULL, y.scale = NULL,
-                         uncertainty = 1, p = 2,
+                         uncertainty = 1, p = 2, neighborhood = 10,
                          field.names = NULL, nx = 50, ny = 50,
                          proj = NULL, verbose = T) {
 
@@ -75,13 +75,6 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, gridder = NULL, grid =
   if (is.null(x.factor)) { x.factor = (y.scale/x.scale + 1) / 2}
   if (is.null(y.factor)) { y.factor = (x.scale/y.scale + 1) / 2}
 
-  x = x * x.factor
-  x.scale = x.scale * x.factor
-  xlim = xlim * x.factor
-  y = y * y.factor
-  y.scale = y.scale * y.factor
-  ylim = ylim * y.factor
-
 
   if (y.scale == 0) {
     y.new = ylim[1]
@@ -129,10 +122,6 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, gridder = NULL, grid =
     y.new = unique(grid$y)
     xlim = range(grid$x)
     ylim = range(grid$y)
-
-    grid$x = grid$x * x.factor
-    grid$y = grid$y * y.factor
-
   }
 
   if (!is.null(proj)) { ## Apply projection
@@ -150,17 +139,25 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, gridder = NULL, grid =
   time.b = Sys.time()
   for (kk in 1:length(field.names)) {
     if (verbose) {message('BUILD.SECTION: Building grid for field ', field.names[kk], '  ', Sys.time(), '.')}
-    grid[[field.names[kk]]] = gridder(grid$x, grid$y, x, y, z[,kk], p, x.scale, y.scale, uncertainty)
+    grid[[field.names[kk]]] = gridder(gx = grid$x,
+                                      gy = grid$y,
+                                      x = x,
+                                      y = y,
+                                      z = z[,kk],
+                                      p = p,
+                                      xscale = x.scale,
+                                      yscale = y.scale,
+                                      uncertainty = uncertainty,
+                                      neighborhood = neighborhood,
+                                      x.factor = x.factor,
+                                      y.factor = y.factor)
   }
 
   time.c = Sys.time()
 
-  grid$x = grid$x / x.factor
-  grid$y = grid$y / y.factor
-
   if (t.axis) {
-    x = conv.time.unix(x)
-    grid$x = conv.time.unix(grid$x)
+    x = as.POSIXct(x, origin = '1970/01/01')
+    grid$x = as.POSIXct(grid$x, origin = '1970/01/01')
   }
 
   ## Reconstruct z
@@ -188,23 +185,28 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, gridder = NULL, grid =
   ## Construct return object
   grid = list(grid = grid,
               grid.meta = list(
-                x.scale = x.scale / x.factor,
-                y.scale = y.scale / y.factor,
+                x.scale = x.scale,
+                y.scale = y.scale,
                 x.factor = x.factor,
                 y.factor = y.factor,
                 nx = nx, ny = ny,
                 uncertainty = uncertainty,
                 p = p,
+                neighborhood = neighborhood,
                 gridder = deparse(substitute(gridder)),
                 time = list(time.built = Sys.time(), build.time = time.c - time.a, grid.time = time.c - time.b),
                 Source.version = packageVersion('TheSource'),
                 R.version = R.version.string
               ),
-              x = x.new / x.factor,
-              y = y.new / y.factor,
+              x = x.new,
+              y = y.new,
               section.lat = section.lat,
               section.lon = section.lon,
-              data = cbind(x = x / x.factor, y = y / y.factor, z = z, lat = lat, lon = lon)
+              data = list(x = x,
+                          y = y,
+                          z = z,
+                          lat = lat,
+                          lon = lon)
   )
 
   if (verbose) {message('BUILD.SECTION Timings\n Total function time: \t ', time.c - time.a, '\n Preprocessing Time:\t', time.b - time.a, '\n Gridding Time:\t', time.c - time.b)}

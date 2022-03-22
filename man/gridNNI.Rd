@@ -4,7 +4,20 @@
 \alias{gridNNI}
 \title{Grid via Natural Neighbor Interpolation}
 \usage{
-gridNNI(gx, gy, x, y, z, p, xscale, yscale, uncertainty)
+gridNNI(
+  gx,
+  gy,
+  x,
+  y,
+  z,
+  p = 2,
+  xscale = 1,
+  yscale = 1,
+  uncertainty = 0.1,
+  neighborhood = NULL,
+  x.factor = 1,
+  y.factor = 1
+)
 }
 \arguments{
 \item{gx}{Grid x values to interpolate onto}

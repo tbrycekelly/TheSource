@@ -4,7 +4,20 @@
 \alias{gridODV}
 \title{Grid via ODV's Interpolation}
 \usage{
-gridODV(gx, gy, x, y, z, p, xscale, yscale, uncertainty)
+gridODV(
+  gx,
+  gy,
+  x,
+  y,
+  z,
+  p = 2,
+  xscale = 1,
+  yscale = 1,
+  uncertainty = 0.1,
+  neighborhood = NULL,
+  x.factor = 1,
+  y.factor = 1
+)
 }
 \arguments{
 \item{gx}{Grid x values to interpolate onto}

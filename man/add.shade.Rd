@@ -4,7 +4,7 @@
 \alias{add.shade}
 \title{Add Shaded Box}
 \usage{
-add.shade(x, col = "grey", border = NA)
+add.shade(x, side = 1, col = "grey", border = NA)
 }
 \description{
 A helper function for adding shaded regions to figures (such as in timeseries).

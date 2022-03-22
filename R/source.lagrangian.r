@@ -15,6 +15,15 @@
 ## College of Fisheries and Oceanographic Science
 ## University of Alaska Fairbanks
 
+
+
+lon = seq(95, 120, length.out = 10)
+lat = seq(-25, -20, length.out = 10)
+
+grid = expand.grid(lon = lon, lat = lat)
+
+
+
 #' @title Initialize Lagrangian Model
 #' @param t.start start time for the Lagrangian model (POSIX)
 #' @param t.end end time for the Lagrangian model (POSIX)
@@ -211,6 +220,69 @@ load.advection.oscar = function(file, lats = NULL, lons = NULL, get.vel = get.ve
 
 
 
+
+#' @title Load Advection (globcurrent)
+#' @author Thomas Bryce Kelly
+#' @param file globcurrent file (includign path) to read in
+#' @param lats The latitude limits of the resulting model domain
+#' @param lons The longitude of the resulting model domain
+#' @param verbose A verbose flag
+#' @description A function used to load an OSCAR circulation netcdf file and structure in a manner suitable for Lagrangian particle release.
+#' @export
+load.advection.globcurrent = function(file, lats = NULL, lons = NULL, get.vel = get.vel.globcurrent, verbose = F) {
+
+  if (verbose) {
+    message('Loading GLOBCurrent Advection Product\n Loading input file ', file, ' (', format(file.size(file)/2^20, digits = 3), ' MB)... ', appendLF = F)
+    a = Sys.time()
+  }
+
+  f = ncdf4::nc_open(file)
+  oscar = f
+  u = ncdf4::ncvar_get(f, 'eastward_eulerian_current_velocity')
+  v = ncdf4::ncvar_get(f, 'northward_eulerian_current_velocity')
+  times = ncdf4::ncvar_get(f, 'time')
+  ncdf4::nc_close(f)
+  if (verbose) {message('Done.')}
+
+  ## Set names
+  times = as.POSIXct(gsub('Z', '', gsub('T', ' ', times)), tz = 'UTC')
+  dimnames(u) = list(longitude = oscar$var$eastward_eulerian_current_velocity$dim[[1]]$vals, latitude = oscar$var$eastward_eulerian_current_velocity$dim[[2]]$vals, time = times)
+  dimnames(v) = list(longitude = oscar$var$northward_eulerian_current_velocity$dim[[1]]$vals, latitude = oscar$var$northward_eulerian_current_velocity$dim[[2]]$vals, time = times)
+
+  oscar = list(u = u,
+               v = v,
+               lon = oscar$var$eastward_eulerian_current_velocity$dim[[1]]$vals,
+               lat = oscar$var$eastward_eulerian_current_velocity$dim[[2]]$vals,
+               time = times,
+               grid = expand.grid(lon = oscar$var$eastward_eulerian_current_velocity$dim[[1]]$vals,
+                                  lat = oscar$var$eastward_eulerian_current_velocity$dim[[2]]$vals))
+
+  if (!is.null(lats)) {
+    l = which(oscar$lat >= lats[1] & oscar$lat <= lats[2])
+    oscar$u = oscar$u[,l,]
+    oscar$v = oscar$v[,l,]
+    oscar$lat = oscar$lat[l]
+    oscar$grid = expand.grid(lon = oscar$lon, lat = oscar$lat)
+    if (verbose) {message(' Trimming GLOBCurrent latitudes (', length(l), ' entries remain).')}
+  }
+  if (!is.null(lons)) {
+    lons[lons<0] = lons[lons<0] + 360
+    ## Filter
+    l = which(oscar$lon >= lons[1] & oscar$lon <= lons[2])
+    oscar$u = oscar$u[l,,]
+    oscar$v = oscar$v[l,,]
+    oscar$lon = oscar$lon[l]
+    oscar$grid = expand.grid(lon = oscar$lon, lat = oscar$lat)
+    if (verbose) {message(' Trimming GLOBCurrent longitudes (', length(l), ' entries remain).')}
+  }
+  if (verbose){message(' GLOBCurrent succesfully loaded (', format(Sys.time() - a, digits = 3), ' sec).')}
+
+  oscar$w = matrix(0, nrow = nrow(oscar$u), ncol = ncol(oscar$u))
+  oscar$get.vel = get.vel
+
+  ## Return
+  oscar
+}
 
 
 
@@ -470,8 +542,14 @@ get.vel.oscar = function(lon, lat, depth, time, advection) {
 
   x2 = sapply(grid$lon, function(x) {min(which(advection$lon > x), length(advection$lon))})
   y2 = sapply(grid$lat, function(x) {max(which(advection$lat > x), 1)})
-  x1 = x2 - 1
-  y1 = y2 + 1
+
+  ## Periodic boundary conditions
+  if (abs(diff(range(advection$lon))) > 350) {
+    x1 = (x2 - 1) %% length(advection$lon)
+  } else {
+    x1 = pmax(x2 - 1, 1)
+  }
+  y1 = pmin(y2 + 1, length(advection$lat))
 
   ## Calculate weights
   x1w = (advection$lon[x2] - grid$lon) / (advection$lon[x2] - advection$lon[x1])
@@ -487,6 +565,59 @@ get.vel.oscar = function(lon, lat, depth, time, advection) {
 
   grid[is.na(grid)] = 0
 
+  ## Return
+  list(u = grid$u,
+       v = grid$v,
+       w = rep(0, length(lon)))
+}
+
+
+#' @title Get Velocity (OSCAR)
+#' @author Thomas Bryce Kelly
+#' @export
+get.vel.globcurrent = function(lon, lat, depth, time, advection) {
+  
+  grid = data.frame(lon = lon, lat = lat)
+  grid$lon[grid$lon < 0] = grid$lon[grid$lon < 0] + 360
+  grid$u = 0
+  grid$v = 0
+  
+  if (time < min(advection$time) | time > max(advection$time)) {
+    message('Improper advection product loaded for time = ', time)
+    nil = rep(0, length(lon))
+    
+    return(list(u = nil, v = nil, w = nil))
+  }
+  
+  t2 = min(which(advection$time > time))
+  t1 = t2-1
+  t1w = as.numeric(advection$time[t2] - time) / as.numeric(advection$time[t2] - advection$time[t1])
+  
+  x2 = sapply(grid$lon, function(x) {min(which(advection$lon > x), length(advection$lon))})
+  y2 = sapply(grid$lat, function(x) {min(which(advection$lat > x), length(advection$lat))})
+  
+  ## Periodic boundary conditions
+  if (abs(diff(range(advection$lon))) > 350) {
+    x1 = (x2 - 1) %% length(advection$lon)
+  } else {
+    x1 = pmax(x2 - 1, 1)
+  }
+  y1 = pmax(y2 - 1, 1)
+  
+  ## Calculate weights
+  x1w = (advection$lon[x2] - grid$lon) / (advection$lon[x2] - advection$lon[x1])
+  y1w = (advection$lat[y2] - grid$lat) / (advection$lat[y2] - advection$lat[y1])
+  
+  ## calculate u
+  grid$u = t1w * ((advection$u[cbind(x1,y1,t1)] * x1w + advection$u[cbind(x2,y1,t1)] * (1 - x1w)) * y1w + (advection$u[cbind(x1,y2,t1)] * x1w + advection$u[cbind(x2,y2,t1)] * (1 - x1w)) * (1 - y1w)) +
+    (1 - t1w) * ((advection$u[cbind(x1,y1,t2)] * x1w + advection$u[cbind(x2,y1,t2)] * (1 - x1w)) * y1w + (advection$u[cbind(x1,y2,t2)] * x1w + advection$u[cbind(x2,y2,t2)] * (1 - x1w)) * (1 - y1w))
+  
+  ## calculate v
+  grid$v = t1w * ((advection$v[cbind(x1,y1,t1)] * x1w + advection$v[cbind(x2,y1,t1)] * (1 - x1w)) * y1w + (advection$v[cbind(x1,y2,t1)] * x1w + advection$v[cbind(x2,y2,t1)] * (1 - x1w)) * (1 - y1w)) +
+    (1 - t1w) * ((advection$v[cbind(x1,y1,t2)] * x1w + advection$v[cbind(x2,y1,t2)] * (1 - x1w)) * y1w + (advection$v[cbind(x1,y2,t2)] * x1w + advection$v[cbind(x2,y2,t2)] * (1 - x1w)) * (1 - y1w))
+  
+  grid[is.na(grid)] = 0
+  
   ## Return
   list(u = grid$u,
        v = grid$v,
@@ -806,7 +937,6 @@ run.advection = function(particles, model, advection, zlim = c(-6e3, 0), verbose
 #' @param model a model list such as that generated by `init.lagrangian.model()`
 #' @param advection An advection list, such as one generated by `load.oscar.advection()`, that contains U V and W
 #' @param dt Time step for forward euler advection
-#' @export
 run.advection.fast = function(particles, model, advection, zlim = c(-6e3, 0), verbose = T) {
 
   if (verbose) { message('Starting Lagrangian model run:')}

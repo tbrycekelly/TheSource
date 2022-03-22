@@ -21,6 +21,7 @@ build.section(
   y.scale = NULL,
   uncertainty = 1,
   p = 2,
+  neighborhood = 10,
   field.names = NULL,
   nx = 50,
   ny = 50,

@@ -1,23 +1,3 @@
-## Functions for plotting maps
-## Please check out the wonderful OCE package! It does most of the work here, we just add wrapper functions to make the code easier for us to modify and customize.
-##
-## Author: Thomas Bryce Kelly1,2,3 (tbk14 at fsu.edu)
-## http://about.tkelly.org/
-## Author: Laura Whitmore4
-## http://whitmorescience.com/
-##
-## 1Dept of Earth, Ocean & Atmospherical Sciences
-## Florida State University
-##
-## 2Center for Ocean & Atmospheric Prediction Studies
-## Florida State University
-##
-## 3National High Magnetic Field Laboratory
-## Florida State University
-##
-## 4Division of Marine Sciences
-## University of Southern Mississippi
-
 #' @title Make Map
 #' @description Default settings are for Arctic, lowest resolution coastline.
 #' Exaples of projection arguments include: `+proj=stere +lat_0=90`, `+proj=merc`, `+proj=aea +lat_1=30 +lat_2=45 +lon_0=-120`.
@@ -74,8 +54,12 @@ make.map = function (coast = NULL,
   h = as.numeric(strsplit(strsplit(paste(p, ''), 'h=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
 
   ## Start Coastline
-  do.call('data', list(coast))
-  coastline = eval(parse(text = coast))@data
+  if (typeof(coast) != "character") {
+    coastline = coast
+  } else {
+    do.call('data', list(coast))
+    coastline = eval(parse(text = coast))@data
+  }
   coastline$latitude = coastline$latitude * 0.999999 ## condense latitudes slightly to avoid potential issues at +-90 degrees
 
 
@@ -134,8 +118,8 @@ make.map = function (coast = NULL,
   ## make plot
   plot(NULL,
        NULL,
-       xlim = range(field[,1]),
-       ylim = range(field[,2]),
+       xlim = range(field[,1], na.rm = T),
+       ylim = range(field[,2], na.rm = T),
        xaxt = 'n', yaxt = 'n',
        xlab = '', ylab = '',
        xaxs = 'i', yaxs = 'i')
@@ -178,6 +162,7 @@ add.map.line = function(map,
                         lwd = 1,
                         greatCircle = T) {
 
+  if (length(lon) != length(lat)) {stop('add.map.line: length of lon/lat are not the same.')}
   if (greatCircle) {
     lons = approx(1:length(lon), lon, xout = seq(1, length(lon), length.out = max(length(lon), 2e3)))$y
     lats = approx(1:length(lat), lat, xout = seq(1, length(lat), length.out = max(length(lon), 2e3)))$y
@@ -196,6 +181,7 @@ add.map.line = function(map,
 
 #' @title Add Map Line
 #' @author Thomas Bryce Kelly
+#' @import rgdal
 #' @param lon a set of longitudes to draw a line between
 #' @param lat a set of latitudes to draw a lien between
 #' @param col the color of the line to be drawn
@@ -208,6 +194,7 @@ get.map.line = function(map,
                         lat,
                         greatCircle = T) {
 
+  if (length(lon) != length(lat)) {stop('get.map.line: length of lon/lat are not the same.')}
   if (greatCircle) {
     lons = approx(1:length(lon), lon, xout = seq(1, length(lon), length.out = max(length(lon), 5e4)))$y
     lats = approx(1:length(lat), lat, xout = seq(1, length(lat), length.out = max(length(lon), 5e4)))$y
@@ -232,7 +219,7 @@ get.map.line = function(map,
 #' @param cex the size of point to be drawn
 #' @param pch the point character to be used
 #' @param ... optional arguments passed to points().
-#' @import oce
+#' @import rgdal
 #' @export
 add.map.points = function(map,
                           lon,
@@ -241,15 +228,40 @@ add.map.points = function(map,
                           cex = 1,
                           pch = 16, ...){
 
+  if (length(lon) != length(lat)) { stop('add.map.points: lengths of lon/lat are not the same.') }
   xy = rgdal::project(cbind(lon, lat), proj = map$p)
   points(xy[,1], xy[,2], col = col, cex = cex, pch = pch, ...)
+}
+
+
+#' @title Add Map Arrows
+#' @author Thomas Bryce Kelly
+#' @description Add station points to a map
+#' @param ... optional arguments passed to shape::Arrows().
+#' @import rgdal shape
+#' @export
+add.map.arrows = function(map,
+                          lon,
+                          lat,
+                          lon2,
+                          lat2,
+                          col = 'black',
+                          cex = 1,
+                          lwd = 1,
+                          ...){
+
+  if (length(lon) != length(lat) | length(lon) != length(lat2) | length(lon2) != length(lat2)) { stop('add.map.arrows: lengths of lon/lat are not the same.') }
+  xy = rgdal::project(cbind(lon, lat), proj = map$p)
+  xy2 = rgdal::project(cbind(lon2, lat2), proj = map$p)
+
+  shape::Arrows(x0 = xy[,1], y0 = xy[,2], x1 = xy2[,1], y1 = xy2[,2], col = col, lwd = lwd, arr.adj = 1, arr.length = 0.4 * cex,  ...)
 }
 
 
 #' @title Add Map Text
 #' @author Thomas Bryce Kelly
 #' @author Laura Whitmore
-#' @import oce
+#' @import rgdal
 #' @param lon longitude position of the text or a vector of positions
 #' @param lat latitude position of the text or a vector of positions
 #' @param text a string or vector of strings for the text to be written
@@ -275,6 +287,7 @@ add.map.text = function(map,
 
 #' @title Add Map Polygon
 #' @author Laura Whitmore
+#' @import rgdal
 #' @export
 add.map.polygon = function(map,
                            lon,
@@ -355,8 +368,8 @@ add.map.axis.label = function(map, temp, label, sides) {
 }
 
 
-
 #' @title Add Axis to Map
+#' @author Thomas Bryce Kelly
 #' @export
 add.map.axis = function(map, lons = NULL, lats = NULL, sides = c(1:4)) {
 
@@ -440,21 +453,32 @@ add.map.quiver = function(map,
                           u,
                           v,
                           zscale = 1,
+                          cex = 1,
                           col = 'black',
                           lwd = 1,
+                          show.scale = T,
                           verbose = T) {
 
+  if (length(lon) != length(lat) | length(lon) != length(u) | length(lon) != length(v)) {stop('add.map.quiver: length of lat, lon, u and v must be the same.')}
   lon = as.numeric(lon)
   lat = as.numeric(lat)
   u = as.numeric(u)
   v = as.numeric(v)
 
-  ## Add points
-  add.map.points(map, lon, lat, pch = 20, cex = 0.5, col = col)
+  ## Filter our NAs
+  k = !is.na(u) & !is.na(v)
 
-  ## Add arrows
-  for (i in 1:length(lon)) {
-    add.map.line(map, c(lon[i], lon[i] + u[i] * zscale), c(lat[i], lat[i] + v[i] * zscale), col = col, lwd = lwd, greatCircle = F)
+  add.map.arrows(map, lon[k], lat[k], lon[k] + u[k] * zscale, lat[k] + v[k] * zscale, col = col, cex = cex, lwd = lwd)
+
+  if (show.scale) {
+    usr = par('usr')
+    dx = median(diff(unique(lon)))
+    dy = median(diff(unique(lon)))
+
+
+    lines(x = c(x.origin, x.origin - sign*scale*1e3), y = rep(y.origin,2), lwd = 3*cex, col = col)
+    points(x = c(x.origin, x.origin - sign*scale*1e3), y = rep(y.origin,2), pch = '|', cex = cex, col = col)
+    text(x.origin - sign*scale*1e3*0.5, y = y.origin, pos = 3, paste0(scale, ' km'), col = col, cex = cex)
   }
 }
 
@@ -611,6 +635,7 @@ add.map.layer = function(map,
                          pal = 'greyscale',
                          col.na = NA,
                          n = 255,
+                         refine = 0,
                          trim = T,
                          col.low = '',
                          col.high = '',
@@ -626,17 +651,19 @@ add.map.layer = function(map,
   lat = as.array(lat)
   z = as.array(z)
 
-  if (is.na(dim(lon)[2])) {
-    if (verbose) { message(' Established Grid.') }
-    if (length(z) == length(lon) * length(lat)) {
+  if (length(dim(lon)) < 2) {
+    if (verbose) { message(' Establishing Grid...', appendLF = F) }
+
+    if (length(z) == 1.0 * length(lon) * length(lat)) {
       z = array(z, dim = c(length(lon), length(lat)))
       lon = matrix(lon, nrow = dim(z)[1], ncol = dim(z)[2])
       lat = matrix(lat, nrow = dim(z)[1], ncol = dim(z)[2], byrow = T)
-    } else {
+    } else { ## TODO add check here that the dimentions are actually correct!
       z = array(z, dim = c(length(unique(lon)), length(unique(lat))))
       lon = matrix(unique(lon), nrow = dim(z)[1], ncol = dim(z)[2])
       lat = matrix(unique(lat), nrow = dim(z)[1], ncol = dim(z)[2], byrow = T)
     }
+    if (verbose) { message(' Done. ') }
   }
 
   ## Order
@@ -648,7 +675,7 @@ add.map.layer = function(map,
   nz = length(z)
 
   ## Trim
-  if (trim) {
+  if (trim & length(z) > 100) {
 
     if (verbose) { message(' Starting domain trimming... ', appendLF = F)}
     corners = expand.grid(lon = c(par('usr')[1], par('usr')[2]),
@@ -689,6 +716,15 @@ add.map.layer = function(map,
     if (verbose) { message(' complete, n = ', length(z), ' (', 100 - round(100 * length(z) / nz), '% trimmed)')}
   }
 
+  if (refine > 0) {
+    for (i in 1:refine) {
+      temp = grid.refinement(lon, lat, z)
+      lon = temp$x
+      lat = temp$y
+      z = temp$z
+    }
+  }
+
   if (is.null(zlim)) { zlim = range(pretty(as.numeric(z), na.rm = TRUE)) }
 
   ## Color scale
@@ -702,9 +738,9 @@ add.map.layer = function(map,
 
   ## Project and Plot
   vertex = calc.vertex(lon, lat)
-  xy = rgdal::project(cbind(as.numeric(vertex$lon), as.numeric(vertex$lat)), p = map$p)
-  xy = list(x = array(xy[,1], dim = dim(vertex$lon)),
-            y = array(xy[,2], dim = dim(vertex$lon)))
+  xy = rgdal::project(cbind(as.numeric(vertex$x), as.numeric(vertex$y)), p = map$p)
+  xy = list(x = array(xy[,1], dim = dim(vertex$x)),
+            y = array(xy[,2], dim = dim(vertex$x)))
 
   ## Order to ensure plotting works correctly
   #l = order(xy$x[,round(dim(vertex$lon)[2] / 2)])
@@ -750,6 +786,7 @@ add.map.layer = function(map,
 add.map.bathy = function(map,
                          bathy,
                          subsample = NULL,
+                         refine = 0,
                          trim = T,
                          zlim = NULL,
                          pal = 'greyscale',
@@ -772,6 +809,7 @@ add.map.bathy = function(map,
                 lon = bathy$Lon,
                 lat = bathy$Lat,
                 z = bathy$Z,
+                refine = refine,
                 pal = pal,
                 rev = rev,
                 zlim = zlim,

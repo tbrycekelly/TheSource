@@ -1,6 +1,99 @@
 library(TheSource)
 library(microbenchmark)
 
+##### Gridder engine test
+
+## gridding random noise
+pdf('R testing/grid tests - runif.pdf')
+par(mfrow = c(2,2))
+for (n in c(10,100, 1e3)) {
+  x = runif(n, 0, 10)
+  y = runif(n, 0, 10)
+  z = runif(n)
+
+  for (gridder in c(gridNN, gridNNI, gridODV, gridIDW)) {
+    section = build.section(x, y, z, gridder = gridder) # defaults
+    plot.section(section, zlim = c(0,1), pal = 'inferno')
+  }
+}
+dev.off()
+
+
+
+pdf('R testing/grid tests - rnorm.pdf')
+par(mfrow = c(2,2))
+for (n in c(10,100, 1e3)) {
+  x = runif(n, 0, 10)
+  y = runif(n, 0, 10)
+  z = rnorm(n)
+
+  for (gridder in c(gridNN, gridNNI, gridODV, gridIDW)) {
+    section = build.section(x, y, z, gridder = gridder) # defaults
+    plot.section(section, zlim = c(-1,1), pal = 'ocean.balance')
+  }
+}
+dev.off()
+
+pdf('R testing/grid tests - grid runif.pdf')
+par(mfrow = c(2,2))
+for (n in c(5, 25, 125)) {
+  grid = expand.grid(x = c(1:n), y = c(1:n))
+  z = runif(n^2)
+
+  for (gridder in c(gridNN, gridNNI, gridODV, gridIDW)) {
+    section = build.section(grid$x, grid$y, z, gridder = gridder) # defaults
+    plot.section(section, zlim = c(0,1), pal = 'inferno')
+  }
+}
+dev.off()
+
+
+pdf('R testing/grid tests - grid rnorm.pdf')
+par(mfrow = c(2,2))
+for (n in c(5, 25, 125)) {
+  grid = expand.grid(x = c(1:n), y = c(1:n))
+  z = rnorm(n^2)
+
+  for (gridder in c(gridNN, gridNNI, gridODV, gridIDW)) {
+    section = build.section(grid$x, grid$y, z, gridder = gridder) # defaults
+    plot.section(section, zlim = c(-1,1), pal = 'ocean.balance')
+  }
+}
+dev.off()
+
+
+
+pdf('R testing/grid tests - grid rnorm scaled with uncertainty.pdf')
+par(mfrow = c(2,2))
+for (n in c(5, 25, 125)) {
+  grid = expand.grid(x = c(1:n), y = c(1:n))
+  z = rnorm(n^2)
+
+  for (gridder in c(gridNN, gridNNI, gridODV, gridIDW)) {
+    section = build.section(grid$x*100, grid$y*100, z, gridder = gridder, nx = 100, ny = 100, uncertainty = 1) # defaults
+    plot.section(section, zlim = c(-1,1), pal = 'ocean.balance')
+  }
+}
+dev.off()
+
+pdf('R testing/grid tests - grid rnorm scaled without uncertainty.pdf')
+par(mfrow = c(2,2))
+for (n in c(5, 25, 125)) {
+  grid = expand.grid(x = c(1:n), y = c(1:n))
+  z = rnorm(n^2)
+
+  for (gridder in c(gridNN, gridNNI, gridODV, gridIDW)) {
+    section = build.section(grid$x*100, grid$y*100, z, gridder = gridder, nx = 100, ny = 100, uncertainty = 1e-5) # defaults
+    plot.section(section, zlim = c(-1,1), pal = 'ocean.balance')
+  }
+}
+dev.off()
+
+
+
+
+#### Benchmarking
+
 N = 25
 x = runif(N)
 x2 = x * 100

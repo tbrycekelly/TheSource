@@ -40,7 +40,9 @@ plot.section = function(section, field = NULL,
                         main = NULL,
                         col.low = '',
                         col.high = '',
-                        N = 255) {
+                        N = 255,
+                        indicate = T,
+                        ...) {
 
   ## Set Defaults
   # Check if values need to set and set them.
@@ -87,7 +89,7 @@ plot.section = function(section, field = NULL,
 
   ## Plot iamge
   image(x = x, y = y, z = z, col = get.pal(N, pal = pal, rev = rev), ylab = ylab, xlab = xlab,
-        xlim = xlim, ylim = ylim, zlim = zlim)
+        xlim = xlim, ylim = ylim, zlim = zlim, ...)
 
   # Plot points that are out of range when a color is given
   if (!is.na(col.low) & col.low != '') {
@@ -106,19 +108,20 @@ plot.section = function(section, field = NULL,
     points(x = section$data$x, y = section$data$y, pch = 20, cex = include.cex) ## Add black points
   }
   if (include.data) {
-    col = make.pal(section$data[,field], pal = pal, n = N, min = zlim[1], max = zlim[2], rev = rev)
+    col = make.pal(section$data$z[,field], pal = pal, n = N, min = zlim[1], max = zlim[2], rev = rev)
     points(x = section$data$x, y = section$data$y, pch = include.pch,
            cex = include.cex, col = col, bg = col)
   }
 
   ## Add Title text
-  if (log) {
-    st = paste0(main, '   zlim: (', round(base^zlim[1], 3), ', ', round(base^zlim[2],3), ')')
-  } else {
-    st = paste0(main, '   zlim: (', round(zlim[1], 3), ', ', round(zlim[2],3), ')')
+  if (indicate) {
+    if (log) {
+      st = paste0(main, '   zlim: (', round(base^zlim[1], 3), ', ', round(base^zlim[2],3), ')')
+    } else {
+      st = paste0(main, '   zlim: (', round(zlim[1], 3), ', ', round(zlim[2],3), ')')
+    }
+    mtext(st, line = 0.25, adj = 1, cex = 0.7)
   }
-  mtext(st, line = 0.25, adj = 1, cex = 0.7)
-
   box() ## make sure plotting didn't cover bounding box
 }
 
@@ -189,13 +192,45 @@ add.section.contour = function(section, field = NULL, levels = NULL, col = 'blac
 
 #' @title Add Map Inlay
 #' @export
-add.section.inlay = function(section) {
+add.section.inlay = function(section, p = NULL, side = 1, pch = 20, cex = 1, col = 'red', land.col = 'black', height = 0.1, width = 0.1) {
   par.old = par()
-  par(new = T, plt = c(0.2, 0.33, 0.2, 0.33))
-  map = make.map(coast = 'coastlineWorld', lon.min = min(section$section.lon), lon.max = max(section$section.lon),
-                 lat.min = min(section$section.lat), lat.max = max(section$section.lat),
-                 dlon = 360, dlat = 360, draw.grid = F,
-                 p = make.proj(8, lat = mean(section$section.lat), lon = mean(section$section.lon)))
-  add.map.points(section$section.lon, section$section.lat, pch = 20, cex = 0.2, col = 'red')
+  plt = par('plt')
+  if (side == 1) {
+    par(new = T, bg = 'white', plt = c(plt[1] + c(0.05, 0.05 + width), plt[3] + c(0.05, 0.05 + height)))
+  }
+
+  if (is.na(section$section.lat[1])) {
+    lon = 0
+    lat = 0
+    dlon = 80
+    dlat = 80
+  } else {
+    lon = mean(section$section.lon, na.rm = T)
+    lat = mean(section$section.lat, na.rm = T)
+    dlon = abs(diff(range(section$section.lon))) / 2
+    dlat = abs(diff(range(section$section.lat))) / 2
+  }
+
+  if (is.null(p)) {
+    p = make.proj(projection = 11,
+              lat = lon,
+              lon = lat)
+  }
+
+  ## Make map
+  map = make.map(coast = 'coastlineWorld',
+                 lon.min = lon - dlon,
+                 lon.max = lon + dlon,
+                 lat.min = lat - dlat,
+                 lat.max = lat + dlat,
+                 draw.grid = F,
+                 draw.axis = F,
+                 p = p,
+                 land.col = land.col)
+
+  ## Plot points if available
+  if (!is.na(section$section.lat[1])) {
+    add.map.points(section$section.lon, section$section.lat, pch = pch, cex = 0.2 * cex, col = col)
+  }
   par(plt = par.old$plt)
 }

@@ -1,7 +1,7 @@
 Package: TheSource
 Type: Package
 Title: TheSource: It Will Hold Your Beer
-Version: 0.6.2
+Version: 0.6.3
 Author:
   Thomas Bryce Kelly <tbkelly@alaska.edu> <http://tkelly.org>
   Laura Whitmore <laura.whitmore@usm.edu> <http://whitmorescience.com/>
@@ -14,11 +14,8 @@ RoxygenNote: 7.1.2
 Depends:
 Imports:
   rgdal,
-  ncdf4
-URL: https://github.com/tbrycekelly/TheSource
-Suggests: 
+  ncdf4,
   lmodel2,
-  openxlsx,
   knitr,
   automap,
   sp,
@@ -29,3 +26,5 @@ Suggests:
   polynom,
   missForest,
   learnr
+URL: https://github.com/tbrycekelly/TheSource
+Suggests: 

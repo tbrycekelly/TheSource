@@ -10,8 +10,8 @@ plot.boxplot(
   at = NULL,
   main = NULL,
   labels = NULL,
-  ylab = NULL,
-  xlab = NULL,
+  ylab = "x",
+  xlab = "y",
   ...
 )
 }

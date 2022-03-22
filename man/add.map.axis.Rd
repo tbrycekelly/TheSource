@@ -9,3 +9,6 @@ add.map.axis(map, lons = NULL, lats = NULL, sides = c(1:4))
 \description{
 Add Axis to Map
 }
+\author{
+Thomas Bryce Kelly
+}
