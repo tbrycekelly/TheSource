@@ -25,17 +25,16 @@ make.map.arctic = function(coast = 'coastlineWorld',
 #' @inheritParams make.map
 #' @export
 make.map.nga = function(coast = 'coastlineWorldFine',
-                        lon.min = -154,
-                        lon.max = -149,
-                        lat.min = 56,
-                        lat.max = 61,
-                        p = make.proj('stere', lat = 60, lon = -151),
+                        lon = -150,
+                        lat = 60,
+                        scale = 300,
+                        p = make.proj('stere', lat = 60, lon = -150),
                         dlat = 3,
                         dlon = 3,
                         land.col = '#333333',
                         draw.grid = TRUE) {
 
-  make.map(coast = coast, lon.min = lon.min, lon.max = lon.max, lat.min = lat.min, lat.max = lat.max,
+  make.map2(coast = coast, lon = lon, lat = lat, scale = scale,
            p = p, land.col = land.col, draw.grid = draw.grid, dlon = dlon, dlat = dlat)
 }
 

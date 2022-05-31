@@ -7,7 +7,6 @@
 add.map.bathy(
   map,
   bathy,
-  subsample = NULL,
   refine = 0,
   trim = T,
   zlim = NULL,
@@ -22,7 +21,6 @@ add.map.bathy(
 add.map.bathy(
   map,
   bathy,
-  subsample = NULL,
   refine = 0,
   trim = T,
   zlim = NULL,

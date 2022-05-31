@@ -71,3 +71,39 @@
 #' This is a coarse resolution coastline, copied from the OCE package, at scale 1:110M, with 10,696 points, suitable for world-scale plots plotted at a small size, e.g. inset diagrams.
 #' @source Downloaded from https://www.naturalearthdata.com, in ne_110m_admin_0_countries.shp in July 2015, with an update on December 16, 2017. Copied from the OCE R package.
 "coastlineWorldFine"
+
+
+#' @title World Coastline Data (L1)
+#' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
+#' @source
+"coastline1"
+
+
+#' @title World Coastline Data (L2)
+#' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
+#' @source
+"coastline2"
+
+
+#' @title World Coastline Data (L3)
+#' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
+#' @source
+"coastline3"
+
+
+#' @title World Coastline Data (L4)
+#' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
+#' @source
+"coastline4"
+
+
+#' @title World Coastline Data (L5)
+#' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
+#' @source
+"coastline5"
+
+
+#' @title World EEZ Data
+#' Global maritime eez boundaries. Creative Commons Attribution 4.0
+#' @source Flanders Marine Institute (2019). Maritime Boundaries Geodatabase: Maritime Boundaries and Exclusive Economic Zones (200NM), version 11. Available online at https://www.marineregions.org/. https://doi.org/10.14284/386
+"eez"

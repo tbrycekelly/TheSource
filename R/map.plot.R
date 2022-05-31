@@ -53,29 +53,6 @@ make.map = function (coast = NULL,
   proj = strsplit(strsplit(paste(p, ''), 'proj=')[[1]][2], '\\s+')[[1]][1] ## retreive the lon0 value from the projection
   h = as.numeric(strsplit(strsplit(paste(p, ''), 'h=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
 
-  ## Start Coastline
-  if (typeof(coast) != "character") {
-    coastline = coast
-  } else {
-    do.call('data', list(coast))
-    coastline = eval(parse(text = coast))@data
-  }
-  coastline$latitude = coastline$latitude * 0.999999 ## condense latitudes slightly to avoid potential issues at +-90 degrees
-
-
-  ## Project coastline
-  coastline = rgdal::project(cbind(coastline$longitude, coastline$latitude), proj = p)
-  coastline[!is.finite(coastline[,1]) | !is.finite(coastline[,2]),] = c(NA, NA)
-  k = which(!is.na(coastline[,1]))
-  coastline[k[coastline[k,1] > 5e7 | coastline[k,1] < -5e7 | coastline[k,2] > 5e7  | coastline[k,2] < -5e7],] = c(NA, NA)
-
-  ## add breaks when distance between coastline points are large
-  l = which(sqrt(diff(coastline[,1])^2 + diff(coastline[,2])^2) > 1e7) # 6000 km between points
-  coastline[l,] = c(NA, NA)
-
-  ## Split at NA's for each polygon.
-  coast.lon = split(coastline[!is.na(coastline[,1]),1], cumsum(is.na(coastline[,1]))[!is.na(coastline[,1])])
-  coast.lat = split(coastline[!is.na(coastline[,1]),2], cumsum(is.na(coastline[,2]))[!is.na(coastline[,2])])
 
   ## Determine lat/lon axis details
   lons = seq(lon.min - 5*dlon, lon.max + 5*dlon, by = dlon)
@@ -92,23 +69,6 @@ make.map = function (coast = NULL,
   lat.axis = rgdal::project(cbind(rep(lon.min, length(lats)), lats), proj = p)[,2]
   lims = rgdal::project(cbind(lims$lon, lims$lat), proj = p)
 
-  ## Setup map object
-  map = list(coastline = list(coast = coast, lon = coast.lon, lat = coast.lat),
-             lon.min = lon.min,
-             lon.max = lon.max,
-             lat.min = lat.min,
-             lat.max = lat.max,
-             p = p,
-             land.col = land.col,
-             grid = list(draw.grid = draw.grid,
-                         lon.axis = list(dlon = dlon, label = lons, projection = lon.axis),
-                         lat.axis = list(dlat = dlat, label = lats, projection = lat.axis)),
-             meta = list(
-               Source.version = packageVersion('TheSource'),
-               R.version = R.version.string,
-               Sys.time = Sys.time()
-             ))
-
   ## Start plotting
   # Calculate projections of plotting area for plot limits
   field = expand.grid(lon = seq(lon.min, lon.max, length.out = 10),
@@ -124,11 +84,27 @@ make.map = function (coast = NULL,
        xlab = '', ylab = '',
        xaxs = 'i', yaxs = 'i')
 
-  ## Add coastlines
-  for (i in 1:length(coast.lon)) {
-    polygon(coast.lon[[i]], coast.lat[[i]], col = land.col)
-  }
+  coast = add.map.coastline(coast, p = p, land.col = land.col)
 
+  ## Setup map object
+  map = list(coastline = coast,
+             lon.min = lon.min,
+             lon.max = lon.max,
+             lat.min = lat.min,
+             lat.max = lat.max,
+             p = p,
+             land.col = land.col,
+             grid = list(draw.grid = draw.grid,
+                         lon.axis = list(dlon = dlon, label = lons, projection = lon.axis),
+                         lat.axis = list(dlat = dlat, label = lats, projection = lat.axis)),
+             meta = list(
+               Source.version = packageVersion('TheSource'),
+               R.version = R.version.string,
+               Sys.time = Sys.time()
+             ))
+
+
+  ## Call to other functions
   if (draw.grid) {
     for (i in lons) {
       add.map.line(map, lon = c(i,i), lat = c(-80, 80), col = 'dark grey')
@@ -141,7 +117,66 @@ make.map = function (coast = NULL,
   if (draw.axis) { add.map.axis(map, sides = c(1,2)) }
   box()
 
+  ## Return
   map
+}
+
+
+#' @title Add Coastline to Map
+#' @author Thomas Bryce Kelly
+#' @description Adds a coastline list to a map given a projection and land color.
+add.map.coastline = function(coast, p, land.col) {
+
+  ## helper function
+  break.polygon = function(projected.coast) {
+
+    for (i in 1:length(projected.coast)) {
+      k = c(which(diff(projected.coast[[i]][,1])^2 + diff(projected.coast[[i]][,2])^2 > diff(par('usr')[1:2])^2),
+            length(projected.coast[[i]][,1]))
+
+      if (length(k) > 1) {
+        for (j in 2:length(k)) {
+          if (k[j] - k[j-1] > 5) {
+            projected.coast[[length(projected.coast) + 1]] = projected.coast[[i]][(k[j-1]+1):k[j],]
+          }
+        }
+        projected.coast[[i]] = array(projected.coast[[i]][1:k[1],], dim = c(k[1], 2))
+      }
+    }
+    projected.coast
+  }
+
+  # Load data if necessary
+  if (typeof(coast) != "character") {
+    coastline = coast
+  } else {
+    do.call('data', list(coast))
+    coastline = eval(parse(text = coast))
+  }
+
+  ## Project coastline
+  projected.coast = lapply(coastline$data, function(x) {
+    rgdal::project(as.matrix(x), proj = p)
+  })
+
+  keep = rep(T, length(projected.coast))
+  usr = par('usr')
+  for (i in 1:length(projected.coast)) {
+    if (all(projected.coast[[i]][,1] < usr[1]) | all(projected.coast[[i]][,1] > usr[2]) |
+        all(projected.coast[[i]][,2] < usr[3]) | all(projected.coast[[i]][,2] > usr[4])) {
+      keep[i] = F
+    }
+  }
+  coastline = coastline[keep]
+  projected.coast = projected.coast[keep]
+  projected.coast = break.polygon(projected.coast)
+
+  ## Add coastlines
+  for (i in 1:length(projected.coast)) {
+    polygon(projected.coast[[i]][,1], projected.coast[[i]][,2], col = land.col)
+  }
+
+  list(coastline = coastline, projected.coast = projected.coast)
 }
 
 
@@ -190,58 +225,7 @@ make.map2 = function (coast = NULL,
   proj = strsplit(strsplit(paste(p, ''), 'proj=')[[1]][2], '\\s+')[[1]][1] ## retreive the lon0 value from the projection
   h = as.numeric(strsplit(strsplit(paste(p, ''), 'h=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
 
-  ## Start Coastline
-  if (typeof(coast) != "character") {
-    coastline = coast
-  } else {
-    do.call('data', list(coast))
-    coastline = eval(parse(text = coast))@data
-  }
-  coastline$latitude = coastline$latitude * 0.999999 ## condense latitudes slightly to avoid potential issues at +-90 degrees
-
-
-  ## Project coastline
-  coastline = rgdal::project(cbind(coastline$longitude, coastline$latitude), proj = p)
-  coastline[!is.finite(coastline[,1]) | !is.finite(coastline[,2]),] = c(NA, NA)
-  k = which(!is.na(coastline[,1]))
-  coastline[k[coastline[k,1] > 5e7 | coastline[k,1] < -5e7 | coastline[k,2] > 5e7  | coastline[k,2] < -5e7],] = c(NA, NA)
-
-  ## add breaks when distance between coastline points are large
-  l = which(sqrt(diff(coastline[,1])^2 + diff(coastline[,2])^2) > 1e7) # 6000 km between points
-  coastline[l,] = c(NA, NA)
-
-  ## Split at NA's for each polygon.
-  coast.lon = split(coastline[!is.na(coastline[,1]),1], cumsum(is.na(coastline[,1]))[!is.na(coastline[,1])])
-  coast.lat = split(coastline[!is.na(coastline[,1]),2], cumsum(is.na(coastline[,2]))[!is.na(coastline[,2])])
-
-
   center.point = rgdal::project(cbind(lon, lat), proj = p)
-
-  ## Determine lat/lon axis details
-  lons = seq(-180, 180, by = dlon)
-  lats = seq(-90, 90, by = dlat)
-  lims = expand.grid(lon = lons, lats = lats)
-
-  lon.axis = rgdal::project(cbind(lons, rep(lat, length(lons))), proj = p)[,1]
-  lat.axis = rgdal::project(cbind(rep(lon, length(lats)), lats), proj = p)[,2]
-  lims = rgdal::project(cbind(lims$lon, lims$lat), proj = p)
-
-  ## Setup map object
-  map = list(coastline = list(coast = coast, lon = coast.lon, lat = coast.lat),
-             lon = lon,
-             lat = lat,
-             scale = scale,
-             p = p,
-             land.col = land.col,
-             grid = list(draw.grid = draw.grid,
-                         lon.axis = list(dlon = dlon, label = lons, projection = lon.axis),
-                         lat.axis = list(dlat = dlat, label = lats, projection = lat.axis)),
-             meta = list(
-               Source.version = packageVersion('TheSource'),
-               R.version = R.version.string,
-               Sys.time = Sys.time()
-             ))
-
   x.y.ratio = par()$pin[1] / par()$pin[2]
 
   ## Start plotting
@@ -259,10 +243,32 @@ make.map2 = function (coast = NULL,
        xlab = '', ylab = '',
        xaxs = 'i', yaxs = 'i')
 
-  ## Add coastlines
-  for (i in 1:length(coast.lon)) {
-    polygon(coast.lon[[i]], coast.lat[[i]], col = land.col)
-  }
+  coast = add.map.coastline(coast, p = p, land.col = land.col)
+
+  ## Determine lat/lon axis details
+  lons = seq(-180, 180, by = dlon)
+  lats = seq(-90, 90, by = dlat)
+  lims = expand.grid(lon = lons, lats = lats)
+
+  lon.axis = rgdal::project(cbind(lons, rep(lat, length(lons))), proj = p)[,1]
+  lat.axis = rgdal::project(cbind(rep(lon, length(lats)), lats), proj = p)[,2]
+  lims = rgdal::project(cbind(lims$lon, lims$lat), proj = p)
+
+  ## Setup map object
+  map = list(coastline = coast,
+             lon = lon,
+             lat = lat,
+             scale = scale,
+             p = p,
+             land.col = land.col,
+             grid = list(draw.grid = draw.grid,
+                         lon.axis = list(dlon = dlon, label = lons, projection = lon.axis),
+                         lat.axis = list(dlat = dlat, label = lats, projection = lat.axis)),
+             meta = list(
+               Source.version = packageVersion('TheSource'),
+               R.version = R.version.string,
+               Sys.time = Sys.time()
+             ))
 
   if (draw.grid) {
     for (i in lons) {
@@ -389,7 +395,16 @@ add.map.arrows = function(map,
   xy = rgdal::project(cbind(lon, lat), proj = map$p)
   xy2 = rgdal::project(cbind(lon2, lat2), proj = map$p)
 
-  shape::Arrows(x0 = xy[,1], y0 = xy[,2], x1 = xy2[,1], y1 = xy2[,2], col = col, lwd = lwd, arr.adj = 1, arr.length = 0.4 * cex,  ...)
+  shape::Arrows(x0 = xy[,1],
+                y0 = xy[,2],
+                x1 = xy2[,1],
+                y1 = xy2[,2],
+                col = col,
+                lwd = lwd,
+                arr.adj = 1,
+                arr.length = 0.4 * cex,
+                arr.width = 0.4 * cex,
+                ...)
 }
 
 
@@ -592,7 +607,8 @@ add.map.quiver = function(map,
                           col = 'black',
                           lwd = 1,
                           show.scale = T,
-                          verbose = T) {
+                          verbose = T,
+                          ...) {
 
   if (length(lon) != length(lat) | length(lon) != length(u) | length(lon) != length(v)) {stop('add.map.quiver: length of lat, lon, u and v must be the same.')}
   lon = as.numeric(lon)
@@ -603,17 +619,20 @@ add.map.quiver = function(map,
   ## Filter our NAs
   k = !is.na(u) & !is.na(v)
 
-  add.map.arrows(map, lon[k], lat[k], lon[k] + u[k] * zscale, lat[k] + v[k] * zscale, col = col, cex = cex, lwd = lwd)
+  add.map.arrows(map, lon[k], lat[k], lon[k] + u[k] * zscale, lat[k] + v[k] * zscale, col = col, cex = cex / 2, lwd = lwd, ...)
 
   if (show.scale) {
     usr = par('usr')
     dx = median(diff(unique(lon)))
     dy = median(diff(unique(lon)))
 
+    x.origin = usr[2] - (usr[2] - usr[1])/10
+    y.origin = usr[3] + (usr[4] - usr[3])/10
 
-    lines(x = c(x.origin, x.origin - sign*scale*1e3), y = rep(y.origin,2), lwd = 3*cex, col = col)
-    points(x = c(x.origin, x.origin - sign*scale*1e3), y = rep(y.origin,2), pch = '|', cex = cex, col = col)
-    text(x.origin - sign*scale*1e3*0.5, y = y.origin, pos = 3, paste0(scale, ' km'), col = col, cex = cex)
+
+    lines(x = c(x.origin, x.origin - sign * scale * 1e3), y = rep(y.origin,2), lwd = 3 * cex, col = col)
+    points(x = c(x.origin, x.origin - sign * scale * 1e3), y = rep(y.origin,2), pch = '|', cex = cex, col = col)
+    text(x.origin - sign * scale * 1e3 * 0.5, y = y.origin, pos = 3, paste0(scale, ' km'), col = col, cex = cex)
   }
 }
 
@@ -813,12 +832,16 @@ add.map.layer = function(map,
   if (trim & length(z) > 100) {
 
     if (verbose) { message(' Starting domain trimming... ', appendLF = F)}
-    corners = expand.grid(lon = c(par('usr')[1], par('usr')[2]),
-                          lat = c(par('usr')[3], par('usr')[4]))
+    usr = par('usr')
+    dx = (usr[2] - usr[1])/10
+    dy = (usr[4] - usr[3])/10
+
+    corners = expand.grid(lon = c(usr[1] - dx, usr[2] + dx),
+                          lat = c(usr[3] - dy, usr[4] + dy))
     corners = rgdal::project(cbind(corners$lon, corners$lat), proj = map$p, inv = T)
 
-    field = expand.grid(lon = seq(par('usr')[1], par('usr')[2], length.out = 180),
-                        lat = seq(par('usr')[3], par('usr')[4], length.out = 50))
+    field = expand.grid(lon = seq(usr[1] - dx, usr[2] + dx, length.out = 50),
+                        lat = seq(usr[3] - dy, usr[4] + dy, length.out = 50))
     field = rgdal::project(cbind(field$lon, field$lat), proj = map$p, inv = T)
     field[,1] = field[,1] %% 360
 
@@ -858,6 +881,13 @@ add.map.layer = function(map,
       lat = temp$y
       z = temp$z
     }
+  } else if (refine < 0) {
+    for (i in 1:abs(refine)) {
+      temp = grid.subsample(lon, lat, z)
+      lon = temp$x
+      lat = temp$y
+      z = temp$z
+    }
   }
 
   if (is.null(zlim)) { zlim = range(pretty(as.numeric(z), na.rm = TRUE)) }
@@ -877,11 +907,6 @@ add.map.layer = function(map,
   xy = list(x = array(xy[,1], dim = dim(vertex$x)),
             y = array(xy[,2], dim = dim(vertex$x)))
 
-  ## Order to ensure plotting works correctly
-  #l = order(xy$x[,round(dim(vertex$lon)[2] / 2)])
-  #xy$x = xy$x[l,]
-  #xy$y = xy$y[l,]
-  #col = col[l[l <= dim(col)[1]],]
 
   if (verbose) { message(' Starting plotting... ', appendLF = F) }
   for (i in 1:dim(col)[1]) {
@@ -920,7 +945,6 @@ add.map.layer = function(map,
 #' @export
 add.map.bathy = function(map,
                          bathy,
-                         subsample = NULL,
                          refine = 0,
                          trim = T,
                          zlim = NULL,
@@ -930,15 +954,6 @@ add.map.bathy = function(map,
                          col.low = '',
                          col.high = '',
                          verbose = T) {
-
-  ## Subsample if requested
-  if (!is.null(subsample)) {
-    k = seq(1, length(bathy$Lon), by = subsample)
-    l = seq(1, length(bathy$Lat), by = subsample)
-    bathy$Lon = bathy$Lon[k]
-    bathy$Lat = bathy$Lat[l]
-    bathy$Z = bathy$Z[k,l]
-  }
 
   add.map.layer(map,
                 lon = bathy$Lon,
@@ -965,18 +980,16 @@ add.map.bathy = function(map,
 #' @export
 redraw.map = function(map) {
 
-  for (i in 1:length(map$coastline$lon)) {
-    polygon(map$coastline$lon[[i]], map$coastline$lat[[i]], col = map$land.col)
+  for (i in 1:length(map$coastline$projected.coast)) {
+    polygon(map$coastline$projected.coast[[i]][,1], map$coastline$projected.coast[[i]][,2], col = map$land.col)
   }
 
 
   if (map$grid$draw.grid) {
     for (i in map$grid$lon.axis$label) {
-      #add.map.line(lon = rep(i, length(lats)), lat = lats * 0.999, p = p, col = 'dark grey')
       add.map.line(map, lon = c(i,i), lat = c(-80, 80), col = 'dark grey')
     }
     for (i in map$grid$lat.axis$label) {
-      #add.map.line(lon = lons * 0.999, lat = rep(i, length(lons)), p = p, col = 'dark grey')
       add.map.line(map, lon = c(-180,180), lat = c(i,i), col = 'dark grey')
     }
   }
@@ -984,22 +997,3 @@ redraw.map = function(map) {
   box()
 }
 
-
-#' @title Replot Map
-#' @author Thomas Bryce Kelly
-#' @param map a map object as returned by make.map()
-#' @export
-replot.map = function(map) {
-  make.map(coast = map$coastline$coast,
-           lon.min = map$lon.min,
-           lon.max = map$lon.max,
-           lat.min = map$lat.min,
-           lat.max = map$lat.max,
-           p = map$p,
-           land.col = map$land.col,
-           draw.grid = map$grid$draw.grid,
-           dlon = map$grid$lon.axis$dlon,
-           dlat = map$grid$lat.axis$dlat)
-
-  invisible(NULL)
-}

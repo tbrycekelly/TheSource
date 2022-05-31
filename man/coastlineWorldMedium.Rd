@@ -6,7 +6,7 @@
 \title{World Coastline Data (Medium Resolution)
 This is a coarse resolution coastline, copied from the OCE package, at scale 1:110M, with 10,696 points, suitable for world-scale plots plotted at a small size, e.g. inset diagrams.}
 \format{
-An object of class \code{coastline} of length 1.
+An object of class \code{list} of length 2.
 }
 \source{
 Downloaded from https://www.naturalearthdata.com, in ne_110m_admin_0_countries.shp in July 2015, with an update on December 16, 2017. Copied from the OCE R package.

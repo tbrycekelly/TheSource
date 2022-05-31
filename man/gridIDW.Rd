@@ -16,7 +16,8 @@ gridIDW(
   uncertainty = 0.1,
   neighborhood = NULL,
   x.factor = 1,
-  y.factor = 1
+  y.factor = 1,
+  verbose = F
 )
 }
 \arguments{

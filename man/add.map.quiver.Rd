@@ -11,9 +11,12 @@ add.map.quiver(
   u,
   v,
   zscale = 1,
+  cex = 1,
   col = "black",
   lwd = 1,
-  verbose = T
+  show.scale = T,
+  verbose = T,
+  ...
 )
 }
 \description{

@@ -42,6 +42,12 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, gridder = NULL, grid =
     if (verbose) { message('BUILD.SECTION: No gridder specified, defaulting to gridODV. Other options: gridBIN, gridIDW, gridNN, gridNNI and gridKrige.') }
   }
 
+  if (is.null(neighborhood)) {
+    neighborhood = min(length(x), 10)
+  } else {
+    neighborhood = min(neighborhood, length(x))
+  }
+
   if (uncertainty == 0) { message('BUILD.SECTION: Uncertainty of zero may produce NAs!') }
   if (is.null(field.names)) {
     field.names = paste0('z', 1:ncol(z))
@@ -58,12 +64,12 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, gridder = NULL, grid =
 
   ## Set default limits (+10% buffer)
   if (is.null(xlim)) {
-    xlim = range(x)
+    xlim = range(x, na.rm = T)
     xlim[1] = xlim[1] - (xlim[2] - xlim[1])/20
     xlim[2] = xlim[2] + (xlim[2] - xlim[1])/20
   }
   if (is.null(ylim)) {
-    ylim = range(y)
+    ylim = range(y, na.rm = T)
     ylim[1] = ylim[1] - (ylim[2] - ylim[1])/20
     ylim[2] = ylim[2] + (ylim[2] - ylim[1])/20
   }
@@ -78,12 +84,14 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, gridder = NULL, grid =
 
   if (y.scale == 0) {
     y.new = ylim[1]
+    y.factor = 1
   } else {
     y.new = seq(ylim[1], ylim[2], by = y.scale)
   }
 
   if (x.scale == 0) {
     x.new = xlim[1]
+    x.scale = 1
   } else {
     x.new = seq(xlim[1], xlim[2], by = x.scale)
   }
@@ -120,8 +128,8 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, gridder = NULL, grid =
     ny = length(unique(grid$y))
     x.new = unique(grid$x)
     y.new = unique(grid$y)
-    xlim = range(grid$x)
-    ylim = range(grid$y)
+    xlim = range(grid$x, na.rm = T)
+    ylim = range(grid$y, na.rm = T)
   }
 
   if (!is.null(proj)) { ## Apply projection
@@ -200,8 +208,8 @@ build.section = function(x, y, z, lat = NULL, lon = NULL, gridder = NULL, grid =
               ),
               x = x.new,
               y = y.new,
-              section.lat = section.lat,
-              section.lon = section.lon,
+              lat = section.lat,
+              lon = section.lon,
               data = list(x = x,
                           y = y,
                           z = z,
@@ -266,12 +274,12 @@ build.section.parallel = function(x, y, z, lat = NULL, lon = NULL,
 
   ## Set default limits (+10% buffer)
   if (is.null(xlim)) {
-    xlim = range(x)
+    xlim = range(x, na.rm = T)
     xlim[1] = xlim[1] - (xlim[2] - xlim[1])/20
     xlim[2] = xlim[2] + (xlim[2] - xlim[1])/20
   }
   if (is.null(ylim)) {
-    ylim = range(y)
+    ylim = range(y, na.rm = T)
     ylim[1] = ylim[1] - (ylim[2] - ylim[1])/20
     ylim[2] = ylim[2] + (ylim[2] - ylim[1])/20
   }
@@ -333,8 +341,8 @@ build.section.parallel = function(x, y, z, lat = NULL, lon = NULL,
               ),
               x = x.new / x.factor,
               y = y.new / y.factor,
-              section.lat = section.lat,
-              section.lon = section.lon,
+              lat = section.lat,
+              lon = section.lon,
               data = data.frame(x = x / x.factor, y = y / y.factor, z = z, lat = lat, lon = lon)
   )
   ## Return

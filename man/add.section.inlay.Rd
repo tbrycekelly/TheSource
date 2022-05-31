@@ -6,6 +6,7 @@
 \usage{
 add.section.inlay(
   section,
+  scale = 1000,
   p = NULL,
   side = 1,
   pch = 20,

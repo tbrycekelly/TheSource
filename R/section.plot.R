@@ -68,15 +68,15 @@ plot.section = function(section, field = NULL,
   if (log) {
     z = log(z, base)
     if (is.null(zlim)) {
-      zlim = range(pretty(z, na.rm = TRUE))
+      zlim = range(pretty(z), na.rm = TRUE)
     }
   }
 
-  if (is.null(zlim)) { zlim = range(pretty(z, na.rm = TRUE)) }
+  if (is.null(zlim)) { zlim = range(pretty(z), na.rm = TRUE) }
 
   if (is.null(main)) { main = field }
-  if (is.null(xlim)) { xlim = range(x)}
-  if (is.null(ylim)) { ylim = range(y) }
+  if (is.null(xlim)) { xlim = range(x, na.rm = T)}
+  if (is.null(ylim)) { ylim = range(y, na.rm = T) }
 
   ## Out of Range
   # Set values to zlim if you want the out of range values plotted at the zlim values
@@ -153,18 +153,24 @@ get.section.bathy = function(lon, lat, res = 10) {
 #' @param bathy.col the color of the bathymetry
 #' @export
 add.section.bathy = function(section, bathy = bathy.global, binning = 1, bathy.col = 'darkgrey') {
-  x = section$x
-  depth = rep(NA, length(x))
-
-  bathy$lon = bathy$lon %% 360
-  section$section.lon = section$section.lon %% 360
-
-  for (i in 1:length(x)) {
-    depth[i] = -bathy$Z[which.min((bathy$Lon - section$section.lon[i])^2), which.min((bathy$Lat - section$section.lat[i])^2)]
+  if ((length(section$lon) == 1 & is.na(section(lon))) | (length(section$lat) == 1 & is.na(section(lat)))) {
+    message(' Bathymetry can only be drawn for sections where lon/lat are provided.')
+    return()
   }
+
+  ## Project lon/lat points
+  p = make.proj(lat = median(section$lat), lon = median(section$lon))
+  bathy$xy = rgdal::project(cbind(bathy$Lon, bathy$Lat), proj = p)
+  section$xy = rgdal::project(cbind(section$lon, section$lat), proj = p)
+
+  ## Calculate depth via bilinear interpolation
+  depth = interp.bilinear(x = section$xy[,1], y = section$xy[,2], gx = bathy$xy[,1], gy = bathy$xy[,2], z = -bathy$Z)
+
+  ## Filter
   depth = runmed(depth, binning)
 
-  polygon(x = c(x, rev(x)), y = c(depth, rep(1e8, length(x))), col = bathy.col)
+  ## Draw polygon
+  polygon(x = c(section$x, rev(section$x)), y = c(depth, rep(1e8, length(section$x))), col = bathy.col)
 }
 
 
@@ -183,7 +189,7 @@ add.section.contour = function(section, field = NULL, levels = NULL, col = 'blac
     field = colnames(section$grid)[3] # first interpolated field
   }
   z = matrix(section$grid[[field]], nrow = length(section$x))
-  if (is.null(levels)) { levels = pretty(range(as.numeric(z)), n = 5) }
+  if (is.null(levels)) { levels = pretty(range(as.numeric(z), na.rm = T), n = 5) }
 
   contour(section$x, section$y, z, add = TRUE, levels = levels, col = col, lty = lty, lwd = lwd,
           labels = labels, labcex = cex.lab, drawlabels = !isFALSE(labels))
@@ -192,45 +198,50 @@ add.section.contour = function(section, field = NULL, levels = NULL, col = 'blac
 
 #' @title Add Map Inlay
 #' @export
-add.section.inlay = function(section, p = NULL, side = 1, pch = 20, cex = 1, col = 'red', land.col = 'black', height = 0.1, width = 0.1) {
+add.section.inlay = function(section,
+                             scale = 1000,
+                             p = NULL,
+                             side = 1,
+                             pch = 20,
+                             cex = 1,
+                             col = 'red',
+                             land.col = 'black',
+                             height = 0.1,
+                             width = 0.1) {
   par.old = par()
   plt = par('plt')
-  if (side == 1) {
-    par(new = T, bg = 'white', plt = c(plt[1] + c(0.05, 0.05 + width), plt[3] + c(0.05, 0.05 + height)))
-  }
+  if (side == 1) { par(new = T, bg = 'white', plt = c(plt[2] - c(0.05 + width, 0.05), plt[3] + c(0.05, 0.05 + height))) }
+  if (side == 2) { par(new = T, bg = 'white', plt = c(plt[1] + c(0.05, 0.05 + width), plt[3] + c(0.05, 0.05 + height))) }
+  if (side == 3) { par(new = T, bg = 'white', plt = c(plt[1] + c(0.05, 0.05 + width), plt[4] - c(0.05 + height, 0.05))) }
+  if (side == 4) { par(new = T, bg = 'white', plt = c(plt[2] - c(0.05 + width, 0.05), plt[4] - c(0.05 + height, 0.05))) }
 
-  if (is.na(section$section.lat[1])) {
+  if (is.na(section$lat[1])) {
     lon = 0
     lat = 0
-    dlon = 80
-    dlat = 80
   } else {
-    lon = mean(section$section.lon, na.rm = T)
-    lat = mean(section$section.lat, na.rm = T)
-    dlon = abs(diff(range(section$section.lon))) / 2
-    dlat = abs(diff(range(section$section.lat))) / 2
+    lon = mean(section$lon, na.rm = T)
+    lat = mean(section$lat, na.rm = T)
   }
 
   if (is.null(p)) {
-    p = make.proj(projection = 11,
+    p = make.proj(projection = 'stere',
               lat = lon,
               lon = lat)
   }
 
   ## Make map
-  map = make.map(coast = 'coastlineWorld',
-                 lon.min = lon - dlon,
-                 lon.max = lon + dlon,
-                 lat.min = lat - dlat,
-                 lat.max = lat + dlat,
-                 draw.grid = F,
-                 draw.axis = F,
-                 p = p,
-                 land.col = land.col)
+  map = make.map2(coast = 'coastlineWorld',
+                  lon = lon,
+                  lat = lat,
+                  scale = scale,
+                  draw.grid = F,
+                  draw.axis = F,
+                  p = p,
+                  land.col = land.col)
 
   ## Plot points if available
-  if (!is.na(section$section.lat[1])) {
-    add.map.points(section$section.lon, section$section.lat, pch = pch, cex = 0.2 * cex, col = col)
+  if (length(section$lon) > 1 & all(!is.na(section$lat))) {
+    add.map.points(section$lon, section$lat, pch = pch, cex = 0.2 * cex, col = col)
   }
   par(plt = par.old$plt)
 }
