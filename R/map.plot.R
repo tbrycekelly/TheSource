@@ -530,6 +530,7 @@ add.map.axis = function(map, lons = NULL, lats = NULL, sides = c(1:4)) {
   for (ll in lons) {
     temp = get.map.line(map, lon = rep(ll, 2), lat = c(-90,90))
     temp = temp[is.finite(temp[,1]) & is.finite(temp[,2]),]
+
     s = 'E'
     if (ll < 0 | ll %% 360 >= 180) { s = 'W'; ll = -ll }
 

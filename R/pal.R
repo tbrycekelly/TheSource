@@ -28,6 +28,10 @@ get.pal = function(n = 10, pal = 'greyscale', rev = FALSE) {
 #' @param clip boolean, remove out of range values? Defaults to False
 #' @export
 make.pal = function(x, n = 255, min = NA, max = NA, pal = 'greyscale', rev = FALSE, clip = FALSE) {
+  x = as.numeric(x)
+  min = as.numeric(min)
+  max = as.numeric(max)
+
   cols = get.pal(n+1, pal = pal, rev = rev)
 
   if (is.na(min)) {  ## set a minimum
@@ -45,7 +49,14 @@ make.pal = function(x, n = 255, min = NA, max = NA, pal = 'greyscale', rev = FAL
     x[x < min] = min
     x[x > max] = max
   }
-  x = (x-min) * n / (max-min) ## Scale so x falls between [0,n]
+
+  if (max == min) {
+    x = x - min
+  } else {
+    x = (x - min) * n / (max - min) ## Scale so x falls between [0,n]
+  }
+
+  ## Map to colors
   cols = cols[floor(x)+1] # return the colors
   cols[is.na(x)] = '#00000000' ## NA values are transparent
 
@@ -61,6 +72,7 @@ make.pal = function(x, n = 255, min = NA, max = NA, pal = 'greyscale', rev = FAL
 #' @export
 make.qual.pal = function(x, pal = 'greyscale', rev = FALSE) {
   x[is.na(x)] = 'other.vals'
+
   ## Determine numeric values
   a = sapply(x, function(xx) {which(xx == unique(x))})
 
@@ -162,18 +174,18 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, labels.at = NULL,
     labels = labels.at
   }
   if (log) {
-    delta = (log(labels.at, base) - log(min, base)) / (log(max, base) - log(min, base))
+    delta = (log(as.numeric(labels.at), base) - log(as.numeric(min), base)) / (log(as.numeric(max), base) - log(as.numeric(min), base))
   } else {
-    delta = (labels.at - min)/(max - min)
+    delta = (as.numeric(labels.at) - as.numeric(min))/(as.numeric(max) - as.numeric(min))
   }
 
   # Ticks
   if (!is.null(ticks)) {
     ticks = ticks[ticks >= min & ticks <= max]
     if (log) {
-      ticks.delta = (log(ticks, base) - log(min, base)) / (log(max, base) - log(min, base))
+      ticks.delta = (log(as.numeric(ticks), base) - log(as.numeric(min), base)) / (log(as.numeric(max), base) - log(as.numeric(min), base))
     } else {
-      ticks.delta = (ticks - min)/(max - min)
+      ticks.delta = (as.numeric(ticks) - as.numeric(min))/(as.numeric(max) - as.numeric(min))
     }
   }
 
