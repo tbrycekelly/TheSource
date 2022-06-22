@@ -69,7 +69,17 @@ calc.sma = function(parameter, k = 100) {
 #' @param n The number of samples to include in the moving average.
 #' @export
 ma = function(x, n = 5){
-  as.numeric(filter(as.numeric(x), rep(1/n, n), sides = 2))
+  if (all(is.na(x))) {
+    #message('All NAs passed to ma, returning NA vector.')
+    return(rep(NA, length(x)))
+  }
+  x = c(rep(x[1], floor(n/2)), x, rep(x[length(x)], floor(n/2)))
+  cx = c(0, cumsum(ifelse(is.na(x), 0, x)))
+  cn = c(0, cumsum(ifelse(is.na(x), 0, 1)))
+
+  rx = cx[(n+1):length(cx)] - cx[1:(length(cx) - n)]
+  rn = cn[(n+1):length(cx)] - cn[1:(length(cx) - n)]
+  rx / rn
 }
 
 
