@@ -125,6 +125,7 @@ make.map = function (coast = NULL,
 #' @title Add Coastline to Map
 #' @author Thomas Bryce Kelly
 #' @description Adds a coastline list to a map given a projection and land color.
+#' @export
 add.map.coastline = function(coast, p, land.col) {
 
   ## helper function
@@ -167,6 +168,10 @@ add.map.coastline = function(coast, p, land.col) {
       keep[i] = F
     }
   }
+  if (sum(keep) == 0) {
+    return(list(coastline = NA, projected.coast = NA))
+  }
+
   coastline = coastline[keep]
   projected.coast = projected.coast[keep]
   projected.coast = break.polygon(projected.coast)

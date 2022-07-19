@@ -67,6 +67,75 @@ coastline3 = build.coastline(list.files('C:/Users/Tom Kelly/Downloads/GSHHS_shp/
 coastline4 = build.coastline(list.files('C:/Users/Tom Kelly/Downloads/GSHHS_shp/h/', full.names = T, pattern = '.shp'))
 coastline5 = build.coastline(list.files('C:/Users/Tom Kelly/Downloads/GSHHS_shp/f/', full.names = T, pattern = '.shp'))
 
+#### Consider land areas:
+area1 = data.frame(index = c(1:length(coastline1$data)), area = NA)
+for (i in 1:nrow(area1)) {
+  n = nrow(coastline1$data[[i]])
+  area = abs(sum(sapply(c(2:n),
+                function (x) {
+                  coastline1$data[[i]]$longitude[x-1] * coastline1$data[[i]]$latitude[x] - coastline1$data[[i]]$longitude[x] * coastline1$data[[i]]$latitude[x-1]
+                })) + coastline1$data[[i]]$longitude[n] * coastline1$data[[i]]$latitude[1] - coastline1$data[[i]]$longitude[1] * coastline1$data[[i]]$latitude[n])
+
+  area1$area[i] = area
+}
+
+temp = coastline1
+temp$data = temp$data[area1$area > quantile(area1$area, probs = 0.75)]
+map = make.map(temp)
+
+object.size(temp)
+object.size(coastline1)
+
+# Coastline2
+
+get.coastline.area = function(coastline) {
+  area = rep(NA, length(coastline$data))
+
+  for (i in 1:length(area)) {
+    n = nrow(coastline$data[[i]])
+    area[i] = abs(sum(sapply(c(2:n),
+                          function (x) {
+                            coastline$data[[i]]$longitude[x-1] * coastline$data[[i]]$latitude[x] - coastline$data[[i]]$longitude[x] * coastline$data[[i]]$latitude[x-1]
+                          })) + coastline$data[[i]]$longitude[n] * coastline$data[[i]]$latitude[1] - coastline$data[[i]]$longitude[1] * coastline$data[[i]]$latitude[n])
+  }
+
+  area
+}
+
+temp = coastline2
+area = get.coastline.area(temp)
+temp$data = temp$data[area > quantile(area, probs = 0.75)]
+map = make.map2(temp, lat = 60, lon = -150)
+
+object.size(temp) / object.size(coastline2)
+
+
+
+## Coastline 3
+temp = coastline3
+area = get.coastline.area(temp)
+temp$data = temp$data[area < quantile(area, probs = 0.75)]
+
+map = make.map2(coastline3, lat = 60, lon = -150)
+add.map.coastline(temp, p = map$p, land.col = 'red')
+
+object.size(temp) / object.size(coastline3)
+
+
+## Coastline 4
+temp = coastline4
+area = get.coastline.area(temp)
+temp$data = temp$data[area < quantile(area, probs = 0.7)]
+
+map = make.map2(coastline4, lat = 59, lon = -145, scale = 250)
+add.map.coastline(temp, p = map$p, land.col = 'red')
+
+object.size(temp) / object.size(coastline4)
+
+
+
+
+
 save(coastline1, file = 'data/coastline1.rdata')
 save(coastline2, file = 'data/coastline2.rdata')
 save(coastline3, file = 'data/coastline3.rdata')

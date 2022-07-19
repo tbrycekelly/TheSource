@@ -153,18 +153,26 @@ get.section.bathy = function(lon, lat, res = 10) {
 #' @param bathy.col the color of the bathymetry
 #' @export
 add.section.bathy = function(section, bathy = bathy.global, binning = 1, bathy.col = 'darkgrey') {
-  if ((length(section$lon) == 1 & is.na(section(lon))) | (length(section$lat) == 1 & is.na(section(lat)))) {
+
+  if (length(section$lon) == 1) {
     message(' Bathymetry can only be drawn for sections where lon/lat are provided.')
     return()
   }
 
+
+
   ## Project lon/lat points
-  p = make.proj(lat = median(section$lat), lon = median(section$lon))
-  bathy$xy = rgdal::project(cbind(bathy$Lon, bathy$Lat), proj = p)
-  section$xy = rgdal::project(cbind(section$lon, section$lat), proj = p)
+  p = make.proj('nsper', lat = median(section$lat, na.rm = T), lon = median(section$lon, na.rm = T))
+  bathy$grid = expand.grid(lon = bathy$Lon, lat = bathy$Lat)
+  bathy$xy = rgdal::project(cbind(bathy$grid$lon, bathy$grid$lat), proj = p) # Project bathymetric values
+  section$xy = rgdal::project(cbind(section$lon, section$lat), proj = p) # project section values.
 
   ## Calculate depth via bilinear interpolation
-  depth = interp.bilinear(x = section$xy[,1], y = section$xy[,2], gx = bathy$xy[,1], gy = bathy$xy[,2], z = -bathy$Z)
+  depth = interp.bilinear(x = section$xy[,1],
+                          y = section$xy[,2],
+                          gx = as.numeric(bathy$xy[,1]),
+                          gy = as.numeric(bathy$xy[,2]),
+                          z = as.numeric(-bathy$Z))
 
   ## Filter
   depth = runmed(depth, binning)

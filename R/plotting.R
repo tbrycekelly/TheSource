@@ -269,9 +269,13 @@ add.barplot.bar = function(data, sd = NULL, x = 1, width = 0.6, col = NULL, pal 
 plot.image = function(x = NULL, y = NULL, z = NULL, col = NULL, xlab = NULL, ylab = NULL,
                       xlim = NULL, ylim = NULL, zlim = NULL,
                       pal = 'greyscale', n = 255, rev = F, ...) {
+
   if (is.null(z) & (is.null(x)) | is.null(y)) { stop('plot.image: if z is not given then x and y are required, along with col.')}
   if (is.null(z) & is.null(col)) { stop('plot.image: Either z or col arrays are required.')}
   if (!is.null(z) & !is.null(col)) { message('plot.image: Both z and col arrays are provieded. Ignoring z.')}
+
+
+  z = as.matrix(z)
 
   if (is.null(col)) {
     if (is.null(x)) {x = c(1:dim(z)[1])}
@@ -310,8 +314,16 @@ plot.image = function(x = NULL, y = NULL, z = NULL, col = NULL, xlab = NULL, yla
     yy = y
   }
 
-  image.default(x = xx[order(xx)], y = yy[order(yy)], z = z[order(xx), order(yy)], zlim = zlim, xlim = xlim, ylim = ylim,
-                col = col, xlab = xlab, ylab = ylab, ...)
+  image.default(x = xx[order(xx)],
+                y = yy[order(yy)],
+                z = matrix(z[order(xx), order(yy)], nrow = length(xx), ncol = length(yy)),
+                zlim = zlim,
+                xlim = xlim,
+                ylim = ylim,
+                col = col,
+                xlab = xlab,
+                ylab = ylab,
+                ...)
 }
 
 

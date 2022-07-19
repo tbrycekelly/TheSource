@@ -17,13 +17,6 @@
 
 
 
-lon = seq(95, 120, length.out = 10)
-lat = seq(-25, -20, length.out = 10)
-
-grid = expand.grid(lon = lon, lat = lat)
-
-
-
 #' @title Initialize Lagrangian Model
 #' @param t.start start time for the Lagrangian model (POSIX)
 #' @param t.end end time for the Lagrangian model (POSIX)
@@ -576,26 +569,26 @@ get.vel.oscar = function(lon, lat, depth, time, advection) {
 #' @author Thomas Bryce Kelly
 #' @export
 get.vel.globcurrent = function(lon, lat, depth, time, advection) {
-  
+
   grid = data.frame(lon = lon, lat = lat)
   grid$lon[grid$lon < 0] = grid$lon[grid$lon < 0] + 360
   grid$u = 0
   grid$v = 0
-  
+
   if (time < min(advection$time) | time > max(advection$time)) {
     message('Improper advection product loaded for time = ', time)
     nil = rep(0, length(lon))
-    
+
     return(list(u = nil, v = nil, w = nil))
   }
-  
+
   t2 = min(which(advection$time > time))
   t1 = t2-1
   t1w = as.numeric(advection$time[t2] - time) / as.numeric(advection$time[t2] - advection$time[t1])
-  
+
   x2 = sapply(grid$lon, function(x) {min(which(advection$lon > x), length(advection$lon))})
   y2 = sapply(grid$lat, function(x) {min(which(advection$lat > x), length(advection$lat))})
-  
+
   ## Periodic boundary conditions
   if (abs(diff(range(advection$lon))) > 350) {
     x1 = (x2 - 1) %% length(advection$lon)
@@ -603,21 +596,21 @@ get.vel.globcurrent = function(lon, lat, depth, time, advection) {
     x1 = pmax(x2 - 1, 1)
   }
   y1 = pmax(y2 - 1, 1)
-  
+
   ## Calculate weights
   x1w = (advection$lon[x2] - grid$lon) / (advection$lon[x2] - advection$lon[x1])
   y1w = (advection$lat[y2] - grid$lat) / (advection$lat[y2] - advection$lat[y1])
-  
+
   ## calculate u
   grid$u = t1w * ((advection$u[cbind(x1,y1,t1)] * x1w + advection$u[cbind(x2,y1,t1)] * (1 - x1w)) * y1w + (advection$u[cbind(x1,y2,t1)] * x1w + advection$u[cbind(x2,y2,t1)] * (1 - x1w)) * (1 - y1w)) +
     (1 - t1w) * ((advection$u[cbind(x1,y1,t2)] * x1w + advection$u[cbind(x2,y1,t2)] * (1 - x1w)) * y1w + (advection$u[cbind(x1,y2,t2)] * x1w + advection$u[cbind(x2,y2,t2)] * (1 - x1w)) * (1 - y1w))
-  
+
   ## calculate v
   grid$v = t1w * ((advection$v[cbind(x1,y1,t1)] * x1w + advection$v[cbind(x2,y1,t1)] * (1 - x1w)) * y1w + (advection$v[cbind(x1,y2,t1)] * x1w + advection$v[cbind(x2,y2,t1)] * (1 - x1w)) * (1 - y1w)) +
     (1 - t1w) * ((advection$v[cbind(x1,y1,t2)] * x1w + advection$v[cbind(x2,y1,t2)] * (1 - x1w)) * y1w + (advection$v[cbind(x1,y2,t2)] * x1w + advection$v[cbind(x2,y2,t2)] * (1 - x1w)) * (1 - y1w))
-  
+
   grid[is.na(grid)] = 0
-  
+
   ## Return
   list(u = grid$u,
        v = grid$v,
