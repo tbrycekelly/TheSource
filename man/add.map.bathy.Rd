@@ -68,6 +68,4 @@ add bathymetry contours
 }
 \author{
 Thomas Bryce Kelly
-
-Thomas Bryce Kelly
 }
