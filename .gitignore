@@ -5,7 +5,5 @@
 *.o
 *.dll
 *.sync*
-*.Rproj
 *.so
 **/desktop.ini
-R Testing
