@@ -5,7 +5,7 @@
 \title{Test Map of California}
 \usage{
 test.map.california(
-  coast = "coastlineWorldFine",
+  coast = "coastline3",
   p = "+proj=merc",
   lat.min = 31,
   lat.max = 36,

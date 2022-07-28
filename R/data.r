@@ -1,5 +1,4 @@
 #' @title Global Bathymetry
-#'
 #' A Matrix containing elevation data taken from NOAA via marmap.
 #' @docType data
 #' @format A matrix containing 2160 x 1080 values of elevation. Depth is given in negative. Resolution is 10 arc minutes (1/6th degree).
@@ -8,7 +7,6 @@
 
 
 #' @title Pacific Bathymetry
-#'
 #' A Matrix containing elevation data taken from NOAA via marmap.
 #' @docType data
 #' @format A list
@@ -17,7 +15,6 @@
 
 
 #' @title Arctic Bathymetry
-#'
 #' A Matrix containing elevation data taken from NOAA via marmap.
 #' @docType data
 #' @format A matrix containing 2160 x 1080 values of elevation. Depth is given in negative. Resolution is 10 arc minutes (1/6th degree).
@@ -26,7 +23,6 @@
 
 
 #' @title Antarctic Bathymetry
-#'
 #' A Matrix containing elevation data taken from NOAA via marmap.
 #' @docType data
 #' @format A matrix containing 2160 x 1080 values of elevation. Depth is given in negative. Resolution is 10 arc minutes (1/6th degree).
@@ -35,7 +31,6 @@
 
 
 #' @title Gulf of Mexico Bathymetry
-#'
 #' A Matrix containing elevation data taken from NOAA via marmap.
 #' @docType data
 #' @format A matrix containing 2160 x 1080 values of elevation. Depth is given in negative. Resolution is 10 arc minutes (1/6th degree).
@@ -75,32 +70,58 @@
 
 #' @title World Coastline Data (L1)
 #' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
-#' @source
+#' @source NOAA
 "coastline1"
 
 
 #' @title World Coastline Data (L2)
 #' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
-#' @source
+#' @source NOAA
 "coastline2"
 
 
 #' @title World Coastline Data (L3)
 #' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
-#' @source
+#' @source NOAA
 "coastline3"
 
 
 #' @title World Coastline Data (L4)
 #' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
-#' @source
+#' @source NOAA
 "coastline4"
 
 
 #' @title World Coastline Data (L5)
 #' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
-#' @source
+#' @source NOAA
 "coastline5"
+
+
+#' @title World lake Polygon (L1)
+#' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
+#' @source NOAA
+"lakes1"
+
+#' @title World lake Polygon (L2)
+#' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
+#' @source NOAA
+"lakes2"
+
+#' @title World lake Polygon (L3)
+#' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
+#' @source NOAA
+"lakes3"
+
+#' @title World lake Polygon (L4)
+#' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
+#' @source NOAA
+"lakes4"
+
+#' @title World lake Polygon (L5)
+#' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
+#' @source NOAA
+"lakes5"
 
 
 #' @title World EEZ Data

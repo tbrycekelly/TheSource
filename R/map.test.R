@@ -3,7 +3,7 @@
 #' @description An example map of the Arctic -- basemap only. For a full test map call test.map.arctic()
 #' @inheritParams make.map
 #' @export
-make.map.arctic = function(coast = 'coastlineWorld',
+make.map.arctic = function(coast = 'coastline1',
                            lon.min = -180,
                            lon.max = 180,
                            lat.min = 60,
@@ -24,9 +24,9 @@ make.map.arctic = function(coast = 'coastlineWorld',
 #' @description An example map of the NGA -- basemap only.
 #' @inheritParams make.map
 #' @export
-make.map.nga = function(coast = 'coastlineWorldFine',
+make.map.nga = function(coast = 'coastline2',
                         lon = -150,
-                        lat = 60,
+                        lat = 58,
                         scale = 300,
                         p = make.proj('stere', lat = 60, lon = -150),
                         dlat = 3,
@@ -46,7 +46,7 @@ make.map.nga = function(coast = 'coastlineWorldFine',
 #' @import oce
 #' @import marmap
 #' @export
-make.map.cce = function (coast = "coastlineWorldFine",
+make.map.cce = function (coast = "coastline3",
                          lon.min = -126,
                          lon.max = -119,
                          lat.min = 31,
@@ -72,10 +72,9 @@ make.map.cce = function (coast = "coastlineWorldFine",
 #' @author Laura Whitmore
 #' @export
 test.map.arctic = function() {
-  ##run as is - default settings for Arctic, coastlineWorld
   map = make.map.arctic()
 
-  add.map.bathy(map, bathy.arctic, zlim = c(-6e3, -20), subsample = 2)
+  add.map.bathy(map, bathy.arctic, zlim = c(-6e3, -20), refine =-2)
   add.map.contour(map, bathy.arctic$Lon, bathy.arctic$Lat, bathy.arctic$Z, trim = F)
 
   map
@@ -87,7 +86,7 @@ test.map.arctic = function() {
 #' @export
 test.map.mississippi = function() {
   ## test for Mississippi Sound region
-  map = make.map(coast = "coastlineWorldFine",
+  map = make.map(coast = "coastline3",
                  lat.min = 24,
                  lat.max = 32,
                  lon.min = -93,
@@ -115,7 +114,7 @@ test.map.mississippi = function() {
 #' @import oce
 #' @import ocedata
 #' @export
-test.map.california = function(coast = "coastlineWorldFine",
+test.map.california = function(coast = "coastline3",
                                p = "+proj=merc",
                                lat.min = 31,
                                lat.max = 36,

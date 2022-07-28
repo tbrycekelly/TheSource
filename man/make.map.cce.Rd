@@ -5,7 +5,7 @@
 \title{Make Map (CCE)}
 \usage{
 make.map.cce(
-  coast = "coastlineWorldFine",
+  coast = "coastline3",
   lon.min = -126,
   lon.max = -119,
   lat.min = 31,

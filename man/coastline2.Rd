@@ -8,6 +8,9 @@ This is a coarse resolution coastline, compiled from the global hierarchical coa
 \format{
 An object of class \code{list} of length 2.
 }
+\source{
+NOAA
+}
 \usage{
 coastline2
 }

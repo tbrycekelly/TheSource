@@ -4,7 +4,7 @@
 \alias{add.map.scale}
 \title{Add Map Scalebar}
 \usage{
-add.map.scale(pos = 1, scale = NULL, verbose = T, col = "black", cex = 0.1)
+add.map.scale(pos = 1, scale = NULL, verbose = T, col = "black", cex = 1)
 }
 \description{
 Add Map Scalebar

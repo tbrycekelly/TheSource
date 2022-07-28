@@ -4,7 +4,6 @@
 \name{bathy.pacific}
 \alias{bathy.pacific}
 \title{Pacific Bathymetry
-
 A Matrix containing elevation data taken from NOAA via marmap.}
 \format{
 A list
@@ -17,7 +16,6 @@ bathy.pacific
 }
 \description{
 Pacific Bathymetry
-
 A Matrix containing elevation data taken from NOAA via marmap.
 }
 \keyword{datasets}

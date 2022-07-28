@@ -5,9 +5,9 @@
 \title{Make Map (NGA)}
 \usage{
 make.map.nga(
-  coast = "coastlineWorldFine",
+  coast = "coastline2",
   lon = -150,
-  lat = 60,
+  lat = 58,
   scale = 300,
   p = make.proj("stere", lat = 60, lon = -150),
   dlat = 3,

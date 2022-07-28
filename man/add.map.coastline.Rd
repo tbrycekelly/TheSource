@@ -4,7 +4,7 @@
 \alias{add.map.coastline}
 \title{Add Coastline to Map}
 \usage{
-add.map.coastline(coast, p, land.col)
+add.map.coastline(coast, p, land.col, field.inv = NULL)
 }
 \description{
 Adds a coastline list to a map given a projection and land color.

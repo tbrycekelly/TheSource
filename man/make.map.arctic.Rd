@@ -5,7 +5,7 @@
 \title{Make an Arctic Map}
 \usage{
 make.map.arctic(
-  coast = "coastlineWorld",
+  coast = "coastline1",
   lon.min = -180,
   lon.max = 180,
   lat.min = 60,

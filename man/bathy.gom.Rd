@@ -4,7 +4,6 @@
 \name{bathy.gom}
 \alias{bathy.gom}
 \title{Gulf of Mexico Bathymetry
-
 A Matrix containing elevation data taken from NOAA via marmap.}
 \format{
 A matrix containing 2160 x 1080 values of elevation. Depth is given in negative. Resolution is 10 arc minutes (1/6th degree).
@@ -17,7 +16,6 @@ bathy.gom
 }
 \description{
 Gulf of Mexico Bathymetry
-
 A Matrix containing elevation data taken from NOAA via marmap.
 }
 \keyword{datasets}
