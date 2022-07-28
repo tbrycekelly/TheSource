@@ -88,9 +88,9 @@ make.map = function (coast = NULL,
 
   ## Setup map object
   map = list(coastline = coast,
-             lon = lon,
-             lat = lat,
-             scale = scale,
+             lon = (lon.min + lon.max)/2,
+             lat = (lat.min + lat.max)/2,
+             scale = NA,
              p = p,
              land.col = land.col,
              grid = list(

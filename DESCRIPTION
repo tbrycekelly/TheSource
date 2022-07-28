@@ -12,19 +12,6 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.1
 Depends:
-  rgdal,
-  ncdf4,
-  lmodel2,
-  knitr,
-  automap,
-  sp,
-  Hmisc,
-  devtools,
-  pals,
-  marmap,
-  polynom,
-  missForest,
-  learnr
 Imports:
   rgdal,
   ncdf4,
@@ -37,7 +24,6 @@ Imports:
   pals,
   marmap,
   polynom,
-  missForest,
-  learnr
+  missForest
 URL: https://github.com/tbrycekelly/TheSource
 Suggests: 

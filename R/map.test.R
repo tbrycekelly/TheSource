@@ -3,7 +3,7 @@
 #' @description An example map of the Arctic -- basemap only. For a full test map call test.map.arctic()
 #' @inheritParams make.map
 #' @export
-make.map.arctic = function(coast = 'coastline1',
+make.map.arctic = function(coast = 'coastline2',
                            lon.min = -180,
                            lon.max = 180,
                            lat.min = 60,
@@ -24,7 +24,7 @@ make.map.arctic = function(coast = 'coastline1',
 #' @description An example map of the NGA -- basemap only.
 #' @inheritParams make.map
 #' @export
-make.map.nga = function(coast = 'coastline2',
+make.map.nga = function(coast = 'coastline3',
                         lon = -150,
                         lat = 58,
                         scale = 300,
