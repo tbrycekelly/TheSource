@@ -48,10 +48,10 @@ make.map = function (coast = NULL,
   }
 
   ## Parse projection info (might be helpful?)
-  lon0 = as.numeric(strsplit(strsplit(paste(p, ''), 'lon_0=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
-  lat0 = as.numeric(strsplit(strsplit(paste(p, ''), 'lat_0=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
-  proj = strsplit(strsplit(paste(p, ''), 'proj=')[[1]][2], '\\s+')[[1]][1] ## retreive the lon0 value from the projection
-  h = as.numeric(strsplit(strsplit(paste(p, ''), 'h=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
+  #lon0 = as.numeric(strsplit(strsplit(paste(p, ''), 'lon_0=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
+  #lat0 = as.numeric(strsplit(strsplit(paste(p, ''), 'lat_0=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
+  #proj = strsplit(strsplit(paste(p, ''), 'proj=')[[1]][2], '\\s+')[[1]][1] ## retreive the lon0 value from the projection
+  #h = as.numeric(strsplit(strsplit(paste(p, ''), 'h=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
 
   ## Start Coastline
   if (typeof(coast) != "character") {
@@ -185,10 +185,10 @@ make.map2 = function (coast = NULL,
   }
 
   ## Parse projection info (might be helpful?)
-  lon0 = as.numeric(strsplit(strsplit(paste(p, ''), 'lon_0=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
-  lat0 = as.numeric(strsplit(strsplit(paste(p, ''), 'lat_0=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
-  proj = strsplit(strsplit(paste(p, ''), 'proj=')[[1]][2], '\\s+')[[1]][1] ## retreive the lon0 value from the projection
-  h = as.numeric(strsplit(strsplit(paste(p, ''), 'h=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
+  #lon0 = as.numeric(strsplit(strsplit(paste(p, ''), 'lon_0=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
+  #lat0 = as.numeric(strsplit(strsplit(paste(p, ''), 'lat_0=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
+  #proj = strsplit(strsplit(paste(p, ''), 'proj=')[[1]][2], '\\s+')[[1]][1] ## retreive the lon0 value from the projection
+  #h = as.numeric(strsplit(strsplit(paste(p, ''), 'h=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
 
   ## Start Coastline
   if (typeof(coast) != "character") {
