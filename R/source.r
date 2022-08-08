@@ -450,23 +450,6 @@ pad.number = function(x, pad = 4) {
 }
 
 
-#' @title Update TheSource
-#' @author Thomas Bryce Kelly
-#' @import devtools
-#' @export
-TheSource.update = function() {
-  user = readline(prompt = 'Update installation of TheSource? [Y|y] ')
-  if (user == 'Y' | user == 'y') {
-    unloadNamespace('package:TheSource')
-    detach("package:TheSource", unload=TRUE)
-    devtools::install_github('tbrycekelly/TheSource')
-    library(TheSource)
-  } else {
-    message('User aborted update. Exiting.')
-  }
-}
-
-
 #' @title Get version of TheSource
 #' @author Thomas Bryce Kelly
 #' @export

@@ -5,7 +5,7 @@
 \title{Make an Arctic Map}
 \usage{
 make.map.arctic(
-  coast = "coastline1",
+  coast = "coastline2",
   lon.min = -180,
   lon.max = 180,
   lat.min = 60,
@@ -18,7 +18,7 @@ make.map.arctic(
 )
 }
 \arguments{
-\item{coast}{Should be the name of a coastline data object. A value of NULL sets the default cosatline to 'coastlineWorld'.}
+\item{coast}{Should be the name of a coastline data object. A value of NULL sets the default cosatline to 'coastline2'.}
 
 \item{lon.min}{The minimum longitude displayed on the map.}
 
