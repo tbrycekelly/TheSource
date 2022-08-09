@@ -12,7 +12,7 @@ names(file$dim)
 
 {
   a = Sys.time()
-  file = nc_open(path)
+  ncdf4::file = nc_open(path)
   
   lats = c(-40, 0)
   lons = c(60, 100)
@@ -39,8 +39,8 @@ names(file$dim)
     }
   }
   
-  data = ncvar_get(file, names(file$var)[1], start = c(lon.start, lat.start), count = c(lon.count, lat.count))
-  nc_close(file)
+  data = ncdf4::ncvar_get(file, names(file$var)[1], start = c(lon.start, lat.start), count = c(lon.count, lat.count))
+  ncdf4::nc_close(file)
   
   message(Sys.time() - a)
 }

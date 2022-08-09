@@ -1,40 +1,128 @@
 #' @title Read Satellite Data
 #' @author Thomas Bryce Kelly
 #' @description read
-#' @export
 ## Read nc file and do preliminary parsing/conversion
-read.satellite = function(file = NULL, lon = NULL, lat = NULL, verbose = T) {
-
-  ## Load and trim satellite data products
-  if (verbose) { message(Sys.time(), ': Loading satellite file: ', file) }
-  sate = load.satellite(file = file, verbose = verbose)
+read.satellite = function(file, lon = NULL, lat = NULL, verbose = T) {
 
   if (!is.null(lon) | !is.null(lat)) {
-    sate = trim.satellite(sate, lon = lon, lat = lat, verbose = verbose)
+    pre.trimmed = T
+    if (is.null(lon)) { lon = c(-180, 180)}
+    if (is.null(lat)) { lat = c(-90,90)}
+    
+    # info = load.nc.dims(file)
+    # 
+    # ## See if lat/lon exists in the file
+    # lat.check = c('lat', 'latitude', 'Lat', 'Latitude', 'LAT', 'LATITUDE', 'y', 'Y', 'fakeDim1') %in% names(info$dim)
+    # lon.check = c('lon', 'longitude', 'Lon', 'Longitude', 'LON', 'LONGITUDE', 'x', 'X', 'fakeDim0') %in% names(file.con$dim)
+    # 
+    # if (any(lat.check) & any(lon.check)) {
+    #   
+    #   ## Valid lon/lat
+    #   file.lons = info$dim[[which(lon.check)[1]]] %% 360
+    #   file.lats = info$dim[[which(lat.check)[1]]]
+    #   
+    #   k = which(file.lons <= lon[2] & file.lons >= lon[1])
+    #   
+    #   ## Determine subset of lon
+    #   if (max(diff(k.lon)) > 1) {
+    #     lon.start = 1
+    #     lon.count = length(file.lons)
+    #   } else {
+    #     file.lons = file.lons[k]
+    #     lon.start = k[1]
+    #     lon.count = length(k)
+    #   }
+    #   
+    #   k = which(file.lats <= lat[2] & file.lats >= lat[1])
+    #   
+    #   ## Determine subset of lat
+    #   if (max(diff(k.lat)) > 1) {
+    #     lat.start = 1
+    #     lat.count = length(file.lats)
+    #   } else {
+    #     file.lats = file.lats[k]
+    #     lat.start = k[1]
+    #     lat.count = length(k)
+    #   }
+    #   
+    # } else {
+    #   ## Lat/lon not found reliably enough...
+    #   lon.count = -1
+    #   lon.start = 1
+    #   lat.start = 1
+    #   lat.count = -1
+    #   message('No coordiantes found.')
+    # }
+    # 
+    # 
+    
+    ## Can we load only subsets of the data?
+    file.con = ncdf4::nc_open(file)
+    
+    lat.check = c('lat', 'latitude', 'Lat', 'Latitude', 'LAT', 'LATITUDE') %in% names(file.con$dim)
+    
+    if (any(lat.check)) {
+      ## Get available latitudes
+      file.lats = file.con$dim[[which(lat.check)[1]]]$vals
+      k = which(file.lats <= lat[2] & file.lats >= lat[1])
+      
+      if (max(diff(k)) == 1) {
+        file.lats = file.lats[k]
+        lat.count = k[length(k)] - k[1] + 1
+        lat.start = k[1]
+      } else {
+        lat.count = -1
+        lat.start = 1
+      }
+    } else {
+      lat.count = -1
+      lat.start = 1
+      file.lats = NULL
+    }
+    
+    lon.check = c('lon', 'longitude', 'Lon', 'Longitude', 'LON', 'LONGITUDE') %in% names(file.con$dim)
+    
+    if (any(lon.check)) {
+      file.lons = file.con$dim$lon$vals
+      k = which(file.lons <= lon[2] & file.lons >= lon[1])
+      
+      if (max(diff(k)) == 1) {
+        file.lons = file.lons[k]
+        lon.count = k[length(k)] - k[1] + 1
+        lon.start = k[1]
+      } else {
+        lon.count = -1
+        lon.start = 1
+      }
+    } else {
+      lon.count = -1
+      lon.start = 1
+      file.lons = NULL
+    }
+    
+    data = list()
+    data[[names(file.con$var)[1]]] = ncdf4::ncvar_get(file.con, names(file.con$var)[1], start = c(lon.start, lat.start), count = c(lon.count, lat.count))
+    data[['lon']] = file.lons
+    data[['lat']] = file.lats
+    
+    ncdf4::nc_close(file.con)
+      
+  } else{
+  
+    ## Load data
+    data = load.nc(file = file, verbose = verbose)
+    pre.trimmed = F
   }
-
-  ## Return
-  sate
-}
-
-
-#' @title Read Satellite Data
-#' @author Thomas Bryce Kelly
-#' @description read
-## Read nc file and do preliminary parsing/conversion
-load.satellite = function(file, verbose = T) {
-
-  ## Load data
-  data = load.nc(file = file, verbose = verbose)
+  
   dimnames = names(data)
   sizes = sapply(data, function(x) {max(cumprod(c(1,dim(x))), na.rm = T)})
-
+  
   ## Determine primary field by size
   l = which.max(sizes)
   field.size = dim(data[[l]])
   l = which(sizes == sizes[l])
   x = data[l] ## list
-
+  
   ## Get Lat/lon if possible
   lat = NULL; lon = NULL
   if ('lat' %in% dimnames) { lat = data[['lat']] }
@@ -43,17 +131,17 @@ load.satellite = function(file, verbose = T) {
   if ('LATITUDE' %in% dimnames) { lat = data[['LATITUDE']] }
   if ('Lat' %in% dimnames) { lat = data[['Lat']] }
   if ('Latitude' %in% dimnames) { lat = data[['Latitude']] }
-
+  
   if ('lon' %in% dimnames) { lon = data[['lon']] }
   if ('LON' %in% dimnames) { lon = data[['LON']] }
   if ('LONGITUDE' %in% dimnames) { lon = data[['LONGITUDE']] }
   if ('longitude' %in% dimnames) { lon = data[['longitude']] }
   if ('Lon' %in% dimnames) { lon = data[['Lon']] }
   if ('Longitude' %in% dimnames) { lon = data[['Longitude']] }
-
+  
   ## time to guess lat and lon
   if (is.null(lat) & is.null(lon)) {
-
+  
     ## Standard NASA 4km grid
     if (4320 %in% field.size) {
       lat = seq(90, -90, length.out = field.size[2]+1)[-1]
@@ -74,7 +162,7 @@ load.satellite = function(file, verbose = T) {
       lon = lon - diff(lon)[1]
     }
   }
-
+  
   meta = list(n = length(x[[1]]),
               n.na = sum(is.na(x[[1]])),
               n.fields = length(l),
@@ -90,14 +178,21 @@ load.satellite = function(file, verbose = T) {
   times = NULL
   if (is.null(times)) { times = get.satellite.times(file, verbose = verbose) }
 
+  sate = list(field = x,
+              file = file,
+              grid = function() {expand.grid(lon = lon, lat = lat)},
+              lon = lon,
+              lat = lat,
+              times = times,
+              meta = meta)
+  
+  ## Trim
+  if (!pre.trimmed & (!is.null(lon) | !is.null(lat))) {
+    sate = trim.satellite(sate, lon = lon, lat = lat, verbose = verbose)
+  }
+  
   ## Return
-  list(field = x,
-       file = file,
-       grid = function() {expand.grid(lon = lon, lat = lat)},
-       lon = lon,
-       lat = lat,
-       times = times,
-       meta = meta)
+  sate
 }
 
 
@@ -171,8 +266,8 @@ trim.satellite = function(satellite, lon = NULL, lat = NULL, verbose = T) {
 #' @export
 get.satellite.times = function(x, verbose = T) {
   start = rep(make.time(), length(x))
-  mid = rep(make.time(1), length(x))
-  end = rep(make.time(1), length(x))
+  mid = rep(make.time(), length(x))
+  end = rep(make.time(), length(x))
 
   for (i in 1:length(x)) {
     temp = strsplit(x[i], split = '/')[[1]]
@@ -360,19 +455,26 @@ load.nc.vars = function(file, verbose = F) {
 load.nc.dims = function(file, verbose = F) {
   
   if (verbose) { message('Attempting to load dims from ', file)}
-  file = ncdf4::nc_open(file)
+  file.con = ncdf4::nc_open(file)
   if (verbose) { message(' File openned.')}
   
   dim = list()
-  var = names(file$var)
+  var = names(file.con$dim)
+  for (v in var) {
+    dim[[v]] = file.con$dim[[v]]$vals
+  }
+  
+  vars = list()
+  var = names(file.con$var)
   
   for (v in var) {
-    dim[[v]] = file$var[[v]]$dim
+    vars[[v]] = file.con$var[[v]]$size
+    names(vars[[v]]) = file.con$var[[v]]$dimids + 1
   }
   
   if (verbose) {message(' Closing file. Finished.')}
-  ncdf4::nc_close(file)
+  ncdf4::nc_close(file.con)
   
   ##return
-  dim
+  list(dim = dim, var = vars)
 }

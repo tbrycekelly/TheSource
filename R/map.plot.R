@@ -47,13 +47,6 @@ make.map = function (coast = NULL,
                   lon = mean(c(lon.min, lon.max)))
   }
 
-  ## Parse projection info (might be helpful?)
-  #lon0 = as.numeric(strsplit(strsplit(paste(p, ''), 'lon_0=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
-  #lat0 = as.numeric(strsplit(strsplit(paste(p, ''), 'lat_0=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
-  #proj = strsplit(strsplit(paste(p, ''), 'proj=')[[1]][2], '\\s+')[[1]][1] ## retreive the lon0 value from the projection
-  #h = as.numeric(strsplit(strsplit(paste(p, ''), 'h=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
-
-
   ## Determine lat/lon axis details
   lons = seq(lon.min - 5*dlon, lon.max + 5*dlon, by = dlon)
   lats = seq(lat.min - 5*dlat, lat.max + 5*dlon, by = dlat)
@@ -124,7 +117,7 @@ add.map.coastline = function(coast, p, land.col, field.inv = NULL) {
   break.polygon = function(projected.coast) {
 
     for (i in 1:length(projected.coast)) {
-      k = c(which(diff(projected.coast[[i]][,1])^2 + diff(projected.coast[[i]][,2])^2 > diff(par('usr')[1:2])^2), length(projected.coast[[i]][,1]))
+      k = c(which(diff(projected.coast[[i]][,1])^2 + diff(projected.coast[[i]][,2])^2 > diff(par('usr')[1:2])^2 / 10), length(projected.coast[[i]][,1]))
 
       if (length(k) > 1) {
         for (j in 2:length(k)) {
@@ -155,8 +148,8 @@ add.map.coastline = function(coast, p, land.col, field.inv = NULL) {
   ## First pass at trimming domain
   if (!is.null(field.inv)) {
     keep = rep(T, length(coastline$data))
-    dx = diff(range(field.inv[,1])) / 2
-    dy = diff(range(field.inv[,2])) / 2
+    dx = median(diff(field.inv[,1])) * 2
+    dy = median(diff(field.inv[,2])) * 2
     
     
     for (i in 1:length(coastline$data)) {
@@ -172,10 +165,9 @@ add.map.coastline = function(coast, p, land.col, field.inv = NULL) {
     coastline$meta$trim1 = sum(keep)
   }
   
-  
   ## Project coastline (takes a while!)
   projected.coast = lapply(coastline$data, function(x) {
-    rgdal::project(as.matrix(x), proj = p)
+    rgdal::project(as.matrix(x)+1e-16, proj = p)
   })
   
   
@@ -245,12 +237,6 @@ make.map2 = function (coast = NULL,
                   lat = lat,
                   lon = lon)
   }
-
-  ## Parse projection info (might be helpful?)
-  #lon0 = as.numeric(strsplit(strsplit(paste(p, ''), 'lon_0=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
-  #lat0 = as.numeric(strsplit(strsplit(paste(p, ''), 'lat_0=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
-  #proj = strsplit(strsplit(paste(p, ''), 'proj=')[[1]][2], '\\s+')[[1]][1] ## retreive the lon0 value from the projection
-  #h = as.numeric(strsplit(strsplit(paste(p, ''), 'h=')[[1]][2], '\\s+')[[1]][1]) ## retreive the lon0 value from the projection
 
   center.point = rgdal::project(cbind(lon, lat), proj = p)
   x.y.ratio = par()$pin[1] / par()$pin[2]

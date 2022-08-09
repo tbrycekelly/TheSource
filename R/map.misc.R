@@ -275,7 +275,7 @@ grid.subsample = function(x = NULL, y = NULL, z) {
     for (j in 1:dim(vertex.x)[2]) {
       vertex.x[i, j] = 0.25 * (x[2*i, 2*j] + x[2*i-1, 2*j] + x[2*i, 2*j-1] + x[2*i-1, 2*j-1])
       vertex.y[i, j] = 0.25 * (y[2*i, 2*j] + y[2*i-1, 2*j] + y[2*i, 2*j-1] + y[2*i-1, 2*j-1])
-      vertex.z[i, j] = 0.25 * (z[2*i, 2*j] + z[2*i-1, 2*j] + z[2*i, 2*j-1] + z[2*i-1, 2*j-1])
+      vertex.z[i, j] = mean(c(z[2*i, 2*j], z[2*i-1, 2*j], z[2*i, 2*j-1], z[2*i-1, 2*j-1]), na.rm = T)
     }
   }
 
