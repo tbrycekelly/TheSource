@@ -185,11 +185,7 @@ read.satellite = function(file, lon = NULL, lat = NULL, verbose = T) {
               lat = lat,
               times = times,
               meta = meta)
-  
-  ## Trim
-  if (!pre.trimmed & (!is.null(lon) | !is.null(lat))) {
-    sate = trim.satellite(sate, lon = lon, lat = lat, verbose = verbose)
-  }
+
   
   ## Return
   sate
