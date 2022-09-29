@@ -101,7 +101,7 @@ grid.interp = function(grid, i, j) {
 }
 
 
-#' @title Calcuye extended grid
+#' @title Calculate extended grid
 #' @author Thomas Bryce Kelly
 #' @export
 calc.vertex = function(x, y) {
@@ -185,6 +185,9 @@ calc.vertex = function(x, y) {
 
   list(x = vertex.x, y = vertex.y)
 }
+
+
+
 
 
 #' @title Calcuye extended grid
@@ -284,6 +287,7 @@ grid.subsample = function(x = NULL, y = NULL, z) {
 
 
 
+#' @export
 calc.section.dist = function(lon, lat) {
   if (length(lon) == 1) { lon = rep(lon, length(lat))}
   if (length(lat) == 1) { lat = rep(lat, length(lon))}
@@ -303,6 +307,8 @@ calc.section.dist = function(lon, lat) {
   d
 }
 
+
+#' @export
 calc.dist = function(lon, lat) {
   sapply(1:(length(lon)-1), function(x) {abs(lon[x+1] - lon[x])})
 }
