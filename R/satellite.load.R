@@ -1,6 +1,7 @@
 #' @title Read Satellite Data
 #' @author Thomas Bryce Kelly
 #' @description read
+#' @export
 ## Read nc file and do preliminary parsing/conversion
 read.satellite = function(file, lon = NULL, lat = NULL, verbose = T) {
 
