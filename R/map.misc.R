@@ -188,8 +188,6 @@ calc.vertex = function(x, y) {
 
 
 
-
-
 #' @title Calcuye extended grid
 #' @author Thomas Bryce Kelly
 #' @export
@@ -255,7 +253,7 @@ grid.refinement = function(x = NULL, y = NULL, z) {
 #' @title Calculate subsampled grid
 #' @author Thomas Bryce Kelly
 #' @export
-grid.subsample = function(x = NULL, y = NULL, z) {
+grid.subsample = function(x = NULL, y = NULL, z, approx = F) {
   if (is.null(dim(z))) {stop('grid.refinement: z must be an array object of two dimensions.')}
   dim = dim(z)
 
@@ -274,11 +272,21 @@ grid.subsample = function(x = NULL, y = NULL, z) {
   vertex.y = vertex.x
   vertex.z = vertex.x
 
-  for (i in 1:dim(vertex.x)[1]) {
-    for (j in 1:dim(vertex.x)[2]) {
-      vertex.x[i, j] = 0.25 * (x[2*i, 2*j] + x[2*i-1, 2*j] + x[2*i, 2*j-1] + x[2*i-1, 2*j-1])
-      vertex.y[i, j] = 0.25 * (y[2*i, 2*j] + y[2*i-1, 2*j] + y[2*i, 2*j-1] + y[2*i-1, 2*j-1])
-      vertex.z[i, j] = mean(c(z[2*i, 2*j], z[2*i-1, 2*j], z[2*i, 2*j-1], z[2*i-1, 2*j-1]), na.rm = T)
+  if (approx) {
+    for (i in 1:dim(vertex.x)[1]) {
+      for (j in 1:dim(vertex.x)[2]) {
+        vertex.x[i, j] = x[2*i, 2*j]
+        vertex.y[i, j] = y[2*i, 2*j]
+        vertex.z[i, j] = z[2*i, 2*j]
+      }
+    }
+  } else {
+    for (i in 1:dim(vertex.x)[1]) {
+      for (j in 1:dim(vertex.x)[2]) {
+        vertex.x[i, j] = 0.25 * (x[2*i, 2*j] + x[2*i-1, 2*j] + x[2*i, 2*j-1] + x[2*i-1, 2*j-1])
+        vertex.y[i, j] = 0.25 * (y[2*i, 2*j] + y[2*i-1, 2*j] + y[2*i, 2*j-1] + y[2*i-1, 2*j-1])
+        vertex.z[i, j] = mean(c(z[2*i, 2*j], z[2*i-1, 2*j], z[2*i, 2*j-1], z[2*i-1, 2*j-1]), na.rm = T)
+      }
     }
   }
 

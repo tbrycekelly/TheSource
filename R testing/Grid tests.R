@@ -3,8 +3,10 @@ library(microbenchmark)
 
 ##### Gridder engine test
 
+dir.create('R testing/out')
+
 ## gridding random noise
-pdf('R testing/grid tests - runif.pdf', pointsize = 11)
+pdf('R testing/out/grid tests - runif.pdf', pointsize = 11)
 par(mfrow = c(2,2))
 for (n in c(10,100, 1e3)) {
   x = runif(n, 0, 10)
@@ -12,17 +14,19 @@ for (n in c(10,100, 1e3)) {
   z = runif(n)
   z[sample(1:length(z), size = length(z) / 2)] = NA
 
-  for (gridder in c('gridNN', 'gridNNI', 'gridODV', 'gridIDW')) {
-    section = build.section(x, y, z, gridder = eval(parse(text = gridder))) # defaults
+  for (gridder in c('gridNN', 'gridNNI', 'gridODV2', 'gridIDW2')) {
+    section = build.section(x*100, y, z, gridder = eval(parse(text = gridder)), uncertainty = 0) # defaults
     plot.section(section, zlim = c(0,1), pal = 'inferno')
     mtext(adj = 0, gridder, cex = 0.8)
+    print(section$grid.meta[[1]])
+    
   }
 }
 dev.off()
 
 
 
-pdf('R testing/grid tests - rnorm.pdf', pointsize = 11)
+pdf('R testing/out/grid tests - rnorm.pdf', pointsize = 11)
 par(mfrow = c(2,2))
 for (n in c(5, 25, 50)) {
   x = runif(n, 0, 10)
@@ -38,7 +42,7 @@ for (n in c(5, 25, 50)) {
 }
 dev.off()
 
-pdf('R testing/grid tests - grid runif.pdf', pointsize = 11)
+pdf('R testing/out/grid tests - grid runif.pdf', pointsize = 11)
 par(mfrow = c(2,2))
 for (n in c(5, 25, 50)) {
   grid = expand.grid(x = c(1:n), y = c(1:n))
@@ -54,7 +58,7 @@ for (n in c(5, 25, 50)) {
 dev.off()
 
 
-pdf('R testing/grid tests - grid rnorm.pdf', pointsize = 11)
+pdf('R testing/out/grid tests - grid rnorm.pdf', pointsize = 11)
 par(mfrow = c(2,2))
 for (n in c(5, 25, 50)) {
   grid = expand.grid(x = c(1:n), y = c(1:n))
@@ -71,7 +75,7 @@ dev.off()
 
 
 
-pdf('R testing/grid tests - grid rnorm scaled with uncertainty.pdf', pointsize = 11)
+pdf('R testing/out/grid tests - grid rnorm scaled with uncertainty.pdf', pointsize = 11)
 par(mfrow = c(2,2))
 for (n in c(5, 25, 50)) {
   grid = expand.grid(x = c(1:n), y = c(1:n))
@@ -92,7 +96,7 @@ for (n in c(5, 25, 50)) {
 }
 dev.off()
 
-pdf('R testing/grid tests - grid rnorm scaled without uncertainty.pdf', pointsize = 11)
+pdf('R testing/out/grid tests - grid rnorm scaled without uncertainty.pdf', pointsize = 11)
 par(mfrow = c(2,2))
 for (n in c(5, 25, 50)) {
   grid = expand.grid(x = c(1:n), y = c(1:n))
@@ -115,7 +119,7 @@ dev.off()
 
 
 
-pdf('R testing/grid tests - x and y scale.pdf', pointsize = 11)
+pdf('R testing/out/grid tests - x and y scale.pdf', pointsize = 11)
 par(mfrow = c(2,2))
 for (n in c(5, 25, 50)) {
   grid = expand.grid(x = c(1:n), y = c(1:n))
@@ -144,7 +148,7 @@ dev.off()
 ##############################################################
 
 
-pdf('R testing/grid tests gridODV - influence of neighbors on ODV.pdf', pointsize = 11)
+pdf('R testing/out/grid tests gridODV - influence of neighbors on ODV.pdf', pointsize = 11)
 par(mfrow = c(2,2))
 
 grid = expand.grid(x = c(1:10), y = c(1:10))
@@ -168,7 +172,7 @@ dev.off()
 
 
 
-pdf('R testing/grid tests gridIDW - influence of neighbors on IDW.pdf', pointsize = 11)
+pdf('R testing/out/grid tests gridIDW - influence of neighbors on IDW.pdf', pointsize = 11)
 par(mfrow = c(2,2))
 
 grid = expand.grid(x = c(1:10), y = c(1:10))
@@ -217,7 +221,7 @@ s11 = build.section(x2, y2, z, gridder = gridNNI)
 s12 = build.section(x2, y2, z, gridder = gridNN)
 
 {
-  pdf('series of tests.pdf')
+  pdf('R testing/out/series of tests.pdf')
   par(mfrow = c(2,2))
   plot.section(s1, pal = 'inferno', zlim = c(0,1)); add.section.contour(s1)
   plot.section(s2, pal = 'inferno', zlim = c(0,1)); add.section.contour(s2)

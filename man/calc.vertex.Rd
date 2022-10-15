@@ -2,12 +2,12 @@
 % Please edit documentation in R/map.misc.R
 \name{calc.vertex}
 \alias{calc.vertex}
-\title{Calcuye extended grid}
+\title{Calculate extended grid}
 \usage{
 calc.vertex(x, y)
 }
 \description{
-Calcuye extended grid
+Calculate extended grid
 }
 \author{
 Thomas Bryce Kelly

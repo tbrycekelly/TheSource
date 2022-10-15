@@ -4,7 +4,7 @@
 \alias{grid.subsample}
 \title{Calculate subsampled grid}
 \usage{
-grid.subsample(x = NULL, y = NULL, z)
+grid.subsample(x = NULL, y = NULL, z, approx = F)
 }
 \description{
 Calculate subsampled grid

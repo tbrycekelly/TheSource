@@ -4,7 +4,7 @@
 \alias{add.map.grid}
 \title{Add Grid to Map}
 \usage{
-add.map.grid(map, lons = NULL, lats = NULL, col = "darkgrey", lty = 2, lwd = 1)
+add.map.grid(map, lons = NULL, lats = NULL, col = "darkgrey", lty = 1, lwd = 1)
 }
 \description{
 Add Grid to Map

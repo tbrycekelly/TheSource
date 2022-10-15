@@ -48,7 +48,7 @@ gridIDW = function(gx, gy, x, y, z, p = 2, xscale = 1, yscale = 1, uncertainty =
   out = rep(NA, length(gx))
 
   for (i in 1:length(gx)) {
-    w = sqrt((x.factor * (x - gx[i]))^2 + (y.factor * (y - gy[i]))^2 + deltamin)^-p
+    w = abs((x.factor * (x - gx[i]))^2 + (y.factor * (y - gy[i]))^2 + deltamin)^-p
 
     k = order(w, decreasing = T)[1:neighborhood]
     out[i] = sum(z[k] * w[k]) / sum(w[k])
@@ -71,21 +71,18 @@ gridIDW = function(gx, gy, x, y, z, p = 2, xscale = 1, yscale = 1, uncertainty =
 gridODV = function (gx, gy, x, y, z, p = 2, xscale = 1, yscale = 1, uncertainty = 0.1, neighborhood = NULL, x.factor = 1, y.factor = 1) {
 
   if (is.null(neighborhood)) {
-    neighborhood = min(10, length(x))
+    neighborhood = min(25, length(x))
     if (verbose) { message(' GRIDODV: No neighborhood given, set to ', neighborhood)}
   } else if (neighborhood > length(x)) {
     neighborhood = length(x)
     if (verbose) { message(' GRIDIDW: Neighborhood longer than valid points, decreasing to ', neighborhood)}
   }
 
-  x.factor = x.factor / xscale
-  y.factor = y.factor / yscale
-
-  deltamin = sqrt(x.factor^2 + y.factor^2) * uncertainty
+  deltamin = sqrt((x.factor * xscale/2.0)^2 + (y.factor * yscale/2.0)^2) * uncertainty
   out = rep(NA, length(gx))
 
   for (i in 1:length(gx)) {
-    w = exp(-0.5*(sqrt((x.factor * (x - gx[i]))^2 + (y.factor * (y - gy[i]))^2) + deltamin))
+    w = exp((sqrt((x.factor * (x - gx[i]))^2 + (y.factor * (y - gy[i]))^2) + deltamin)/-p)
 
     k = order(w, decreasing = T)[1:neighborhood]
     out[i] = sum(z[k] * w[k]) / sum(w[k])
@@ -109,7 +106,7 @@ gridNN = function (gx, gy, x, y, z, p = 2, xscale = 1, yscale = 1, uncertainty =
   out = rep(NA, length(gx))
 
   for (i in 1:length(gx)) {
-    out[i] = z[which.min(x.factor * abs(x - gx[i])/xscale + y.factor * abs(y - gy[i])/yscale)]
+    out[i] = z[which.min(x.factor * abs(x - gx[i]) + y.factor * abs(y - gy[i]))]
   }
   out
 }
