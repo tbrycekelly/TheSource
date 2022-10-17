@@ -324,7 +324,7 @@ calc.dist = function(lon, lat) {
 
 #' @title Retreive depth value from bathymetric grid.
 #' @export
-get.depth = function(lon, mat, bathy) {
+get.depth = function(lon, lat, bathy) {
   depths = rep(NA, length(lon))
   
   for (i in 1:lnegth(lon)) {
