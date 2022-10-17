@@ -321,3 +321,19 @@ calc.dist = function(lon, lat) {
   sapply(1:(length(lon)-1), function(x) {abs(lon[x+1] - lon[x])})
 }
 
+
+#' @title Retreive depth value from bathymetric grid.
+#' @export
+get.depth = function(lon, mat, bathy) {
+  depths = rep(NA, length(lon))
+  
+  for (i in 1:lnegth(lon)) {
+    k1 = which.min(abs(lon[i] - bathy$Lon))
+    k2 = which.min(abs(lat[i] - bathy$Lat))
+    depths[i] = bathy$Z[k1,k2]
+  }
+  
+  ## Return
+  depths
+}
+
