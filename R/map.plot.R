@@ -286,41 +286,7 @@ make.map2 = function (coast = NULL,
 }
 
 
-#' @title Add Map Line
-#' @author Thomas Bryce Kelly
-#' @param lon a set of longitudes to draw a line between
-#' @param lat a set of latitudes to draw a lien between
-#' @param col the color of the line to be drawn
-#' @param lty the type of line to be drawn
-#' @param lty the type of line to be drawn
-#' @param lwd the width of the line to be drawn
-#' @export
-add.map.line = function(map,
-                        lon,
-                        lat,
-                        col = 'black',
-                        lty = 1,
-                        lwd = 1,
-                        greatCircle = T) {
-
-  if (length(lon) != length(lat)) {stop('add.map.line: length of lon/lat are not the same.')}
-  if (greatCircle) {
-    lons = approx(1:length(lon), lon, xout = seq(1, length(lon), length.out = max(length(lon), 2e3)))$y
-    lats = approx(1:length(lat), lat, xout = seq(1, length(lat), length.out = max(length(lon), 2e3)))$y
-  } else {
-    lons = lon
-    lats = lat
-  }
-
-  ## project
-  xy = rgdal::project(cbind(lons, lats), proj = map$p)
-
-  ## Plot
-  lines(xy[,1], xy[,2], col = col, lty = lty, lwd = lwd)
-}
-
-
-#' @title Add Map Line
+#' @title Get Map Line
 #' @author Thomas Bryce Kelly
 #' @import rgdal
 #' @param lon a set of longitudes to draw a line between
@@ -333,7 +299,8 @@ add.map.line = function(map,
 get.map.line = function(map,
                         lon,
                         lat,
-                        greatCircle = T) {
+                        greatCircle = T,
+                        N = 1e3) {
 
   if (length(lon) != length(lat)) {stop('get.map.line: length of lon/lat are not the same.')}
   if (greatCircle) {
@@ -372,6 +339,31 @@ add.map.points = function(map,
   if (length(lon) != length(lat)) { stop('add.map.points: lengths of lon/lat are not the same.') }
   xy = rgdal::project(cbind(lon, lat), proj = map$p)
   points(xy[,1], xy[,2], col = col, cex = cex, pch = pch, ...)
+}
+
+
+#' @title Add Map Line
+#' @author Thomas Bryce Kelly
+#' @param lon a set of longitudes to draw a line between
+#' @param lat a set of latitudes to draw a lien between
+#' @param col the color of the line to be drawn
+#' @param lty the type of line to be drawn
+#' @param lty the type of line to be drawn
+#' @param lwd the width of the line to be drawn
+#' @export
+add.map.line = function(map,
+                        lon,
+                        lat,
+                        col = 'black',
+                        lty = 1,
+                        lwd = 1,
+                        greatCircle = T,
+                        N = 1e3) {
+  
+  line = get.map.line(map = map, lon = lon, lat = lat, greatCircle = greatCircle, N = N)
+  
+  ## Plot
+  lines(line[,1], line[,2], col = col, lty = lty, lwd = lwd)
 }
 
 
@@ -471,7 +463,7 @@ add.map.axis.label = function(map, temp, label, sides) {
       ## Check angle
       k = which.min(abs(temp[-nrow(temp),2] - usr[3]))
       dd = abs(diff(temp)[k,])
-      if (dd[1]/dd[2] < 2 * dy / dx) {
+      if (dd[1]/dd[2] < dy / dx) {
         axis(1, at = temp[which.min((temp[,2] - usr[3])^2),1], labels = label)
       }
     }
@@ -484,7 +476,7 @@ add.map.axis.label = function(map, temp, label, sides) {
       ## Check angle
       k = which.min(abs(temp[-nrow(temp),2] - usr[4]))
       dd = abs(diff(temp)[k,])
-      if (dd[1]/dd[2] < 2 * dy / dx) {
+      if (dd[1]/dd[2] < dy / dx) {
         axis(3, at = temp[which.min((temp[,2] - usr[4])^2),1], labels = label)
       }
     }
@@ -497,7 +489,7 @@ add.map.axis.label = function(map, temp, label, sides) {
       ## Check angle
       k = which.min(abs(temp[-nrow(temp),1] - usr[1]))
       dd = abs(diff(temp)[k,])
-      if (dd[2]/dd[1] < 2 * dx / dy) {
+      if (dd[2]/dd[1] < dx / dy) {
         axis(2, at = temp[which.min((temp[,1] - usr[1])^2),2], labels = label, las = 2)
       }
     }
@@ -510,7 +502,7 @@ add.map.axis.label = function(map, temp, label, sides) {
       ## Check angle
       k = which.min((temp[-nrow(temp),1] - usr[2])^2)
       dd = abs(diff(temp)[k,])
-      if (dd[2]/dd[1] < 2 * dx / dy) {
+      if (dd[2]/dd[1] < dx / dy) {
         axis(4, at = temp[which.min((temp[,1] - usr[2])^2),2], labels = label, las = 2)
       }
     }
@@ -521,14 +513,14 @@ add.map.axis.label = function(map, temp, label, sides) {
 #' @title Add Axis to Map
 #' @author Thomas Bryce Kelly
 #' @export
-add.map.axis = function(map, lons = NULL, lats = NULL, sides = c(1:4)) {
+add.map.axis = function(map, lons = NULL, lats = NULL, sides = c(1:4), N = 100) {
 
   if (is.null(lons)) { lons = seq(-180, 180, by = map$grid$dlon) }
   if (is.null(lats)) { lats = seq(-90, 90, by = map$grid$dlat) }
 
   ## Add lon axes
   for (ll in lons) {
-    temp = get.map.line(map, lon = rep(ll, 2), lat = c(-90,90))
+    temp = get.map.line(map, lon = rep(ll, 2), lat = c(-90,90), N = N)
     temp = temp[is.finite(temp[,1]) & is.finite(temp[,2]),]
 
     s = 'E'
@@ -540,7 +532,7 @@ add.map.axis = function(map, lons = NULL, lats = NULL, sides = c(1:4)) {
 
   ## Add lats
   for (ll in lats) {
-    temp = get.map.line(map, lon = c(-180, 180), lat = rep(ll, 2))
+    temp = get.map.line(map, lon = c(-180, 180), lat = rep(ll, 2), N = N)
     temp = temp[is.finite(temp[,1]) & is.finite(temp[,2]),]
     s = 'N'
     if (ll < 0) { s = 'S'; ll = -ll }
