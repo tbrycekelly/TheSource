@@ -456,18 +456,13 @@ add.log.axis = function(side = 1, at = NULL, labels = NULL, ticks = T, base = 10
   if(is.null(at)) {
     at = at.default
     if (ticks) {
-      ticks = rep(1:(base-1), length(at)) * base^as.numeric(sapply(at, function(x) {rep(x, base-1)}))
+      tick.pos = rep(1:(base-1), length(at)) * base^as.numeric(sapply(at, function(x) {rep(x, base-1)}))
     }
   } else {
     at = log(at, base)
     if (ticks) {
-      ticks = rep(1:(base-1), length(at.default)) * base^as.numeric(sapply(at.default, function(x) {rep(x, base-1)}))
+      tick.pos = rep(1:(base-1), length(at.default)) * base^as.numeric(sapply(at.default, function(x) {rep(x, base-1)}))
     }
-  }
-
-  ## If True, setup ticks for each power of the base
-  if (ticks) {
-    ticks = rep(1:(base-1), length(at)) * base^as.numeric(sapply(at, function(x) {rep(x, base-1)}))
   }
 
   ## Default labels are just the transformed values
@@ -476,14 +471,14 @@ add.log.axis = function(side = 1, at = NULL, labels = NULL, ticks = T, base = 10
   }
 
   ## Draw Axis
-  axis(side = side, at = log(ticks, base), tick = T, labels = F, col = color.minor, ...)
+  axis(side = side, at = log(tick.pos, base), tick = T, labels = F, col = color.minor, ...)
   axis(side = side, at = at, labels = labels, col = col, ...)
 
   if (grid & (side == 1 | side == 3)) {
-    abline(v = log(ticks, base), col = color.minor, lty = 3)
+    abline(v = log(tick.pos, base), col = color.minor, lty = 3)
   }
   if (grid & (side == 2 | side == 4)) {
-    abline(h = log(ticks, base), col = color.minor, lty = 3)
+    abline(h = log(tick.pos, base), col = color.minor, lty = 3)
   }
   if (grid.major & (side == 1 | side == 3)) {
     abline(v = at, col = color.minor, lty = 3)
