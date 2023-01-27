@@ -18,6 +18,24 @@ make.map.arctic = function(coast = 'coastline2',
            p = p, land.col = land.col, draw.grid = draw.grid, dlon = dlon, dlat = dlat)
 }
 
+make.map.arctic = function(coast = 'coastline2',
+                           lon = 0,
+                           lat = 90,
+                           scale = 2.85e3,
+                           p = NULL,
+                           dlat = 10,
+                           dlon = 60,
+                           land.col = 'lightgray',
+                           draw.grid = TRUE) {
+  
+  
+  if (is.null(p)) { 
+    p = make.proj('stere', lat = 90, lon = lon)
+  }
+  make.map2(coast = coast, lon = lon, lat = lat, scale = scale,
+           p = p, land.col = land.col, draw.grid = draw.grid, dlon = dlon, dlat = dlat)
+}
+
 
 #' @title Make Map (NGA)
 #' @author Thomas Bryce Kelly
