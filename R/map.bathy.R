@@ -37,39 +37,3 @@ get.bathy = function(map, res = 25, override = FALSE, keep = FALSE) {
 }
 
 
-#' @title Add Map Bathymetry
-#' @description add bathymetry contours
-#' @author Thomas Bryce Kelly
-#' @param map a map object as returned by make.map()
-#' @param bathy a bathymetry dataframe as produced by get.bathy()
-#' @param bathy.levels a vector of elevations for which to draw contours. NB: depths are negative elevation.
-#' @param bathy.col the color of the lines to be drawn
-#' @param bathy.lwd the weight of the lines
-#' @param bathy.lty the type of line to be drawn
-#' @param drawlabels boolean value to draw labels (default: TRUE)
-#' @export
-add.map.bathy = function(map, bathy,
-                         levels = c(-100, -1000, -2500),
-                         bathy.col = 'darkgrey',
-                         bathy.lwd = 1,
-                         bathy.lty = 1,
-                         drawlabels = TRUE,
-                         cex.lab = 1,
-                         bathy.levels = NULL){
-
-  if (!is.null(bathy.levels)) {
-    warning('Option bathy.levels is depreciated, please use levels argument instead.')
-    levels = bathy.levels
-  }
-
-  ## add bathy contours (oce)
-  oce::mapContour(longitude = bathy$Lon,
-                  latitude = bathy$Lat,
-                  z = bathy$Z,
-                  levels = levels,
-                  lwd = bathy.lwd,
-                  lty = bathy.lty,
-                  col = bathy.col,
-                  drawlabels = drawlabels,
-                  labcex = cex.lab)
-}

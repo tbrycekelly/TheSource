@@ -266,21 +266,18 @@ add.barplot.bar = function(data, sd = NULL, x = 1, width = 0.6, col = NULL, pal 
 #' @author Thomas Bryce Kelly
 #' @export
 #' @inheritParams image
-plot.image = function(x = NULL, y = NULL, z = NULL, col = NULL, xlab = NULL, ylab = NULL,
+plot.image = function(x = NULL, y = NULL, z, col = NULL, xlab = NULL, ylab = NULL,
                       xlim = NULL, ylim = NULL, zlim = NULL,
                       pal = 'greyscale', n = 255, rev = F, ...) {
 
-  if (is.null(z) & (is.null(x)) | is.null(y)) { stop('plot.image: if z is not given then x and y are required, along with col.')}
-  if (is.null(z) & is.null(col)) { stop('plot.image: Either z or col arrays are required.')}
-  if (!is.null(z) & !is.null(col)) { message('plot.image: Both z and col arrays are provieded. Ignoring z.')}
-
+  if (missing(z) & ((is.null(x)) | is.null(y))) { stop('plot.image: if z is not given then x and y are required, along with col.')}
 
   z = as.matrix(z)
 
   if (is.null(col)) {
     if (is.null(x)) {x = c(1:dim(z)[1])}
     if (is.null(y)) {y = c(1:dim(z)[2])}
-    if (is.null(zlim)) {zlim = range(z, na.rm = T)}
+    if (is.null(zlim)) {zlim = range(pretty(z))}
   }
 
   if (is.null(xlim)) {xlim = range(x, na.rm = T)}

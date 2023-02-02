@@ -105,14 +105,32 @@ make.qual.pal = function(x, pal = 'greyscale', rev = FALSE) {
 #' @description Add a color bar to any graphical device such as a plot or map. The color bar can be based on any color palette function and be placed either vertically or horizontally.
 #' @keywords Plotting
 #' @export
-add.colorbar = function(min, max, labels = NULL, ticks = NULL, labels.at = NULL, pal = 'greyscale', rev = FALSE,
-                        units = '', col.high = '', col.low = '', log = FALSE, base = 10, x.pos = NULL, width = NULL,
-                        y.pos = NULL, height = NULL, cex = 1, cex.units = 1, n = 255, horizontal = FALSE,
-                        col.lab = 'black', col.tck = 'darkgrey') {
+add.colorbar = function(min,
+                        max,
+                        labels = NULL,
+                        ticks = NULL,
+                        labels.at = NULL,
+                        pal = 'greyscale',
+                        rev = FALSE,
+                        units = '',
+                        col.high = '',
+                        col.low = '',
+                        log = FALSE,
+                        base = 10,
+                        x.pos = NULL,
+                        width = NULL,
+                        y.pos = NULL,
+                        height = NULL,
+                        cex = 1,
+                        cex.units = 1,
+                        n = 255,
+                        horizontal = FALSE,
+                        col.lab = 'black',
+                        col.tck = 'darkgrey') {
 
   ## Setup
   par.original = par()
-  for (p in c('cin', 'cra', 'csi', 'cxy', 'din', 'page')) { par.original[[p]] = NULL}
+  #for (p in c('cin', 'cra', 'csi', 'cxy', 'din', 'page')) { par.original[[p]] = NULL}
 
   ## Default Spacing
   # width
@@ -206,14 +224,22 @@ add.colorbar = function(min, max, labels = NULL, ticks = NULL, labels.at = NULL,
     if (col.high == '') {
       col.high = get.pal(100, pal, rev = rev)[100]
     }
-    polygon(x = c(0, 1, 0.5, 0.5), y = c(1, 1, 41/40, 41/40) * n + 0.5, col = col.high, border = NA)
+    if (horizontal) {
+      polygon(y = c(0, 1, 0.5, 0.5), x = c(1, 1, 41/40, 41/40) * n + 0.5, col = col.high, border = NA)
+    } else {
+      polygon(x = c(0, 1, 0.5, 0.5), y = c(1, 1, 41/40, 41/40) * n + 0.5, col = col.high, border = NA)
+    }
   }
 
   if (!is.na(col.low)) {
     if (col.low == '') {
       col.low = get.pal(100, pal, rev = rev)[1]
     }
-    polygon(x = c(0, 1, 0.5, 0.5), y = c(0, 0, -n/40, -n/40)-0.5, col = col.low, border = NA)
+    if (horizontal) {
+      polygon(y = c(0, 1, 0.5, 0.5), x = c(0, 0, -n/40, -n/40)-0.5, col = col.low, border = NA)
+    } else {
+      polygon(x = c(0, 1, 0.5, 0.5), y = c(0, 0, -n/40, -n/40)-0.5, col = col.low, border = NA)
+    }
   }
 
   if (!horizontal) {mtext(units, side = 1, line = -1.5, cex = cex.units)}

@@ -55,10 +55,10 @@ smooth.gaussian = function(x, sd = 0.2, n = 5) {
 }
 
 
-original = array(cumsum(runif(400, -1, 1)), dim = c(25,16))
-image(original)
-test = smooth.gaussian(original, sd = 5, n = 13)
-image(test)
+original = array(runif(40000, -1, 1) > 0, dim = c(250,160))
+plot.image(z = original)
+test = smooth.gaussian(original, sd = 0.1, n = 9)
+plot.image(z = test)
 
 
 poc = read.satellite('C:/Data/Satellite/A20022492002256.L3m_8D_POC_poc_4km.nc', lon = c(-180, -140), lat = c(40, 80))

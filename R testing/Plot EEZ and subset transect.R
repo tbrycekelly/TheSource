@@ -39,4 +39,3 @@ get.transect.stations = function(start.lon, start.lat, end.lon, end.lat, n = 10)
   data.frame(lon = points[,1], lat = points[,2])
 }
 
-
