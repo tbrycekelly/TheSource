@@ -20,14 +20,14 @@ get.coast = function(coast = 'coastlineWorld') {
 #' @export
 make.proj = function(projection = NULL, lat = NULL, lon = NULL, h = NULL, dlat = 10) {
   if (is.null(projection)) { projection = 'merc' }
-  projections = c('merc', 'aea', 'eck3', 'eck4', 'eqc', 'geos', 'lonlat', 'mill', 'natearth', 'nsper', 'stere')
-  projection.list = c('1) merc', '2) aea', '3) eck3', '4) eck4', '5) eqc', '6) geos', '7) lonlat', '8) mill', '9) natearth', '10) nsper', '11) stere')
+  projections = c('merc', 'aea', 'eck3', 'eck4', 'eqc', 'geos', 'lonlat', 'mill', 'natearth', 'nsper', 'stere', 'ortho')
+  projection.list = c('1) merc', '2) aea', '3) eck3', '4) eck4', '5) eqc', '6) geos', '7) lonlat', '8) mill', '9) natearth', '10) nsper', '11) stere', '12) ortho')
 
   if (is.numeric(projection)) {
     projection = projections[projection]
   }
   if (!projection %in% projections) {
-    stop('Invalid projection type, please provide one of the following:', paste(projection.list, collapse = ', '))
+    message('Unknown projection type, recommend to use:', paste(projection.list, collapse = ', '))
   }
 
   if (projection == 'geos' & is.null(h)) { h = 1e8 }

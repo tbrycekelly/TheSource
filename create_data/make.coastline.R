@@ -72,6 +72,12 @@ lakes3 = build.coastline(list.files(paste0(temp.dir, '/GSHHS_shp/i/'), full.name
 lakes4 = build.coastline(list.files(paste0(temp.dir, '/GSHHS_shp/h/'), full.names = T, pattern = 'L2.shp'))
 lakes5 = build.coastline(list.files(paste0(temp.dir, '/GSHHS_shp/f/'), full.names = T, pattern = 'L2.shp'))
 
+antarctica1 = build.coastline(list.files(paste0(temp.dir, '/GSHHS_shp/c/'), full.names = T, pattern = 'L6.shp'))
+antarctica2 = build.coastline(list.files(paste0(temp.dir, '/GSHHS_shp/l/'), full.names = T, pattern = 'L6.shp'))
+antarctica3 = build.coastline(list.files(paste0(temp.dir, '/GSHHS_shp/i/'), full.names = T, pattern = 'L6.shp'))
+antarctica4 = build.coastline(list.files(paste0(temp.dir, '/GSHHS_shp/h/'), full.names = T, pattern = 'L6.shp'))
+antarctica5 = build.coastline(list.files(paste0(temp.dir, '/GSHHS_shp/f/'), full.names = T, pattern = 'L6.shp'))
+
 
 ## Coastline1
 temp = coastline1
@@ -107,6 +113,13 @@ temp$data = temp$data[area > quantile(area, probs = 0.7)]
 coastline5 = temp
 
 
+## Trim lakes
+for (i in c(lakes1, lakes2, lakes3, lakes4, lakes5)) {
+  area = get.coastline.area(i)
+  i$data = i$data[area > quantile(area, probs = 0.5)]
+}
+
+
 ## Add metadata
 coastline1$meta$url = file.url
 coastline2$meta$url = file.url
@@ -118,7 +131,11 @@ lakes2$meta$url = file.url
 lakes3$meta$url = file.url
 lakes4$meta$url = file.url
 lakes5$meta$url = file.url
-
+antarctica1$meta$url = file.url
+antarctica2$meta$url = file.url
+antarctica3$meta$url = file.url
+antarctica4$meta$url = file.url
+antarctica5$meta$url = file.url
 
 ## Add sizes
 coastline1$meta$size = object.size(coastline1)
@@ -131,7 +148,11 @@ lakes2$meta$size = object.size(lakes2)
 lakes3$meta$size = object.size(lakes3)
 lakes4$meta$size = object.size(lakes4)
 lakes5$meta$size = object.size(lakes5)
-
+antarctica1$meta$size = object.size(antarctica1)
+antarctica2$meta$size = object.size(antarctica2)
+antarctica3$meta$size = object.size(antarctica3)
+antarctica4$meta$size = object.size(antarctica4)
+antarctica5$meta$size = object.size(antarctica5)
 
 ## Save
 save(coastline1, file = 'data/coastline1.rdata')
@@ -144,6 +165,11 @@ save(lakes2, file = 'data/lakes2.rdata')
 save(lakes3, file = 'data/lakes3.rdata')
 save(lakes4, file = 'data/lakes4.rdata')
 save(lakes5, file = 'data/lakes5.rdata')
+save(antarctica1, file = 'data/antarctica1.rdata')
+save(antarctica2, file = 'data/antarctica2.rdata')
+save(antarctica3, file = 'data/antarctica3.rdata')
+save(antarctica4, file = 'data/antarctica4.rdata')
+save(antarctica5, file = 'data/antarctica5.rdata')
 
 
 map = make.map2(coastline1, scale = 200, lat = 5)

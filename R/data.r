@@ -123,6 +123,30 @@
 #' @source NOAA
 "lakes5"
 
+#' @title Antarctica Polygon (L1)
+#' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
+#' @source NOAA
+"antarctica1"
+
+#' @title Antarctica Polygon (L2)
+#' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
+#' @source NOAA
+"antarctica2"
+
+#' @title Antarctica Polygon (L3)
+#' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
+#' @source NOAA
+"antarctica3"
+
+#' @title Antarctica Polygon (L4)
+#' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
+#' @source NOAA
+"antarctica4"
+
+#' @title Antarctica Polygon (L5)
+#' This is a coarse resolution coastline, compiled from the global hierarchical coastline data product.
+#' @source NOAA
+"antarctica5"
 
 #' @title World EEZ Data
 #' Global maritime eez boundaries. Creative Commons Attribution 4.0
