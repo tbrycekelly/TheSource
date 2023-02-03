@@ -2,9 +2,9 @@
 % Please edit documentation in R/map.plot.R
 \name{get.map.line}
 \alias{get.map.line}
-\title{Add Map Line}
+\title{Get Map Line}
 \usage{
-get.map.line(map, lon, lat, greatCircle = T)
+get.map.line(map, lon, lat, greatCircle = T, N = 1000)
 }
 \arguments{
 \item{lon}{a set of longitudes to draw a line between}
@@ -18,7 +18,7 @@ get.map.line(map, lon, lat, greatCircle = T)
 \item{lwd}{the width of the line to be drawn}
 }
 \description{
-Add Map Line
+Get Map Line
 }
 \author{
 Thomas Bryce Kelly

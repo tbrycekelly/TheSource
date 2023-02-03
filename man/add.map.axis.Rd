@@ -4,7 +4,7 @@
 \alias{add.map.axis}
 \title{Add Axis to Map}
 \usage{
-add.map.axis(map, lons = NULL, lats = NULL, sides = c(1:4))
+add.map.axis(map, lons = NULL, lats = NULL, sides = c(1:4), N = 100)
 }
 \description{
 Add Axis to Map

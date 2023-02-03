@@ -4,7 +4,16 @@
 \alias{add.map.line}
 \title{Add Map Line}
 \usage{
-add.map.line(map, lon, lat, col = "black", lty = 1, lwd = 1, greatCircle = T)
+add.map.line(
+  map,
+  lon,
+  lat,
+  col = "black",
+  lty = 1,
+  lwd = 1,
+  greatCircle = T,
+  N = 1000
+)
 }
 \arguments{
 \item{lon}{a set of longitudes to draw a line between}

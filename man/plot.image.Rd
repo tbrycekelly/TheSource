@@ -7,7 +7,7 @@
 plot.image(
   x = NULL,
   y = NULL,
-  z = NULL,
+  z,
   col = NULL,
   xlab = NULL,
   ylab = NULL,
