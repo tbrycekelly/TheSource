@@ -1,61 +1,51 @@
 #' @title Read Satellite Data
 #' @author Thomas Bryce Kelly
-#' @description read
+#' @description read satellite netcdf data from one or more files.
 #' @export
 ## Read nc file and do preliminary parsing/conversion
-read.satellite = function(file, lon = NULL, lat = NULL, verbose = T) {
+read.satellite = function(file,
+                          lon = NULL,
+                          lat = NULL,
+                          combine = F,
+                          combine.func = function(x) {mean(x, na.rm = T)},
+                          verbose = T) {
+  
+  if (length(file) == 1) {
+    sate = load.satellite(file, lon = lon, lat = lat, verbose = verbose)
+  } else {
+    sate = list()
+    
+    ## Load data
+    for (i in 1:length(file)) {
+      sate[[i]] = load.satellite(file[i], lon = lon, lat = lat, verbose = verbose)
+    }
+    
+    sate[[1]]$field = array(sate[[1]]$field, dim = c(length(sate[[1]]$lon), length(sate[[1]]$lat), length(file)))
+    for (i in 2:length(file)) {
+      sate[[1]]$field[,,i] = sate[[i]]$field
+    }
+    sate = sate[[1]]
+    
+    if (combine) {
+      sate$field = apply(sate$field, c(1,2), combine.func)
+    }
+  }
+  
+  sate
+}
 
+
+#' @title Load Satellite File
+#' @author Thomas Bryce Kelly
+#' @description read
+## Read nc file and do preliminary parsing/conversion
+load.satellite = function(file, lon = NULL, lat = NULL, verbose = T) {
+  
   if (!is.null(lon) | !is.null(lat)) {
     pre.trimmed = T
     if (is.null(lon)) { lon = c(-180, 180)}
     if (is.null(lat)) { lat = c(-90,90)}
     
-    # info = load.nc.dims(file)
-    # 
-    # ## See if lat/lon exists in the file
-    # lat.check = c('lat', 'latitude', 'Lat', 'Latitude', 'LAT', 'LATITUDE', 'y', 'Y', 'fakeDim1') %in% names(info$dim)
-    # lon.check = c('lon', 'longitude', 'Lon', 'Longitude', 'LON', 'LONGITUDE', 'x', 'X', 'fakeDim0') %in% names(file.con$dim)
-    # 
-    # if (any(lat.check) & any(lon.check)) {
-    #   
-    #   ## Valid lon/lat
-    #   file.lons = info$dim[[which(lon.check)[1]]] %% 360
-    #   file.lats = info$dim[[which(lat.check)[1]]]
-    #   
-    #   k = which(file.lons <= lon[2] & file.lons >= lon[1])
-    #   
-    #   ## Determine subset of lon
-    #   if (max(diff(k.lon)) > 1) {
-    #     lon.start = 1
-    #     lon.count = length(file.lons)
-    #   } else {
-    #     file.lons = file.lons[k]
-    #     lon.start = k[1]
-    #     lon.count = length(k)
-    #   }
-    #   
-    #   k = which(file.lats <= lat[2] & file.lats >= lat[1])
-    #   
-    #   ## Determine subset of lat
-    #   if (max(diff(k.lat)) > 1) {
-    #     lat.start = 1
-    #     lat.count = length(file.lats)
-    #   } else {
-    #     file.lats = file.lats[k]
-    #     lat.start = k[1]
-    #     lat.count = length(k)
-    #   }
-    #   
-    # } else {
-    #   ## Lat/lon not found reliably enough...
-    #   lon.count = -1
-    #   lon.start = 1
-    #   lat.start = 1
-    #   lat.count = -1
-    #   message('No coordiantes found.')
-    # }
-    # 
-    # 
     
     ## Can we load only subsets of the data?
     file.con = ncdf4::nc_open(file)
@@ -107,9 +97,9 @@ read.satellite = function(file, lon = NULL, lat = NULL, verbose = T) {
     data[['lat']] = file.lats
     
     ncdf4::nc_close(file.con)
-      
+    
   } else{
-  
+    
     ## Load data
     data = load.nc(file = file, verbose = verbose)
     pre.trimmed = F
@@ -119,10 +109,10 @@ read.satellite = function(file, lon = NULL, lat = NULL, verbose = T) {
   sizes = sapply(data, function(x) {max(cumprod(c(1,dim(x))), na.rm = T)})
   
   ## Determine primary field by size
-  l = which.max(sizes)
+  l = which.max(sizes)[1]
   field.size = dim(data[[l]])
   l = which(sizes == sizes[l])
-  x = data[l] ## list
+  x = data[[l]] ## list
   
   ## Get Lat/lon if possible
   lat = NULL; lon = NULL
@@ -142,7 +132,7 @@ read.satellite = function(file, lon = NULL, lat = NULL, verbose = T) {
   
   ## time to guess lat and lon
   if (is.null(lat) & is.null(lon)) {
-  
+    
     ## Standard NASA 4km grid
     if (4320 %in% field.size) {
       lat = seq(90, -90, length.out = field.size[2]+1)[-1]
@@ -153,8 +143,8 @@ read.satellite = function(file, lon = NULL, lat = NULL, verbose = T) {
       lat = seq(45, 30.03597, length.out = field.size[2])
       lon = seq(-140, -115.5454, length.out = field.size[1])
     } else if (588 %in% field.size) {  ## mati Kahru's Calcofi Fit
-        lat = seq(37, 29.51349, length.out = field.size[2])
-        lon = seq(-126.125, -116.6828, length.out = field.size[1])
+      lat = seq(37, 29.51349, length.out = field.size[2])
+      lon = seq(-126.125, -116.6828, length.out = field.size[1])
     } else {
       if (verbose) { message(' No known grids found, assuming global extent.')}
       lat = seq(90, -90, length.out = field.size[2]+1)[-1]
@@ -175,10 +165,10 @@ read.satellite = function(file, lon = NULL, lat = NULL, verbose = T) {
                 time = Sys.time(),
                 Source.version = packageVersion('TheSource'),
                 R.version = R.version.string))
-
+  
   times = NULL
   if (is.null(times)) { times = get.satellite.times(file, verbose = verbose) }
-
+  
   sate = list(field = x,
               file = file,
               grid = function() {expand.grid(lon = lon, lat = lat)},
@@ -186,7 +176,7 @@ read.satellite = function(file, lon = NULL, lat = NULL, verbose = T) {
               lat = lat,
               times = times,
               meta = meta)
-
+  
   
   ## Return
   sate

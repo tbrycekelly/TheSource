@@ -833,12 +833,6 @@ add.map.layer = function(map,
     if (verbose) { message(' Done. ') }
   }
 
-  ## Order
-  l = order(lon[,round(dim(lon)[2]/2)])
-  lon = lon[l,]
-  lat = lat[l,]
-  z = z[l,]
-
   nz = length(z)
 
   ## Trim
@@ -846,24 +840,34 @@ add.map.layer = function(map,
 
     if (verbose) { message(' Starting domain trimming... ', appendLF = F)}
     usr = par('usr')
-    dx = (usr[2] - usr[1])/10
-    dy = (usr[4] - usr[3])/10
 
-    corners = expand.grid(lon = c(usr[1] - dx, usr[2] + dx),
-                          lat = c(usr[3] - dy, usr[4] + dy))
+    corners = expand.grid(lon = c(usr[1], usr[2]),
+                          lat = c(usr[3], usr[4]))
     corners = rgdal::project(cbind(corners$lon, corners$lat), proj = map$p, inv = T)
 
-    field = expand.grid(lon = seq(usr[1] - dx, usr[2] + dx, length.out = 50),
-                        lat = seq(usr[3] - dy, usr[4] + dy, length.out = 50))
+    
+    if (corners[1,1] > corners[2,1]) { ## antimeridian
+      if (verbose) { message(' antimeridian... ', appendLF = F)}
+      antimeridian = T
+    } else {
+      antimeridian = F
+      lon = lon %% 360
+      lon[lon > 180] = lon[lon > 180] - 360
+    }
+      
+    field = expand.grid(lon = seq(usr[1], usr[2], length.out = 50),
+                        lat = seq(usr[3], usr[4], length.out = 50))
     field = rgdal::project(cbind(field$lon, field$lat), proj = map$p, inv = T)
     field[,1] = field[,1] %% 360
+    if (!antimeridian) {
+      field[field[,1] > 180,1] = field[field[,1] > 180,1] - 360
+    }
 
     field.lon = range(field[,1], na.rm = T)
     field.lat = range(field[,2], na.rm = T)
 
     ## Trim longitude
     if (corners[1,1] > corners[2,1]) { ## antimeridian
-      if (verbose) { message(' antimeridian... ', appendLF = F)}
       k = apply(lon, 1, function(x) {any(x >= field.lon[1] & x <= field.lon[2])})
     } else {
       if (verbose) { message(' longitude... ', appendLF = F)}
@@ -888,12 +892,16 @@ add.map.layer = function(map,
   }
 
   if (refine > 0) {
+    if (!antimeridan) {
+      lon[lon > 180] = lon[lon>180] - 360
+    }
     for (i in 1:refine) {
       temp = grid.refinement(lon, lat, z)
       lon = temp$x
       lat = temp$y
       z = temp$z
     }
+    if (verbose) {message(' Refined grid by ', 2^refine,'x.')}
   } else if (refine < 0) {
     for (i in 1:abs(refine)) {
       temp = grid.subsample(lon, lat, z)
@@ -901,9 +909,17 @@ add.map.layer = function(map,
       lat = temp$y
       z = temp$z
     }
+    if (verbose) {message(' Refined grid by 1:', 2^-refine,'x.')}
   }
 
   if (is.null(zlim)) { zlim = range(pretty(as.numeric(z), na.rm = TRUE)) }
+  
+  ## Order: Not needed?
+  l = order(rgdal::project(cbind(lon[,round(dim(lon)[2]/2)], lat[,round(dim(lon)[2]/2)]), p = map$p)[,1])
+  #l = order(lon[,round(dim(lon)[2]/2)])
+  lon = lon[l,]
+  lat = lat[l,]
+  z = z[l,]
 
   ## Color scale
   col = make.pal(z, pal = pal, rev = rev, n = n, min = zlim[1], max = zlim[2])
@@ -911,10 +927,11 @@ add.map.layer = function(map,
 
   ## Apply out of range colors if provided:
   if (is.na(col.low)) { col[z < zlim[1]] = NA }
-  if (is.na(col.high)) { col[z > zlim[2]] = NA}
+  if (is.na(col.high)) { col[z > zlim[2]] = NA }
 
 
   ## Project and Plot
+  if (verbose) {message(' Projecting grid...')}
   vertex = calc.vertex(lon, lat)
   xy = rgdal::project(cbind(as.numeric(vertex$x), as.numeric(vertex$y)), p = map$p)
   xy = list(x = array(xy[,1], dim = dim(vertex$x)),
@@ -924,9 +941,11 @@ add.map.layer = function(map,
   if (verbose) { message(' Starting plotting... ', appendLF = F) }
   for (i in 1:dim(col)[1]) {
     for (j in 1:dim(col)[2]) {
-      polygon(x = c(xy$x[i,j], xy$x[i,j+1], xy$x[i+1,j+1], xy$x[i+1,j]),
-              y = c(xy$y[i,j], xy$y[i,j+1], xy$y[i+1,j+1], xy$y[i+1,j]),
-              col = col[i,j], border = NA)
+      if (!is.na(col[i,j])) {
+        polygon(x = c(xy$x[i,j], xy$x[i,j+1], xy$x[i+1,j+1], xy$x[i+1,j]),
+                y = c(xy$y[i,j], xy$y[i,j+1], xy$y[i+1,j+1], xy$y[i+1,j]),
+                col = col[i,j], border = NA)
+      }
     }
   }
   if (verbose) { message(' complete.') }
