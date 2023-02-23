@@ -291,6 +291,20 @@ integrate.trapezoid = function(x, y, xlim = NULL) {
 }
 
 
+#' @export
+bin = function(x, y, xout, func = function (x) {mean(x, na.rm = T)}) {
+  yout = rep(NA, length(xout))
+  
+  for (i in 1:length(xout)) {
+    l = x == xout[i]
+    if (sum(l) > 0) {
+      yout[i] = func(y[l])
+    }
+  }
+  
+  yout
+}
+
 #' @title Make dataframe
 #' @description A helpful wrapper to the base data.frame function which provides column indexes upon mismatched lengths.
 #' @export
@@ -440,7 +454,7 @@ sync.dir = function(source, destination, pattern = '*', verbose = T, level = 0, 
 pad.number = function(x, pad = 4) {
   out = rep(NA, length(x))
 
-  for (i in length(x)) {
+  for (i in 1:length(x)) {
     dn = max(pad - nchar(x[i]), 0)
     out[i] = paste0(paste0(rep(0, dn), collapse = ''), x[i])
   }

@@ -10,6 +10,8 @@ add.exaggerated.axis(
   at = NULL,
   labels = NULL,
   grid = F,
+  lty = 2,
+  col = "grey",
   ...
 )
 }
