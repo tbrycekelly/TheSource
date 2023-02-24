@@ -292,18 +292,14 @@ integrate.trapezoid = function(x, y, xlim = NULL) {
 
 
 #' @export
-bin = function(x, y, xout, func = function (x) {mean(x, na.rm = T)}) {
-  yout = rep(NA, length(xout))
+bin = function(x, y, xout, func = function(x){mean(x, na.rm = T)}) {
+  cuts = cut.default(as.numeric(x), c(-Inf, as.numeric(xout)))
+  vals = levels(cuts)
+  x.vals = as.numeric(cuts)
   
-  for (i in 1:length(xout)) {
-    l = x == xout[i]
-    if (sum(l) > 0) {
-      yout[i] = func(y[l])
-    }
-  }
-  
-  yout
+  approx(x.vals, y, xout = c(1:length(vals)), ties = func)$y
 }
+
 
 #' @title Make dataframe
 #' @description A helpful wrapper to the base data.frame function which provides column indexes upon mismatched lengths.

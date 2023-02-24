@@ -171,7 +171,7 @@ load.satellite = function(file, lon = NULL, lat = NULL, verbose = T) {
   
   sate = list(field = x,
               file = file,
-              grid = function() {expand.grid(lon = lon, lat = lat)},
+              grid = function(satellite) {expand.grid(lon = satellite$lon, lat = satellite$lat)},
               lon = lon,
               lat = lat,
               times = times,

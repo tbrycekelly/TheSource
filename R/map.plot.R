@@ -855,29 +855,33 @@ add.map.layer = function(map,
       lon[lon > 180] = lon[lon > 180] - 360
     }
       
-    field = expand.grid(lon = seq(usr[1], usr[2], length.out = 50),
-                        lat = seq(usr[3], usr[4], length.out = 50))
+    field = expand.grid(lon = seq(usr[1], usr[2], length.out = 100),
+                        lat = seq(usr[3], usr[4], length.out = 100))
     field = rgdal::project(cbind(field$lon, field$lat), proj = map$p, inv = T)
+    
     field[,1] = field[,1] %% 360
-    if (!antimeridian) {
-      field[field[,1] > 180,1] = field[field[,1] > 180,1] - 360
+    if (!antimeridian & any(field[,1] > 180)) {
+      l = which(!is.na(field[,1]) & field[,1] > 180)
+      field[l,1] = field[l,1] - 360
     }
 
-    field.lon = range(field[,1], na.rm = T)
-    field.lat = range(field[,2], na.rm = T)
+    field.lon = range(field[,1], na.rm = T) %% 360
+    field.lat = range(field[,2], na.rm = T) 
 
     ## Trim longitude
-    if (corners[1,1] > corners[2,1]) { ## antimeridian
-      k = apply(lon, 1, function(x) {any(x >= field.lon[1] & x <= field.lon[2])})
-    } else {
+    if (field.lat[1] > -80 & field.lat[2] < 80) { ## only if a pole isn't visible!
       if (verbose) { message(' longitude... ', appendLF = F)}
-      k = apply(lon, 1, function(x) {any(x <= field.lon[2] & x >= field.lon[1])})
-    }
-
-    if (sum(k) > 2) {
-      z = z[k,]
-      lon = lon[k,]
-      lat = lat[k,]
+      if (corners[1,1] > corners[2,1]) { ## antimeridian
+        k = apply(lon, 1, function(x) {any(x >= field.lon[1] & x <= field.lon[2])})
+      } else {
+        k = apply(lon, 1, function(x) {any(x <= field.lon[2] & x >= field.lon[1])})
+      }
+  
+      if (sum(k) > 2) {
+        z = z[k,]
+        lon = lon[k,]
+        lat = lat[k,]
+      }
     }
 
     ## Trim latitude
@@ -932,11 +936,16 @@ add.map.layer = function(map,
 
   ## Project and Plot
   if (verbose) {message(' Projecting grid...')}
-  vertex = calc.vertex(lon, lat)
-  xy = rgdal::project(cbind(as.numeric(vertex$x), as.numeric(vertex$y)), p = map$p)
-  xy = list(x = array(xy[,1], dim = dim(vertex$x)),
-            y = array(xy[,2], dim = dim(vertex$x)))
-
+  #vertex = calc.vertex(lon, lat)
+  #xy = rgdal::project(cbind(as.numeric(vertex$x), as.numeric(vertex$y)), p = map$p)
+  #xy = list(x = array(xy[,1], dim = dim(vertex$x)),
+  #          y = array(xy[,2], dim = dim(vertex$x)))
+  
+  xy = rgdal::project(cbind(as.numeric(lon), as.numeric(lat)), p = map$p)
+  xy = list(x = array(xy[,1], dim = dim(lon)),
+            y = array(xy[,2], dim = dim(lat)))
+  xy = calc.vertex(xy$x, xy$y)
+  
 
   if (verbose) { message(' Starting plotting... ', appendLF = F) }
   for (i in 1:dim(col)[1]) {

@@ -4,10 +4,19 @@
 \alias{read.satellite}
 \title{Read Satellite Data}
 \usage{
-read.satellite(file, lon = NULL, lat = NULL, verbose = T)
+read.satellite(
+  file,
+  lon = NULL,
+  lat = NULL,
+  combine = F,
+  combine.func = function(x) {
+     mean(x, na.rm = T)
+ },
+  verbose = T
+)
 }
 \description{
-read
+read satellite netcdf data from one or more files.
 }
 \author{
 Thomas Bryce Kelly
