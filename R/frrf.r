@@ -19,8 +19,7 @@
 load.frrf = function(input.dir, file.names = NULL, verbose = T) {
     if (is.null(file.names)) {
         if (verbose) { message('No files provided, attempting to load all files in target directory.')}
-        file.names = list.files(input.dir, pattern = '*.csv', full.names = T, recursive = T)
-        input.dir = ''
+        file.names = list.files(input.dir, pattern = '*.csv')
     }
 
     if (verbose) { message('Preparing to load ', length(file.names), ' files.')}
@@ -28,7 +27,7 @@ load.frrf = function(input.dir, file.names = NULL, verbose = T) {
 
     for (file.name in file.names) {
 
-        if (verbose) { message('Loading ', file.name, appendLF = F)}
+        if (verbose) { message('Loading ', paste0(input.dir, file.name), appendLF = F)}
 
         con = file(paste0(input.dir, file.name), "r")
 
@@ -199,12 +198,9 @@ load.frrf = function(input.dir, file.names = NULL, verbose = T) {
                 minute = substr(file.name, 12, 13)
                 second = substr(file.name, 14, 15)
 
-                as.POSIXct(paste0(year, '-', month, '-', day, ' ', hour, ':', minute, ':', second))
+                as.POSIXct(paste0(year, '-', month, '-', day, ' ', hour, ':', minute, ':', second), tz = 'UTC')
             },
             error = function(c) {
-                NA
-            },
-            warning = function(c) {
                 NA
             }
         )
