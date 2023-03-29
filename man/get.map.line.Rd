@@ -4,7 +4,7 @@
 \alias{get.map.line}
 \title{Get Map Line}
 \usage{
-get.map.line(map, lon, lat, greatCircle = T, N = 1000)
+get.map.line(map, lon, lat, greatCircle = F, N = 1000)
 }
 \arguments{
 \item{lon}{a set of longitudes to draw a line between}

@@ -299,7 +299,7 @@ make.map2 = function (coast = NULL,
 get.map.line = function(map,
                         lon,
                         lat,
-                        greatCircle = T,
+                        greatCircle = F,
                         N = 1e3) {
 
   if (length(lon) != length(lat)) {stop('get.map.line: length of lon/lat are not the same.')}
@@ -357,7 +357,7 @@ add.map.line = function(map,
                         col = 'black',
                         lty = 1,
                         lwd = 1,
-                        greatCircle = T,
+                        greatCircle = F,
                         N = 1e3) {
   
   line = get.map.line(map = map, lon = lon, lat = lat, greatCircle = greatCircle, N = N)
@@ -967,6 +967,26 @@ add.map.layer = function(map,
                 ')   Z range: (', round(zlim[1], 3), ', ', round(zlim[2], 3), ')'
     )
     mtext(st, line = 0.25, adj = 1, cex = 0.7)
+  }
+}
+
+
+#' @export
+add.map.eez = function(map, eez, names = NULL, col = 'black', lwd = 1, lty = 1, verbose = T) {
+  if (is.null(names)) {
+    names = names(eez)
+    if (verbose) {
+      message('No names provided, using all available: ', paste0(names, collapse = ', '))
+    }
+  }
+  
+  for (n in names) {
+    l = which(names(eez) == n)
+    if (length(l) > 0) {
+      for (i in 1:length(eez[[n]])) {
+        add.map.line(map, eez[[n]][[i]]$lon, eez[[n]][[i]]$lat, col = col, lwd = lwd, lty = lty)
+      }
+    }
   }
 }
 

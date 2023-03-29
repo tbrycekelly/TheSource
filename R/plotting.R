@@ -265,7 +265,6 @@ add.barplot.bar = function(data, sd = NULL, x = 1, width = 0.6, col = NULL, pal 
 #' @title Plot Image
 #' @author Thomas Bryce Kelly
 #' @export
-#' @inheritParams image
 plot.image = function(x = NULL, y = NULL, z, col = NULL, xlab = NULL, ylab = NULL,
                       xlim = NULL, ylim = NULL, zlim = NULL,
                       pal = 'greyscale', n = 255, rev = F, ...) {

@@ -53,3 +53,26 @@ library(TheSource)
   redraw.map(map)
   dev.off()
 }
+
+
+proj.ortho = function(lon, lat, lon0 = 0, lat0 = 0, R = 6350000) {
+  lon = lon * 3.14159 / 180
+  lat = lat * 3.14159 / 180
+  data.frame(x = cos(lat) * sin(lon - lon0),
+             y = cos(lat0) * sin(lat) - sin(lat0) * cos(lat) * cos(lon-lon0)) * R
+}
+
+test.data = data.frame(lon = runif(1e5, -90, 90), lat = runif(1e5, -90, 90))
+
+{
+  a = Sys.time()
+  temp = rgdal::project(as.matrix(test.data), proj = '+proj=lonlat +h=1e7')
+  b = Sys.time()
+  temp2 = proj.ortho(test.data$lon, test.data$lat)
+  c = Sys.time()
+  
+  message('RGDAL Function: ', b - a, ' (', round(100*as.numeric(b-a) / as.numeric(c-a)), '%)')
+  message('My own Function: ', c - b, ' (', round(100*as.numeric(c-b) / as.numeric(c-a)), '%)')
+}
+
+
