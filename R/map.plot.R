@@ -357,7 +357,7 @@ add.map.line = function(map,
                         col = 'black',
                         lty = 1,
                         lwd = 1,
-                        greatCircle = F,
+                        greatCircle = T,
                         N = 1e3) {
   
   line = get.map.line(map = map, lon = lon, lat = lat, greatCircle = greatCircle, N = N)
