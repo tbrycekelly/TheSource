@@ -508,3 +508,37 @@ add.broken.axis = function(broken, ...) {
 
 
 
+
+#' Load CTD Bottle Files
+#' @export
+load.ctd.bottle = function(file) {
+  ## Load data
+  temp = readLines(file)
+  
+  ## Get lines
+  start = grep('Bottle', temp)
+  header = strsplit(temp[start], '\\s+')[[1]][-c(1,3)]
+  header = make.names(header, unique = T)
+  
+  #header[duplicated(header)] = paste0(header[duplicated(header)], 2)
+  bottle = list()
+  for (i in 1:length(header)) {
+    bottle[[header[i]]] = NA
+  }
+  bottle = as.data.frame(bottle)
+  
+  for (i in seq(start + 2, length(temp), by = 2)) {
+    row = as.numeric(strsplit(temp[i], '\\s+')[[1]][-c(1,3:5)])
+    row = row[-length(row)]
+    
+    bottle = rbind(bottle, row)
+  }
+  
+  ## Return
+  bottle = bottle[-1,]
+  rownames(bottle) = bottle$Bottle
+  
+  bottle
+}
+
+
