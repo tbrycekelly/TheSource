@@ -399,7 +399,8 @@ sync.dir = function(source, destination, pattern = '*', verbose = T, level = 0, 
   source.files = list.files(source, pattern = pattern)
   destination.files = list.files(destination, pattern = pattern)
   tab = paste0(rep(' ', level), collapse = '')
-
+  empty.size = c(0, file.size(source), 4096) # Should be size of a directory on that system
+  
   a = Sys.time()
 
   ## For each source file
@@ -411,21 +412,31 @@ sync.dir = function(source, destination, pattern = '*', verbose = T, level = 0, 
         ## file exists
         if (file.exists(paste0(source, sep, source.files[i])) & file.exists(paste0(destination, sep, source.files[i]))) {
           ## is a directory
-          if (file.size(paste0(source, sep, source.files[i])) == 0) {
+          if (file.info(paste0(source, sep, source.files[i]))$isdir) {
+            if (!file.info(paste0(destination, sep, source.files[i]))$isdir) {
+              file.remove(paste0(destination, sep, source.files[i]))
+              dir.create(paste0(destination, sep, source.files[i]))
+              if (verbose) {meassage(tab, Sys.time(), ': Bad file pretending to be directory. Fixing...')}
+            }
             if (verbose) { message(tab, Sys.time(), ': File ', i, ' is a folder, recursing...') }
             ## Recursion
             sync.dir(source = paste0(source, sep, source.files[i]), destination = paste0(destination, sep, source.files[i]), level = level + 1, verbose = verbose)
           } else {
-            if (file.size(paste0(source, sep, source.files[i])) != file.size(paste0(destination, sep, source.files[i]))) {
+            if (file.size(paste0(source, sep, source.files[i])) != file.size(paste0(destination, sep, source.files[i])) | file.size(paste0(destination, sep, source.files[i])) == 0) {
               ## Copy file if they are not the same size.
               if (verbose) { message(tab, Sys.time(), ': File ', i, ' was corrupted, copying from source.') }
-              file.copy(paste0(source, sep, source.files[i]), paste0(destination, sep, source.files[i]))
+              if (file.info(paste0(source, sep, source.files[i]))$isdir) {
+                file.remove(paste0(source, sep, source.files[i]))
+                dir.create(paste0(source, sep, source.files[i]))
+              } else {
+                file.copy(paste0(source, sep, source.files[i]), paste0(destination, sep, source.files[i]))
+              }
             } else {
               if (verbose) { message(tab, Sys.time(), ': File ', i, ' already exists.') }
             }
           }
         } else { ## file or dir does not exist
-          if (file.size(paste0(source, sep, source.files[i])) == 0) {
+          if (file.size(paste0(source, sep, source.files[i])) %in% empty.size) {
             ## Create directory and recurse
             if (verbose) { message(tab, Sys.time(), ': File ', i, ' is a folder and missing from destination, recursing...') }
             dir.create(paste0(destination, sep, source.files[i]))

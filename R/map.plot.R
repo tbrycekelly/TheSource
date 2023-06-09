@@ -521,11 +521,10 @@ add.map.axis = function(map, lons = NULL, lats = NULL, sides = c(1:4), N = 100) 
   ## Add lon axes
   for (ll in lons) {
     temp = get.map.line(map, lon = rep(ll, 2), lat = c(-90,90), N = N)
-    temp = temp[is.finite(temp[,1]) & is.finite(temp[,2]),]
+    #temp = temp[is.finite(temp[,1]) & is.finite(temp[,2]),]
 
     s = 'E'
     if (ll < 0 | ll %% 360 >= 180) { s = 'W'; ll = -ll }
-
     add.map.axis.label(map, temp, label = paste0(ll, s), sides = sides)
   }
 
@@ -533,7 +532,7 @@ add.map.axis = function(map, lons = NULL, lats = NULL, sides = c(1:4), N = 100) 
   ## Add lats
   for (ll in lats) {
     temp = get.map.line(map, lon = c(-180, 180), lat = rep(ll, 2), N = N)
-    temp = temp[is.finite(temp[,1]) & is.finite(temp[,2]),]
+    #temp = temp[is.finite(temp[,1]) & is.finite(temp[,2]),]
     s = 'N'
     if (ll < 0) { s = 'S'; ll = -ll }
 
