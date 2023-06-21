@@ -395,8 +395,8 @@ is.inside = function(pos, box, verbose = FALSE) {
 #' @param level A recursion counter for the number of sublevels indexed (used for logging)
 #' @param sep The folder/folder seperator, default is
 #' @export
-sync.dir = function(source, destination, pattern = '*', verbose = T, level = 0, sep = '/') {
-  source.files = list.files(source, pattern = pattern)
+sync.dir = function(source, destination, pattern = '*', verbose = T, level = 0, sep = '/', shuffle = T) {
+  source.files = sample(list.files(source, pattern = pattern))
   destination.files = list.files(destination, pattern = pattern)
   tab = paste0(rep(' ', level), collapse = '')
   empty.size = c(0, file.size(source), 4096) # Should be size of a directory on that system
