@@ -11,7 +11,7 @@ add.map.line(
   col = "black",
   lty = 1,
   lwd = 1,
-  greatCircle = F,
+  greatCircle = T,
   N = 1000
 )
 }
