@@ -141,7 +141,7 @@ get.section.bathy = function(lon, lat, res = 10) {
               lat.min = max(min(lat) - 1, -90),  lat.max = min(max(lat) + 1, 90))
   bathy = get.bathy(map, res = res)
 
-  oce::bilinearInterp(lon, lat, bathy$Lon, bathy$Lat, bathy$Z)
+  TheSource::interp.bilinear(lon, lat, bathy$Lon, bathy$Lat, bathy$Z)
 }
 
 
