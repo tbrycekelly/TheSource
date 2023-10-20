@@ -918,11 +918,11 @@ add.map.layer = function(map,
   if (is.null(zlim)) { zlim = range(pretty(as.numeric(z), na.rm = TRUE)) }
   
   ## Order: Not needed?
-  l = order(rgdal::project(cbind(lon[,round(dim(lon)[2]/2)], lat[,round(dim(lon)[2]/2)]), p = map$p)[,1])
+  #l = order(rgdal::project(cbind(lon[,round(dim(lon)[2]/2)], lat[,round(dim(lon)[2]/2)]), p = map$p)[,1])
   #l = order(lon[,round(dim(lon)[2]/2)])
-  lon = lon[l,]
-  lat = lat[l,]
-  z = z[l,]
+  #lon = lon[l,]
+  #lat = lat[l,]
+  #z = z[l,]
 
   ## Color scale
   col = make.pal(z, pal = pal, rev = rev, n = n, min = zlim[1], max = zlim[2])
