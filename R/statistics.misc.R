@@ -45,18 +45,22 @@ is.prime = function(n) {
 #' @param parameter signal or vector to be smoothed
 #' @param k the integer number of entries to average over
 #' @export
-calc.sma = function(parameter, k = 100) {
+sma = function(parameter, k, f = mean) {
+  if (k %% 2 == 1) {
+    k = k - 1
+  } else {
+    stop('Please select an odd window size.')
+  }
+  k = k / 2
   sma = rep(NA, length(parameter)) ## need this vector to be the same length as parameter
   for (i in 1:length(parameter)) {
-    if (i < k/2 | i > length(parameter) - k/2) {
+    if (i <= k | i >= length(parameter) - k + 1) {
       sma[i] = NA
     } else {
-      series = c((i - floor(k/2) + 1):(i + floor(k/2) - 1))
-      #message(k, ' = k\t', length(series), ' = series')
-      sma[i] = mean(parameter[series], na.rm = TRUE)
+      series = c((i - k):(i + k))
+      sma[i] = f(parameter[series])
     }
   }
-
   sma
 }
 
